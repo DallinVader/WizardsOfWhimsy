@@ -151,6 +151,10 @@ body.cm-page h1 {
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
 }
 
+html {
+    scroll-padding-top: max(56px, calc(env(safe-area-inset-top) + 48px));
+}
+
 body {
     margin: 0;
     padding: 0;
@@ -1964,17 +1968,26 @@ kbd {
         max-height: none;
     }
 
+    /* Editor before preview on phones/tablets — fields are the primary task */
+    .main-container .controls-panel {
+        order: 1;
+    }
+
+    .main-container .card-preview {
+        order: 2;
+    }
+
     .card-preview {
         position: relative;
         top: 0;
         justify-content: center;
         padding: 0;
-        max-height: min(70dvh, 600px);
+        max-height: min(52dvh, 440px);
     }
 
     #cardCanvas {
         max-width: 100%;
-        max-height: min(64dvh, 540px);
+        max-height: min(48dvh, 400px);
     }
 }
 
@@ -2019,10 +2032,42 @@ kbd {
 
     .cm-page .cm-editor-panel {
         padding: 10px 12px max(14px, env(safe-area-inset-bottom));
+        max-height: none;
+        overflow: visible;
+    }
+
+    .cm-page .cm-editor-panel .cm-quick-presets button {
+        min-height: 36px !important;
+        padding: 8px 10px !important;
+        font-size: 12px !important;
+    }
+
+    .cm-page .cm-editor-panel .section-header {
+        padding: 12px 14px;
+        min-height: 44px;
+        box-sizing: border-box;
+    }
+
+    .drive-modal-input,
+    .drive-modal-search-input {
+        font-size: 16px;
+        min-height: 44px;
+    }
+
+    .drive-modal-close,
+    .spm-modal-close {
+        width: 44px;
+        height: 44px;
+        top: max(8px, env(safe-area-inset-top));
+        right: max(8px, env(safe-area-inset-right));
     }
 
     .card-preview {
-        max-height: min(58dvh, 480px);
+        max-height: min(44dvh, 360px);
+    }
+
+    #cardCanvas {
+        max-height: min(40dvh, 340px);
     }
 
     .top-bar-btn,
@@ -2062,11 +2107,6 @@ kbd {
         flex: 1 1 auto;
         justify-content: center;
         text-align: center;
-    }
-
-    .drive-modal-panel {
-        max-width: 100%;
-        border-radius: 14px 14px 0 0;
     }
 }
 

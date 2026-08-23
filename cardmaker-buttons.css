@@ -478,18 +478,28 @@ a.cp-btn {
 @media (max-width: 900px) {
     .spm-btn,
     .spm-small-btn,
+    .spm-link-btn,
+    a.spm-link-btn,
     .db-btn,
     .cp-btn,
     .cg-btn,
     .top-bar-btn,
     .top-drive-btn,
-    .drive-modal-btn {
+    .drive-modal-btn,
+    .cm-field-options-manage-btn,
+    .controls-panel .quick-buttons button {
         min-height: 44px;
         padding-top: 11px;
         padding-bottom: 11px;
     }
 
     .db-qty-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .drive-modal-close,
+    .spm-modal-close {
         min-width: 44px;
         min-height: 44px;
     }

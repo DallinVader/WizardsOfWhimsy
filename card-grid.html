@@ -109,11 +109,53 @@
             font-size: 0.78rem;
         }
 
+        @media (max-width: 900px) {
+            .cg-wrap { padding-top: 14px; }
+            .cg-size-row select,
+            .cg-size-row input[type="number"],
+            #printSetupModal .drive-modal-input,
+            #cgChooseCardModal .drive-modal-input {
+                font-size: 16px;
+                min-height: 44px;
+            }
+        }
+
+        @media (max-width: 720px) {
+            .cg-grid-container {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
         @media (max-width: 640px) {
             .cg-page { padding-bottom: max(28px, env(safe-area-inset-bottom)); }
-            .cg-toolbar { gap: 8px; }
-            .cg-toolbar label.cg-upload-label { min-height: 44px; display: inline-flex; align-items: center; }
+            .cg-toolbar { gap: 8px; justify-content: stretch; }
+            .cg-toolbar .cg-btn { flex: 1 1 calc(50% - 6px); justify-content: center; min-width: 0; }
+            .cg-toolbar label.cg-upload-label {
+                min-height: 44px;
+                display: inline-flex;
+                align-items: center;
+                flex: 1 1 100%;
+                justify-content: center;
+            }
             .cg-grid-wrap { padding: 10px; }
+            .cg-grid-container {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+                padding: 10px;
+            }
+            .cg-size-row select,
+            .cg-size-row input[type="number"],
+            #printSetupModal .drive-modal-input,
+            #cgChooseCardModal .drive-modal-input {
+                font-size: 16px;
+                min-height: 44px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .cg-grid-container {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media print {

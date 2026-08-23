@@ -53,6 +53,32 @@
         .spm-status-card .k { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
         .spm-status-card .v { font-size: 15px; font-weight: 800; color: #93c5fd; line-height: 1.35; }
 
+        .spm-summary-fold > summary {
+            list-style: none;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 12px;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: #93c5fd;
+            padding: 4px 0 12px;
+            user-select: none;
+        }
+        .spm-summary-fold > summary::-webkit-details-marker { display: none; }
+        .spm-summary-fold > summary::after {
+            content: ' ▾';
+            color: #64748b;
+            font-size: 11px;
+        }
+        .spm-summary-fold:not([open]) > summary::after { content: ' ▸'; }
+        @media (min-width: 981px) {
+            .spm-summary-fold > summary { display: none; }
+            .spm-summary-fold { display: block; }
+        }
+        @media (max-width: 980px) {
+            .spm-summary-fold .spm-list-box { max-height: 180px; }
+        }
+
         .spm-list-box {
             max-height: 260px; overflow: auto; border-radius: 12px;
             border: 1px solid rgba(148,163,184,0.16);
@@ -887,6 +913,41 @@
                 justify-content: stretch !important;
             }
             .spm-multi-panel-body { padding: 0 10px 12px; }
+            .spm-input, select.spm-select, textarea {
+                font-size: 16px;
+                min-width: 0;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .spm-modal {
+                padding: max(8px, env(safe-area-inset-left)) max(8px, env(safe-area-inset-right))
+                    max(8px, env(safe-area-inset-bottom));
+                align-items: flex-end;
+            }
+            .spm-modal-dialog {
+                flex-direction: column;
+                max-width: 100%;
+                max-height: min(100dvh - 12px, 100vh);
+                overflow: hidden;
+                gap: 14px;
+            }
+            .spm-modal-panel {
+                max-width: 100%;
+                border-radius: 18px 18px 0 0;
+                padding-bottom: max(18px, env(safe-area-inset-bottom));
+            }
+            .spm-actions {
+                flex-direction: column;
+            }
+            .spm-actions .spm-small-btn,
+            .spm-actions .spm-link-btn {
+                flex: 1 1 auto;
+                width: 100%;
+            }
+            .spm-edit-card-nav .spm-small-btn {
+                min-height: 44px;
+                min-width: 76px;
+            }
         }
 
         @media (max-width: 720px) {
@@ -923,15 +984,6 @@
             .spm-zoom-title { font-size: 13px; }
             input.spm-input, select.spm-select, textarea {
                 font-size: 16px;
-            }
-            .spm-edit-card-nav .spm-small-btn {
-                min-height: 44px;
-                min-width: 76px;
-            }
-            .spm-modal {
-                padding: max(8px, env(safe-area-inset-left)) max(8px, env(safe-area-inset-right))
-                    max(8px, env(safe-area-inset-bottom));
-                align-items: flex-end;
             }
             .spm-modal-dialog {
                 flex-direction: column;
@@ -995,6 +1047,8 @@
                     <div class="v" id="spmStatus">Not connected</div>
                 </div>
 
+                <details class="spm-summary-fold">
+                    <summary>Sets, types &amp; counts</summary>
                 <h3 class="spm-list-heading">Named sets</h3>
                 <p class="spm-muted" style="font-size:12px; line-height:1.45; margin:0 0 10px;">Sets are stored in this browser. Assign them to saves below or use the same choice in Card Maker for the default total instead of 120.</p>
                 <div class="spm-default-set-field">
@@ -1019,6 +1073,7 @@
 
                 <h3 class="spm-list-heading">Counts by rarity</h3>
                 <div class="spm-list-box" id="spmRarityCounts"></div>
+                </details>
             </div>
 
             <div class="spm-panel">

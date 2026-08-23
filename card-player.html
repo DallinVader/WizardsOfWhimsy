@@ -91,26 +91,44 @@
                 grid-template-columns: 1fr;
                 max-height: none;
                 flex: 1 1 auto;
+                display: flex;
+                flex-direction: column;
+            }
+            .cp-panel-play {
+                order: 1;
+                min-height: min(58dvh, 480px);
+                max-height: none;
+            }
+            .cp-main > .cp-sidebar-shell {
+                order: 2;
+                background: transparent;
+                border: none;
+                box-shadow: none;
+                display: block;
             }
             .cp-main.cp-sidebar-collapsed { grid-template-columns: 1fr; }
-            .cp-main.cp-sidebar-collapsed .cp-sidebar-inner { display: block; }
-            .cp-sidebar-toggle { display: none; }
-            .cp-main > .cp-sidebar-shell {
-                background: transparent; border: none; box-shadow: none;
-                display: block;
+            .cp-main.cp-sidebar-collapsed .cp-sidebar-inner { display: none; }
+            .cp-sidebar-toggle {
+                display: flex;
+                width: 100%;
+                min-height: 44px;
+                border-radius: 12px;
+                margin-bottom: 8px;
             }
             .cp-sidebar-inner { border-radius: 0; overflow-y: visible; }
             .cp-sidebar-inner .cp-panel {
-                border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);
+                border-radius: 16px;
+                border: 1px solid rgba(255,255,255,0.1);
                 background: rgba(255,255,255,0.06);
                 box-shadow: 0 12px 40px rgba(0,0,0,0.22);
             }
-            .cp-panel-play {
-                min-height: min(70dvh, 560px);
-                max-height: none;
+            .cp-actions .cp-btn {
+                flex: 1 1 calc(50% - 6px);
+                min-width: 0;
+                justify-content: center;
             }
             input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
-            select, textarea { font-size: 16px; }
+            select, textarea { font-size: 16px; min-height: 44px; box-sizing: border-box; }
         }
         .cp-panel {
             background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
