@@ -21,8 +21,36 @@
             flex-direction: column;
             overflow: hidden;
         }
+        body.cp-player-body {
+            min-height: 100dvh;
+            height: 100dvh;
+        }
+        body.cp-player-body .cp-wrap {
+            max-width: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+        body.cp-player-body .cp-main {
+            gap: 0;
+            height: 100%;
+        }
+        body.cp-player-body .cp-main > .cp-sidebar-shell {
+            border-radius: 0;
+            border-left: none;
+            border-top: none;
+            border-bottom: none;
+        }
+        body.cp-player-body .cp-main.cp-sidebar-collapsed .cp-sidebar-toggle {
+            border-radius: 0;
+        }
+        body.cp-player-body .cp-sidebar-inner {
+            border-radius: 0;
+        }
         .cp-wrap {
-            max-width: min(1600px, calc(100vw - 24px)); margin: 0 auto; padding: 12px 16px 16px;
+            max-width: min(1800px, calc(100vw - 16px)); margin: 0 auto; padding: 8px 12px 12px;
             flex: 1 1 auto;
             min-height: 0;
             max-height: none;
@@ -30,9 +58,8 @@
             display: flex; flex-direction: column;
             width: 100%;
         }
-        /* cp-btn variants → cardmaker-buttons.css */
         .cp-main {
-            display: grid; grid-template-columns: minmax(260px, 320px) minmax(0, 1fr); gap: 16px;
+            display: grid; grid-template-columns: minmax(260px, 300px) minmax(0, 1fr); gap: 12px;
             align-items: stretch;
             flex: 1 1 auto; min-height: 0;
         }
@@ -75,6 +102,7 @@
         }
         .cp-main > .cp-panel.cp-panel-play {
             overflow: visible;
+            position: relative;
         }
         @media (max-width: 900px) {
             body {
@@ -86,6 +114,9 @@
             .cp-wrap {
                 max-width: 100%;
                 padding: 12px max(12px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+            }
+            body.cp-player-body .cp-wrap {
+                padding: 0 0 max(8px, env(safe-area-inset-bottom)) 0;
             }
             .cp-main {
                 grid-template-columns: 1fr;
@@ -162,33 +193,85 @@
         .cp-list .cp-card-title { font-weight: 800; color: #f1f5f9; word-break: break-word; display: block; }
         .cp-list .cp-card-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; display: block; }
         .cp-field-wrap {
-            position: relative; border-radius: 16px; border: none;
-            background: rgba(15,23,42,0.55);
-            flex: 1 1 0; min-height: 0; overflow: visible;
+            position: relative;
+            border: none;
+            border-radius: 0;
+            background: transparent;
+            flex: 1 1 0;
+            min-height: 0;
+            overflow: hidden;
             box-shadow: none;
         }
         /* Hover preview must paint above the other player mat (still below modals: z-index 1100). */
         .cp-field-wrap:has(.cp-card-enlarged) {
             z-index: 4;
+            overflow: visible;
+        }
+        .cp-play-stacks:has(.cp-card-enlarged) {
+            overflow: visible;
         }
         .cp-panel.cp-panel-play {
             border: none;
             box-shadow: none;
-            background: transparent;
+            background: #060a12;
             padding: 0;
-            overflow: visible;
+            overflow: hidden;
             min-height: 0;
             height: 100%;
             display: flex;
             flex-direction: column;
+            border-radius: 0;
+            --cp-card-field-w: min(72px, 8.5vh);
+            --cp-card-hand-w: min(70px, 7.5vh);
+            --cp-card-treasure-w: min(58px, 7vh);
+            --cp-deck-w: min(70px, 9vh);
+            --cp-deck-h: min(98px, 12.5vh);
+            --cp-deck-col-w: calc(var(--cp-deck-w) * 2 + 14px);
+            --cp-hand-rail-h: calc(var(--cp-card-hand-w) * 1.4 + 14px);
+            --cp-bottom-inset: 6px;
         }
+        /* Local player mat gets more vertical space than opponent */
+        .cp-field-wrap--p1 { flex: 1.25 1 0; }
+        .cp-field-wrap--p2 { flex: 0.75 1 0; }
+        .cp-panel-play.cp-local-seat-p2 .cp-field-wrap--p2 { flex: 1.25 1 0; }
+        .cp-panel-play.cp-local-seat-p2 .cp-field-wrap--p1 { flex: 0.75 1 0; }
         .cp-play-stacks {
+            position: relative;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 0;
             flex: 1 1 auto;
             min-height: 0;
-            overflow: visible;
+            overflow: hidden;
+            border-radius: 0;
+            background:
+                linear-gradient(180deg,
+                    rgba(36, 44, 34, 0.98) 0%,
+                    rgba(28, 36, 32, 0.96) 46%,
+                    rgba(14, 22, 36, 0.98) 54%,
+                    rgba(10, 16, 28, 1) 100%);
+            box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.45);
+        }
+        .cp-play-stacks::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.07) 20%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.07) 80%, transparent 100%);
+            pointer-events: none;
+            z-index: 6;
+        }
+        .cp-play-stacks::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 120% 45% at 50% 0%, rgba(80, 100, 70, 0.08), transparent 55%),
+                radial-gradient(ellipse 120% 45% at 50% 100%, rgba(50, 80, 120, 0.1), transparent 55%);
+            pointer-events: none;
+            z-index: 0;
         }
         /* Local player 2: own board at bottom, upright; opponent (P1) rotated like across the table. */
         .cp-panel-play.cp-local-seat-p2 .cp-play-stacks {
@@ -215,27 +298,16 @@
         /* Same footprint as P1’s field; inner layer is rotated 180° like sitting across the table. */
         .cp-field-wrap--p2 {
             position: relative;
-            border-radius: 16px;
             border: none;
-            background: rgba(15,23,42,0.45);
+            border-radius: 0;
+            background: transparent;
             flex: 1 1 0;
             min-height: 0;
-            overflow: visible;
+            overflow: hidden;
             box-shadow: none;
         }
         .cp-field-wrap--p2 .cp-field-label {
-            position: absolute;
-            top: 12px;
-            left: 16px;
-            right: 16px;
-            text-align: center;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: rgba(148,163,184,0.8);
-            font-weight: 800;
-            pointer-events: none;
-            z-index: 2;
+            display: none;
         }
         .cp-field-rot-p2 {
             width: 100%;
@@ -268,127 +340,302 @@
             transform: rotate(180deg);
         }
         .cp-field-label {
-            position: absolute; top: 12px; left: 16px; font-size: 11px; text-transform: uppercase;
-            letter-spacing: 0.1em; color: rgba(148,163,184,0.75); font-weight: 800; pointer-events: none; z-index: 0;
+            display: none;
         }
         .cp-field {
             position: relative; width: 100%; height: 100%; min-height: 0; z-index: 1;
+            box-sizing: border-box;
+            padding-bottom: calc(var(--cp-hand-rail-h) + var(--cp-deck-h) + var(--cp-bottom-inset));
             perspective: min(1600px, 200vw);
             perspective-origin: 50% 45%;
         }
+        .cp-field-wrap--p2 .cp-field {
+            background: radial-gradient(ellipse 85% 55% at 50% 38%, rgba(70, 85, 60, 0.1), transparent 68%);
+        }
+        .cp-field-wrap--p1 .cp-field {
+            background: radial-gradient(ellipse 85% 55% at 50% 62%, rgba(45, 70, 105, 0.11), transparent 68%);
+        }
         .cp-draw-zone {
-            position: absolute; left: 14px; bottom: 14px;
-            width: min(118px, 22vw); height: min(165px, 29vw);
+            position: absolute; right: var(--cp-bottom-inset); bottom: var(--cp-bottom-inset);
+            left: auto;
+            width: var(--cp-deck-w);
+            height: var(--cp-deck-h);
             background-color: #1a1a1c;
             background-image: url('Card Back.png');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            border: 2px solid rgba(42, 42, 42, 0.95); border-radius: 12px; z-index: 5;
-            box-shadow: inset 0 0 18px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.35);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            z-index: 9;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
             overflow: hidden;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 0;
             cursor: grab; user-select: none; touch-action: none; color: #e2e8f0;
         }
         .cp-draw-zone:active { cursor: grabbing; }
-        .cp-treasure-zone {
+        .cp-draw-zone .cp-zone-label {
+            display: block;
             position: absolute;
-            left: 14px;
-            bottom: calc(14px + min(165px, 29vw) + 10px);
-            width: min(118px, 22vw);
-            height: min(120px, 22vw);
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.9);
-            border-radius: 12px;
-            z-index: 5;
-            pointer-events: none;
-        }
-        .cp-treasure-zone .cp-zone-label {
-            position: absolute; top: 6px; left: 0; right: 0; text-align: center; pointer-events: none;
-            color: rgba(255, 255, 255, 0.95);
-            letter-spacing: 0.08em;
-            font-size: 8px;
-            line-height: 1.2;
-            text-shadow: 0 0 6px rgba(0, 0, 0, 0.95), 0 1px 2px rgba(0, 0, 0, 0.9);
-        }
-        .cp-hand-zone {
-            position: absolute;
-            left: clamp(132px, 26vw, 200px);
-            right: clamp(178px, 34vw, 220px);
-            bottom: 14px;
-            height: min(128px, 23vw);
-            border: 1px dashed rgba(129, 140, 248, 0.45);
-            border-radius: 12px;
-            background: rgba(30, 27, 75, 0.25);
-            z-index: 5;
-            pointer-events: none;
-        }
-        .cp-hand-zone .cp-zone-label {
-            position: absolute;
-            top: 8px;
+            top: 4px;
             left: 0;
             right: 0;
             text-align: center;
+            font-size: 7px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            color: rgba(226, 232, 240, 0.72);
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
             pointer-events: none;
-            color: rgba(165, 180, 252, 0.85);
+        }
+        .cp-treasure-zone {
+            position: absolute;
+            left: var(--cp-bottom-inset);
+            right: calc(var(--cp-bottom-inset) + var(--cp-deck-col-w));
+            bottom: var(--cp-bottom-inset);
+            height: var(--cp-deck-h);
+            background: rgba(22, 20, 12, 0.88);
+            border: 1px solid rgba(250, 204, 21, 0.38);
+            border-radius: 8px;
+            z-index: 8;
+            pointer-events: auto;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+        .cp-treasure-zone:hover {
+            background: rgba(28, 24, 14, 0.94);
+            border-color: rgba(250, 204, 21, 0.58);
+        }
+        .cp-treasure-zone .cp-zone-label {
+            display: block;
+            position: absolute;
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            font-size: 7px;
+            font-weight: 800;
             letter-spacing: 0.14em;
+            color: rgba(250, 204, 21, 0.62);
+            pointer-events: none;
+        }
+        .cp-hand-zone {
+            position: absolute;
+            left: var(--cp-bottom-inset);
+            right: calc(var(--cp-bottom-inset) + var(--cp-deck-col-w));
+            bottom: calc(var(--cp-bottom-inset) + var(--cp-deck-h));
+            height: var(--cp-hand-rail-h);
+            border: 1px solid rgba(129, 140, 248, 0.28);
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            background: linear-gradient(to top, rgba(30, 27, 75, 0.82) 0%, rgba(30, 27, 75, 0.2) 100%);
+            box-shadow: none;
+            z-index: 7;
+            pointer-events: none;
+        }
+        .cp-hand-zone .cp-zone-label {
+            display: block;
+            position: absolute;
+            top: 2px;
+            left: 8px;
+            transform: none;
+            font-size: 7px;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            color: rgba(199, 210, 254, 0.75);
+            pointer-events: none;
+        }
+        .cp-hand-zone .cp-hand-count {
+            position: absolute;
+            top: 1px;
+            right: 8px;
+            font-size: 10px;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            color: #c7d2fe;
+            padding: 1px 6px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(129, 140, 248, 0.25);
+            pointer-events: none;
+        }
+        .cp-card-on-field[data-cp-treasure="1"] {
+            width: var(--cp-card-treasure-w);
+            z-index: 34;
+            cursor: pointer;
+            transition:
+                left 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+                top 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+                width 0.22s ease,
+                transform 0.2s ease,
+                filter 0.2s ease,
+                opacity 0.2s ease;
+        }
+        .cp-card-on-field[data-cp-treasure="1"].cp-treasure-exhausted {
+            filter: saturate(0.4) brightness(0.78);
+            opacity: 0.82;
+        }
+        .cp-card-on-field[data-cp-treasure="1"].cp-treasure-hover {
+            filter: drop-shadow(0 4px 14px rgba(250, 204, 21, 0.42));
+            z-index: 52 !important;
+        }
+        .cp-card-on-field[data-cp-discard="1"] {
+            width: var(--cp-card-treasure-w);
+            z-index: 24;
+        }
+        .cp-card-on-field.cp-hand-card .cp-card-rot {
+            transform-origin: 50% 100%;
         }
         .cp-card-on-field.cp-hand-card {
-            width: min(76px, 10.5vw);
-            z-index: 28;
+            width: var(--cp-card-hand-w);
+            z-index: 30;
+            transition:
+                left 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+                top 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+                width 0.22s ease,
+                transform 0.2s ease,
+                filter 0.28s ease;
+        }
+        .cp-card-on-field.cp-hand-card.cp-card-dragging {
+            transition: width 0.22s ease, filter 0.28s ease;
         }
         .cp-discard-zone {
             position: absolute;
-            right: clamp(8px, 1.5vw, 14px);
-            bottom: clamp(8px, 1.5vw, 14px);
-            /* % height/width are relative to the playfield — keeps zones inside short split-view mats */
-            width: min(160px, 34%, 33vw);
-            height: min(150px, 26%, 32vw);
-            background: linear-gradient(145deg, #94a3b8 0%, #64748b 55%, #475569 100%);
-            border: 2px solid #475569; border-radius: 12px; z-index: 5;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 8px 24px rgba(0,0,0,0.3);
-            pointer-events: none;
+            right: calc(var(--cp-bottom-inset) + var(--cp-deck-w) + 6px);
+            left: auto;
+            bottom: var(--cp-bottom-inset);
+            width: var(--cp-deck-w);
+            height: var(--cp-deck-h);
+            background: rgba(28, 18, 24, 0.92);
+            border: 1px solid rgba(248, 113, 113, 0.42);
+            border-radius: 8px;
+            z-index: 9;
+            pointer-events: auto;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+        }
+        .cp-discard-zone:hover {
+            border-color: rgba(248, 113, 113, 0.65);
+            background: rgba(36, 22, 30, 0.96);
+        }
+        /* Drop-target highlights while dragging cards */
+        .cp-hand-zone.cp-drop-target,
+        .cp-treasure-zone.cp-drop-target,
+        .cp-discard-zone.cp-drop-target,
+        .cp-draw-zone.cp-drop-target,
+        .cp-commander-zone.cp-drop-target {
+            transition: border-color 0.14s ease, background 0.14s ease, box-shadow 0.14s ease;
+        }
+        .cp-hand-zone.cp-drop-target {
+            border-color: rgba(129, 140, 248, 0.45);
+            box-shadow: inset 0 0 0 1px rgba(129, 140, 248, 0.2);
+        }
+        .cp-hand-zone.cp-drop-target--active {
+            border-color: rgba(165, 180, 252, 0.85);
+            background: linear-gradient(to top, rgba(49, 46, 129, 0.92) 0%, rgba(49, 46, 129, 0.35) 100%);
+            box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.45), 0 0 18px rgba(99, 102, 241, 0.28);
+        }
+        .cp-treasure-zone.cp-drop-target {
+            border-color: rgba(250, 204, 21, 0.52);
+        }
+        .cp-treasure-zone.cp-drop-target--active {
+            border-color: rgba(253, 224, 71, 0.9);
+            background: rgba(38, 32, 14, 0.96);
+            box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.4), 0 0 16px rgba(250, 204, 21, 0.22);
+        }
+        .cp-discard-zone.cp-drop-target {
+            border-color: rgba(248, 113, 113, 0.55);
+        }
+        .cp-discard-zone.cp-drop-target--active {
+            border-color: rgba(252, 165, 165, 0.92);
+            background: rgba(48, 24, 32, 0.98);
+            box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.42), 0 0 16px rgba(248, 113, 113, 0.2);
+        }
+        .cp-draw-zone.cp-drop-target {
+            box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.28);
+        }
+        .cp-draw-zone.cp-drop-target--active {
+            box-shadow: 0 0 0 2px rgba(226, 232, 240, 0.55), 0 0 18px rgba(148, 163, 184, 0.28);
+        }
+        .cp-commander-zone.cp-drop-target {
+            background: rgba(240, 192, 106, 0.06);
+            border: 2px dashed rgba(240, 192, 106, 0.32);
+        }
+        .cp-commander-zone.cp-drop-target--active {
+            background: rgba(240, 192, 106, 0.16);
+            border-color: rgba(240, 192, 106, 0.72);
+            box-shadow: 0 0 16px rgba(240, 192, 106, 0.28);
         }
         .cp-commander-zone {
             position: absolute;
-            right: clamp(8px, 1.5vw, 14px);
-            top: clamp(18px, 5%, 40px);
-            width: min(160px, 34%, 33vw);
-            height: min(200px, 33%, 40vw);
-            background: linear-gradient(145deg, #7c3aed 0%, #6d28d9 40%, #4c1d95 100%);
-            border: 2px solid #a78bfa; border-radius: 12px; z-index: 5;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 8px 24px rgba(0,0,0,0.35);
+            left: 8px;
+            top: 8px;
+            right: auto;
+            width: min(70px, 12vw);
+            height: min(98px, 16.5vw);
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            z-index: 5;
             pointer-events: none;
+            box-shadow: none;
         }
         .cp-commander-zone .cp-zone-label {
-            position: absolute; top: 10px; left: 0; right: 0; text-align: center; pointer-events: none;
-            color: rgba(237, 233, 254, 0.92);
-            letter-spacing: 0.1em;
+            display: none;
         }
         .cp-zone-label {
-            font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em;
-            color: rgba(226,232,240,0.75); pointer-events: none;
-        }
-        .cp-draw-zone .cp-zone-label {
-            color: rgba(241,245,249,0.96);
-            text-shadow: 0 1px 2px rgba(0,0,0,0.85), 0 0 12px rgba(0,0,0,0.55);
+            font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em;
+            color: rgba(226,232,240,0.45); pointer-events: none;
         }
         .cp-draw-zone .cp-zone-count {
-            text-shadow: 0 1px 2px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.6);
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            font-weight: 800;
+            padding: 1px 7px;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.55);
+            text-shadow: none;
         }
         .cp-discard-zone .cp-zone-label {
-            position: absolute; top: 10px; left: 0; right: 0; text-align: center; pointer-events: none;
-            color: rgba(15,23,42,0.75);
+            display: block;
+            position: absolute;
+            top: 4px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 7px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            color: rgba(252, 165, 165, 0.82);
+            pointer-events: none;
         }
-        .cp-zone-count { font-size: 22px; font-weight: 900; font-variant-numeric: tabular-nums; color: #e2e8f0; pointer-events: none; }
+        .cp-discard-zone .cp-discard-count {
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            padding: 1px 7px;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.55);
+            color: rgba(254, 202, 202, 0.95);
+            pointer-events: none;
+        }
+        .cp-zone-count { font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; color: rgba(226, 232, 240, 0.9); pointer-events: none; }
         .cp-deck-drag-ghost {
-            position: fixed; width: min(88px, 16vw); aspect-ratio: 5 / 7;
-            background: #0f0f0f; border: 2px solid #3f3f46; border-radius: 8px;
-            box-shadow: 0 12px 32px rgba(0,0,0,0.5); pointer-events: none; z-index: 100000;
+            position: fixed; width: min(64px, 11vw); aspect-ratio: 5 / 7;
+            background: #0f0f0f; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 6px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5); pointer-events: none; z-index: 100000;
             display: none; left: 0; top: 0; transform: translate(-50%, -50%);
         }
         .cp-card-on-field {
-            position: absolute; width: min(100px, 14vw); border-radius: 10px;
+            position: absolute; width: var(--cp-card-field-w); border-radius: 6px;
             box-shadow: none;
             outline: none;
             border: none;
@@ -408,8 +655,8 @@
         .cp-card-on-field.cp-card-enlarged {
             transform: translate(var(--cp-enlarge-dx, 0px), calc(var(--cp-enlarge-dy, 0px) + var(--cp-enlarge-shift, 0px)));
             transition: width 0.32s cubic-bezier(0.22, 1, 0.36, 1), filter 0.28s ease;
-            width: min(300px, 68vw) !important;
-            max-height: calc(100vh - 28px);
+            width: min(220px, 36vw, calc((100dvh - 100px) * 5 / 7)) !important;
+            max-height: calc(100dvh - 32px);
             z-index: 6500 !important;
             filter: drop-shadow(0 16px 32px rgba(0, 0, 0, 0.55));
         }
@@ -418,11 +665,11 @@
                 left 0.42s cubic-bezier(0.25, 0.85, 0.22, 1), top 0.42s cubic-bezier(0.25, 0.85, 0.22, 1);
         }
         .cp-card-on-field.cp-hand-card.cp-card-enlarged {
-            width: min(375px, 78vw) !important;
+            width: min(220px, 36vw, calc((100dvh - 100px) * 5 / 7)) !important;
         }
         @media (max-width: 640px) {
-            .cp-card-on-field.cp-card-enlarged { width: min(248px, 78vw) !important; }
-            .cp-card-on-field.cp-hand-card.cp-card-enlarged { width: min(288px, 82vw) !important; }
+            .cp-card-on-field.cp-card-enlarged { width: min(200px, 72vw, calc((100dvh - 80px) * 5 / 7)) !important; }
+            .cp-card-on-field.cp-hand-card.cp-card-enlarged { width: min(200px, 72vw, calc((100dvh - 80px) * 5 / 7)) !important; }
         }
         .cp-card-on-field.cp-card-enlarged .cp-card-rot {
             max-height: calc(100vh - 36px);
@@ -431,7 +678,7 @@
             max-height: inherit;
         }
         .cp-card-on-field.cp-card-enlarged .cp-flip-face img {
-            max-height: min(calc(100vh - 48px), 82vh);
+            max-height: min(calc(100dvh - 40px), 62dvh);
             width: 100%;
             height: auto;
             object-fit: contain;
@@ -470,24 +717,188 @@
             transform: rotateY(180deg);
         }
         .cp-flip-face img {
-            display: block; width: 100%; height: auto; border-radius: 10px;
+            display: block; width: 100%; height: auto; border-radius: 6px;
             vertical-align: top; pointer-events: none;
             outline: none;
             border: none;
-            box-shadow: none;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.32);
         }
         @media (prefers-reduced-motion: reduce) {
             .cp-flip-inner { transition: none; }
             .cp-card-on-field { transition: none; }
             .cp-card-on-field.cp-card-sync-move { transition: none; }
             .cp-card-on-field.cp-card-enlarged {
-                width: min(100px, 14vw) !important;
+                width: var(--cp-card-field-w) !important;
                 max-height: none;
                 transform: none;
                 filter: none;
             }
             .cp-card-on-field.cp-hand-card.cp-card-enlarged {
-                width: min(76px, 10.5vw) !important;
+                width: var(--cp-card-hand-w) !important;
+            }
+            .cp-sparkle-layer,
+            .cp-card-glimmer { display: none; }
+            .cp-card-on-field.cp-card-sparkle .cp-card-rot {
+                animation: none;
+            }
+        }
+        /* Legendary+ glimmer when still; fairy dust only while dragging */
+        .cp-card-on-field.cp-card-sparkle {
+            overflow: visible;
+        }
+        .cp-card-on-field.cp-card-sparkle .cp-card-rot {
+            animation: cp-card-rarity-glow 4.2s ease-in-out infinite;
+        }
+        .cp-card-on-field.cp-card-sparkle.cp-card-dragging .cp-card-rot {
+            animation: none;
+            box-shadow: 0 0 16px rgba(240, 192, 106, 0.34);
+        }
+        @keyframes cp-card-rarity-glow {
+            0%, 100% { box-shadow: 0 0 10px rgba(240, 192, 106, 0.16); }
+            50% { box-shadow: 0 0 18px rgba(240, 192, 106, 0.3), 0 0 8px rgba(196, 168, 255, 0.18); }
+        }
+        .cp-card-on-field.cp-card-sparkle[data-cp-rarity="Mythic"] .cp-card-rot {
+            animation-name: cp-card-rarity-glow-mythic;
+        }
+        @keyframes cp-card-rarity-glow-mythic {
+            0%, 100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.16); }
+            50% { box-shadow: 0 0 18px rgba(239, 68, 68, 0.32), 0 0 8px rgba(255, 180, 120, 0.16); }
+        }
+        .cp-card-on-field.cp-card-sparkle[data-cp-rarity="Fantastical"] .cp-card-rot {
+            animation-name: cp-card-rarity-glow-fantastical;
+        }
+        @keyframes cp-card-rarity-glow-fantastical {
+            0%, 100% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.16); }
+            50% { box-shadow: 0 0 18px rgba(16, 185, 129, 0.3), 0 0 8px rgba(167, 243, 208, 0.18); }
+        }
+        .cp-card-glimmer {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 3;
+            mix-blend-mode: soft-light;
+        }
+        .cp-card-on-field.cp-card-sparkle.cp-card-dragging .cp-card-glimmer {
+            opacity: 0;
+            transition: opacity 0.12s ease;
+        }
+        .cp-card-glimmer-sweep {
+            position: absolute;
+            inset: -50%;
+            background: linear-gradient(
+                105deg,
+                transparent 36%,
+                rgba(255, 255, 255, 0.02) 42%,
+                rgba(255, 232, 168, 0.34) 48%,
+                rgba(221, 208, 255, 0.26) 50%,
+                rgba(255, 232, 168, 0.34) 52%,
+                rgba(255, 255, 255, 0.02) 58%,
+                transparent 64%
+            );
+            transform: translateX(-125%) skewX(-14deg);
+            animation: cp-glimmer-sweep 4.6s ease-in-out infinite;
+        }
+        .cp-card-on-field.cp-card-sparkle[data-cp-rarity="Mythic"] .cp-card-glimmer-sweep {
+            background: linear-gradient(
+                105deg,
+                transparent 36%,
+                rgba(255, 255, 255, 0.02) 42%,
+                rgba(255, 160, 140, 0.34) 48%,
+                rgba(254, 202, 202, 0.24) 50%,
+                rgba(255, 160, 140, 0.34) 52%,
+                rgba(255, 255, 255, 0.02) 58%,
+                transparent 64%
+            );
+        }
+        .cp-card-on-field.cp-card-sparkle[data-cp-rarity="Fantastical"] .cp-card-glimmer-sweep {
+            background: linear-gradient(
+                105deg,
+                transparent 36%,
+                rgba(255, 255, 255, 0.02) 42%,
+                rgba(110, 231, 183, 0.34) 48%,
+                rgba(167, 243, 208, 0.24) 50%,
+                rgba(110, 231, 183, 0.34) 52%,
+                rgba(255, 255, 255, 0.02) 58%,
+                transparent 64%
+            );
+        }
+        @keyframes cp-glimmer-sweep {
+            0%, 68% {
+                transform: translateX(-125%) skewX(-14deg);
+                opacity: 0;
+            }
+            74% { opacity: 1; }
+            100% {
+                transform: translateX(125%) skewX(-14deg);
+                opacity: 0;
+            }
+        }
+        .cp-card-glimmer::before,
+        .cp-card-glimmer::after {
+            content: '';
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 0 7px 2px rgba(255, 232, 168, 0.75);
+            opacity: 0;
+            pointer-events: none;
+            animation: cp-glimmer-twinkle 2.8s ease-in-out infinite;
+        }
+        .cp-card-glimmer::before { top: 20%; left: 24%; animation-delay: 0.2s; }
+        .cp-card-glimmer::after { top: 64%; right: 18%; animation-delay: 1.35s; }
+        @keyframes cp-glimmer-twinkle {
+            0%, 100% { opacity: 0; transform: scale(0.45); }
+            42%, 58% { opacity: 0.92; transform: scale(1.15); }
+        }
+        .cp-sparkle-layer {
+            position: absolute;
+            inset: -22%;
+            pointer-events: none;
+            overflow: visible;
+            z-index: 8;
+        }
+        .cp-sparkle-dust {
+            position: absolute;
+            width: var(--ds, 4px);
+            height: var(--ds, 4px);
+            border-radius: 50%;
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.5);
+            pointer-events: none;
+            will-change: transform, opacity;
+        }
+        .cp-sparkle-dust--gold {
+            background: radial-gradient(circle at 32% 32%, #fff 0%, #ffe8a8 42%, rgba(240, 192, 106, 0.25) 72%, transparent 100%);
+            box-shadow: 0 0 7px 2px rgba(240, 192, 106, 0.65);
+        }
+        .cp-sparkle-dust--violet {
+            background: radial-gradient(circle at 32% 32%, #fff 0%, #ddd0ff 44%, rgba(196, 168, 255, 0.22) 72%, transparent 100%);
+            box-shadow: 0 0 7px 2px rgba(196, 168, 255, 0.55);
+        }
+        .cp-sparkle-dust--bright {
+            box-shadow:
+                0 0 5px 2px rgba(255, 248, 230, 0.85),
+                0 0 14px 3px rgba(240, 192, 106, 0.5);
+        }
+        .cp-sparkle-dust.is-falling {
+            animation: cp-sparkle-dust-fall var(--dur, 0.85s) cubic-bezier(0.22, 0.85, 0.35, 1) forwards;
+        }
+        @keyframes cp-sparkle-dust-fall {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.35);
+            }
+            10% {
+                opacity: 1;
+                transform: translate(calc(-50% + var(--sx) * 0.06), calc(-50% + var(--sy) * 0.04)) scale(1.1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(calc(-50% + var(--sx)), calc(-50% + var(--sy))) scale(0.1);
             }
         }
         /* Fixed full-viewport layer: opponent card preview (pointer-events none — card underneath keeps hover). */
@@ -496,8 +907,8 @@
             z-index: 200000;
             left: 0;
             top: 0;
-            max-width: min(300px, 68vw);
-            width: min(300px, 68vw);
+            max-width: min(260px, 50vw);
+            width: min(260px, 50vw);
             pointer-events: none;
             border-radius: 12px;
             box-shadow: 0 24px 56px rgba(0, 0, 0, 0.6);
@@ -514,14 +925,14 @@
             display: block;
             width: 100%;
             height: auto;
-            max-height: min(calc(100vh - 40px), 82vh);
+            max-height: min(calc(100dvh - 48px), 62dvh);
             border-radius: 12px;
             object-fit: contain;
         }
         @media (max-width: 640px) {
             #cpOpponentPreviewPop {
-                max-width: min(248px, 78vw);
-                width: min(248px, 78vw);
+                max-width: min(220px, 76vw);
+                width: min(220px, 76vw);
             }
         }
         @media (prefers-reduced-motion: reduce) {
@@ -805,6 +1216,11 @@
             flex: 0 0 auto;
             width: 76px;
             text-align: center;
+            cursor: pointer;
+        }
+        #cpTreasureModal .cp-treasure-modal-cell:hover .cp-treasure-modal-thumb-wrap {
+            outline: 2px solid rgba(250, 204, 21, 0.45);
+            outline-offset: 2px;
         }
         #cpTreasureModal .cp-treasure-modal-thumb-wrap {
             width: 76px;
@@ -863,22 +1279,117 @@
         }
         .cp-treasure-zone .cp-treasure-ready-count {
             position: absolute;
-            bottom: 4px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 15px;
-            font-weight: 900;
+            top: 4px;
+            left: 10px;
+            bottom: auto;
+            transform: none;
+            font-size: 12px;
+            font-weight: 800;
             font-variant-numeric: tabular-nums;
-            color: rgba(255, 255, 255, 0.96);
-            text-shadow: 0 0 8px rgba(0, 0, 0, 0.95), 0 1px 2px rgba(0, 0, 0, 0.9);
-            pointer-events: none;
+            color: #fef08a;
+            pointer-events: auto;
+            cursor: pointer;
             line-height: 1;
+            padding: 4px 9px;
+            border-radius: 999px;
+            background: rgba(8, 14, 26, 0.92);
+            border: 1px solid rgba(250, 204, 21, 0.45);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+            z-index: 55;
+            min-width: 2.4em;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .cp-treasure-zone .cp-treasure-ready-count:hover {
+            border-color: rgba(250, 204, 21, 0.75);
+            background: rgba(12, 20, 36, 0.96);
         }
         #cpDeckDriveList { max-height: min(200px, 28vh); }
+        /* First-run onboarding overlay */
+        .cp-onboarding {
+            position: absolute;
+            inset: 0;
+            z-index: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: rgba(8, 12, 22, 0.72);
+            backdrop-filter: blur(4px);
+        }
+        .cp-onboarding[hidden] { display: none !important; }
+        .cp-onboarding-panel {
+            max-width: min(420px, 94vw);
+            padding: 24px 26px;
+            border-radius: 16px;
+            border: 1px solid rgba(129, 140, 248, 0.35);
+            background: linear-gradient(165deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.99) 100%);
+            box-shadow: 0 24px 56px rgba(0, 0, 0, 0.55);
+        }
+        .cp-onboarding-panel h2 {
+            margin: 0 0 8px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #f8fafc;
+        }
+        .cp-onboarding-panel p {
+            margin: 0 0 14px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #94a3b8;
+        }
+        .cp-onboarding-steps {
+            margin: 0 0 18px;
+            padding-left: 1.2rem;
+            font-size: 14px;
+            line-height: 1.55;
+            color: #cbd5e1;
+        }
+        .cp-onboarding-steps li { margin-bottom: 6px; }
+        .cp-onboarding-steps li.is-done { color: #86efac; }
+        .cp-onboarding-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .cp-onboarding-dismiss {
+            display: block;
+            width: 100%;
+            margin: 0;
+            padding: 8px;
+            border: none;
+            background: transparent;
+            color: #64748b;
+            font-size: 13px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .cp-onboarding-dismiss:hover { color: #94a3b8; }
+        .cp-sfx-toggle.is-muted { opacity: 0.72; }
+        .cp-draw-n-stepper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 220px;
+        }
+        .cp-draw-n-stepper input[type="number"] {
+            flex: 1 1 auto;
+            min-width: 0;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+        .cp-draw-n-stepper .cp-deck-qty-btn {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+        }
     </style>
 </head>
-<body>
+<body class="cp-player-body">
     <div class="cp-wrap">
         <div class="cp-main" id="cpMain">
             <div class="cp-sidebar-shell">
@@ -895,6 +1406,9 @@
                 <div class="cp-actions">
                     <button type="button" class="cp-btn" id="cpSelectCommander">Select commander…</button>
                     <button type="button" class="cp-btn" id="cpClearCommander" disabled>Clear commander</button>
+                </div>
+                <div class="cp-actions">
+                    <button type="button" class="cp-btn" id="cpSfxToggle" aria-pressed="true" title="Toggle sound effects">Sound: on</button>
                 </div>
                 <div class="cp-actions">
                     <button type="button" class="cp-btn" id="cpRefresh">Refresh library</button>
@@ -920,19 +1434,12 @@
                     <button type="button" class="cp-btn" id="cpShuffleDiscard" title="Shuffle your discard pile back into the deck">Discard → deck</button>
                     <button type="button" class="cp-btn" id="cpMulligan" title="Return hand to deck, shuffle, draw 7">Mulligan</button>
                 </div>
-                <p class="cp-muted" style="font-size:12px;margin:8px 0 4px;">Tip: middle-click or double-click a card to flip it. Right-click to rotate (exhaust).</p>
+                <p class="cp-muted" style="font-size:12px;margin:8px 0 4px;">Tip: click deck to draw · drag to hand or field · double-click hand card to play · click treasure to tap · discard is bottom-left of deck.</p>
                 <div class="cp-actions" style="align-items:center;">
                     <input type="text" class="cp-firebase-room" id="cpRoomId" placeholder="Room name (e.g. friday-game)" maxlength="48" autocomplete="off" aria-label="Room name" />
+                    <button type="button" class="cp-btn" id="cpCopyRoomLink" title="Copy shareable room link" disabled>Copy link</button>
                 </div>
-                <p class="cp-muted" style="font-size:12px;margin-bottom:6px;">Seat (before Connect)</p>
-                <div class="cp-actions" style="align-items:center;gap:14px;margin-bottom:4px;" role="group" aria-label="Player seat">
-                    <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
-                        <input type="radio" name="cpMultiplayerSeat" id="cpSeatP1" value="1" checked /> Player 1
-                    </label>
-                    <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
-                        <input type="radio" name="cpMultiplayerSeat" id="cpSeatP2" value="2" /> Player 2
-                    </label>
-                </div>
+                <p class="cp-muted" style="font-size:12px;margin-bottom:6px;">Connect joins the first open seat automatically (Player 1, then Player 2).</p>
                 <div class="cp-actions">
                     <button type="button" class="cp-btn cp-btn-primary" id="cpFirebaseConnect">Connect</button>
                     <button type="button" class="cp-btn" id="cpFirebaseDisconnect" disabled>Disconnect</button>
@@ -944,6 +1451,24 @@
             </div>
 
             <div class="cp-panel cp-panel-play">
+                <div class="cp-onboarding" id="cpOnboarding" hidden>
+                    <div class="cp-onboarding-panel" role="dialog" aria-labelledby="cpOnboardingTitle">
+                        <h2 id="cpOnboardingTitle">Welcome to Card Player</h2>
+                        <p>Load cards, build a deck, then draw your opening hand.</p>
+                        <ol class="cp-onboarding-steps" id="cpOnboardingSteps">
+                            <li id="cpOnboardStepLibrary">Add cards to your library</li>
+                            <li id="cpOnboardStepDeck">Build a play deck</li>
+                            <li id="cpOnboardStepDraw">Draw 7 to start</li>
+                        </ol>
+                        <div class="cp-onboarding-actions">
+                            <button type="button" class="cp-btn" id="cpOnboardImport">Import JSON…</button>
+                            <button type="button" class="cp-btn" id="cpOnboardQuickDeck">Quick list…</button>
+                            <button type="button" class="cp-btn" id="cpOnboardUseAll">Use entire library</button>
+                            <button type="button" class="cp-btn cp-btn-primary" id="cpOnboardDraw7" disabled>Draw 7</button>
+                        </div>
+                        <button type="button" class="cp-onboarding-dismiss" id="cpOnboardDismiss">Dismiss</button>
+                    </div>
+                </div>
                 <div class="cp-play-stacks">
                     <div class="cp-field-wrap cp-field-wrap--p2">
                         <span class="cp-field-label">Player 2 · same layout as P1, flipped 180° (opponent view)</span>
@@ -954,17 +1479,19 @@
                                 </div>
                                 <div class="cp-hand-zone" id="cpHandZoneP2" title="Hand">
                                     <span class="cp-zone-label">Hand</span>
+                                    <span class="cp-hand-count" id="cpHandCountZoneP2" aria-label="Cards in hand">0</span>
                                 </div>
-                                <div class="cp-treasure-zone" id="cpTreasureZoneP2" title="Treasure — right-click for manager. Shift+right-click a card to rotate on the mat. Number = ready (unexhausted).">
+                                <div class="cp-treasure-zone" id="cpTreasureZoneP2" title="Treasure — click to manage · click a card to tap/untap · drag cards here">
                                     <span class="cp-zone-label">Treasure</span>
-                                    <span class="cp-treasure-ready-count" id="cpTreasureCountZoneP2" aria-label="Unexhausted treasures">0</span>
+                                    <span class="cp-treasure-ready-count" id="cpTreasureCountZoneP2" aria-label="Treasure ready count">0</span>
                                 </div>
                                 <div class="cp-draw-zone" id="cpDrawZoneP2" title="Deck — click / drag. Right-click to search.">
                                     <span class="cp-zone-label">Deck</span>
                                     <span class="cp-zone-count" id="cpDeckCountZoneP2">0</span>
                                 </div>
-                                <div class="cp-discard-zone" id="cpDiscardZoneP2" title="Discard — drop cards here. Right-click a discard card or this zone to search. Shift+right-click a card to rotate.">
+                                <div class="cp-discard-zone" id="cpDiscardZoneP2" title="Discard — drop cards here · click to search">
                                     <span class="cp-zone-label">Discard</span>
+                                    <span class="cp-discard-count" id="cpDiscardCountZoneP2" aria-label="Cards in discard">0</span>
                                 </div>
                             </div>
                         </div>
@@ -979,23 +1506,46 @@
                                 </div>
                                 <div class="cp-hand-zone" id="cpHandZone" title="Hand — cards drawn by clicking the deck">
                                     <span class="cp-zone-label">Hand</span>
+                                    <span class="cp-hand-count" id="cpHandCountZone" aria-label="Cards in hand">0</span>
                                 </div>
-                                <div class="cp-treasure-zone" id="cpTreasureZone" title="Treasure — right-click for manager. Shift+right-click a card to rotate on the mat. Number = ready (unexhausted).">
+                                <div class="cp-treasure-zone" id="cpTreasureZone" title="Treasure — click to manage · click a card to tap/untap · drag cards here">
                                     <span class="cp-zone-label">Treasure</span>
-                                    <span class="cp-treasure-ready-count" id="cpTreasureCountZone" aria-label="Unexhausted treasures">0</span>
+                                    <span class="cp-treasure-ready-count" id="cpTreasureCountZone" aria-label="Treasure ready count">0</span>
                                 </div>
                                 <div class="cp-draw-zone" id="cpDrawZone" title="Click to draw to hand. Right-click to search deck. Drag out to place on the field. Drop a card here to return to the deck.">
                                     <span class="cp-zone-label">Deck</span>
                                     <span class="cp-zone-count" id="cpDeckCountZone">0</span>
                                 </div>
-                                <div class="cp-discard-zone" id="cpDiscardZone" title="Discard — drop cards here face up. Right-click a discard card or this zone to search. Shift+right-click a card to rotate.">
+                                <div class="cp-discard-zone" id="cpDiscardZone" title="Discard — drop cards here · click to search">
                                     <span class="cp-zone-label">Discard</span>
+                                    <span class="cp-discard-count" id="cpDiscardCountZone" aria-label="Cards in discard">0</span>
                                 </div>
                             </div>
                         </div>
                         <div class="cp-deck-drag-ghost" id="cpDeckDragGhost" aria-hidden="true"></div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="cpDrawNModal" class="drive-modal" aria-hidden="true">
+        <div class="drive-modal-backdrop" id="cpDrawNModalBackdrop" aria-hidden="true"></div>
+        <div class="drive-modal-panel" role="dialog" aria-modal="true" aria-labelledby="cpDrawNModalTitle" style="max-width:min(400px,94vw);">
+            <button type="button" class="drive-modal-close" id="cpDrawNModalClose" aria-label="Close">&times;</button>
+            <h2 id="cpDrawNModalTitle" class="drive-modal-title">Draw to hand</h2>
+            <p class="drive-modal-hint" id="cpDrawNModalHint">Choose how many cards to draw from your deck.</p>
+            <div class="drive-modal-section">
+                <label class="drive-modal-label" for="cpDrawNInput">Number of cards</label>
+                <div class="cp-draw-n-stepper">
+                    <button type="button" class="cp-deck-qty-btn" id="cpDrawNMinus" aria-label="Draw fewer">−</button>
+                    <input type="number" id="cpDrawNInput" class="drive-modal-input" min="1" max="99" value="1" inputmode="numeric" aria-label="Cards to draw" />
+                    <button type="button" class="cp-deck-qty-btn" id="cpDrawNPlus" aria-label="Draw more">+</button>
+                </div>
+            </div>
+            <div class="drive-modal-section" style="display:flex;flex-wrap:wrap;gap:10px;">
+                <button type="button" class="drive-modal-btn drive-modal-btn-primary" id="cpDrawNConfirm">Draw</button>
+                <button type="button" class="drive-modal-btn drive-modal-btn-ghost" id="cpDrawNCancel">Cancel</button>
             </div>
         </div>
     </div>
@@ -1131,9 +1681,10 @@
             <button type="button" class="drive-modal-close" id="cpTreasureModalClose" aria-label="Close">&times;</button>
             <h2 id="cpTreasureModalTitle" class="drive-modal-title">Treasure</h2>
             <p id="cpTreasureModalStats" class="drive-modal-hint" role="status">0 of 0</p>
-            <p class="drive-modal-hint" style="margin-top:-6px;">Right-click a card in the row below to rotate 90° (exhaust). Use <strong>Unexhaust all</strong> to set every treasure upright.</p>
+            <p class="drive-modal-hint" style="margin-top:-6px;">Click a card to tap or untap it. <strong>Use 1</strong> taps the next ready treasure. Drag cards onto the gold row at the bottom (left of discard) to add them.</p>
             <div class="drive-modal-section" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
-                <button type="button" class="drive-modal-btn drive-modal-btn-primary" id="cpTreasureUnexhaustAll">Unexhaust all</button>
+                <button type="button" class="drive-modal-btn drive-modal-btn-primary" id="cpTreasureUseOne">Use 1</button>
+                <button type="button" class="drive-modal-btn" id="cpTreasureUnexhaustAll">Untap all</button>
                 <button type="button" class="drive-modal-btn drive-modal-btn-ghost" id="cpTreasureModalDone">Close</button>
             </div>
             <div class="drive-modal-section cp-treasure-modal-scroll">
@@ -1167,8 +1718,34 @@
     var library = [];
     var imported = [];
     var deck = [];
-    /** Independent draw pile for player 2 (mirrors P1 when you build or shuffle). */
     var deckP2 = [];
+    /** Play-mat card footprint (zoomed-out duels-style scale). */
+    var CP_FIELD_CARD_W = 68;
+    var CP_FIELD_CARD_H = 95;
+    var CP_HAND_CARD_W = 70;
+    var CP_TREASURE_CARD_W = 58;
+
+    function zoneBoxInField(field, zoneEl) {
+        if (!field || !zoneEl) return null;
+        var off = offsetWithinField(field, zoneEl);
+        if (off) {
+            return {
+                l: off.l,
+                t: off.t,
+                w: zoneEl.offsetWidth || zoneEl.clientWidth,
+                h: zoneEl.offsetHeight || zoneEl.clientHeight
+            };
+        }
+        return zoneOriginInField(field, zoneEl);
+    }
+
+    function cpHandCardHeight() {
+        return Math.round(CP_HAND_CARD_W * 1.4);
+    }
+
+    function cpTreasureCardHeight() {
+        return Math.round(CP_TREASURE_CARD_W * 1.4);
+    }
     /** @type {{id:string,state:object,source?:string}|null} */
     var commanderCard = null;
     var libraryListEl = document.getElementById('cpDeckModalLibrary');
@@ -1182,19 +1759,23 @@
     var cpPlayingField = document.getElementById('cpPlayingField');
     var cpDrawZone = document.getElementById('cpDrawZone');
     var cpDiscardZone = document.getElementById('cpDiscardZone');
+    var cpDiscardCountZone = document.getElementById('cpDiscardCountZone');
     var cpTreasureZone = document.getElementById('cpTreasureZone');
     var cpTreasureCountZone = document.getElementById('cpTreasureCountZone');
     var cpCommanderZone = document.getElementById('cpCommanderZone');
     var cpHandZone = document.getElementById('cpHandZone');
+    var cpHandCountZone = document.getElementById('cpHandCountZone');
     var cpDeckCountZone = document.getElementById('cpDeckCountZone');
     var cpDeckDragGhost = document.getElementById('cpDeckDragGhost');
     var cpPlayingFieldP2 = document.getElementById('cpPlayingFieldP2');
     var cpDrawZoneP2 = document.getElementById('cpDrawZoneP2');
     var cpDiscardZoneP2 = document.getElementById('cpDiscardZoneP2');
+    var cpDiscardCountZoneP2 = document.getElementById('cpDiscardCountZoneP2');
     var cpTreasureZoneP2 = document.getElementById('cpTreasureZoneP2');
     var cpTreasureCountZoneP2 = document.getElementById('cpTreasureCountZoneP2');
     var cpCommanderZoneP2 = document.getElementById('cpCommanderZoneP2');
     var cpHandZoneP2 = document.getElementById('cpHandZoneP2');
+    var cpHandCountZoneP2 = document.getElementById('cpHandCountZoneP2');
     var cpDeckCountZoneP2 = document.getElementById('cpDeckCountZoneP2');
     var cpDeckDragGhostP2 = document.getElementById('cpDeckDragGhostP2');
     var cpImportFile = document.getElementById('cpImportFile');
@@ -1204,7 +1785,7 @@
         var btn = document.getElementById('cpSidebarToggle');
         if (!main || !btn) return;
         try {
-            if (localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1') {
+            if (localStorage.getItem(SIDEBAR_COLLAPSED_KEY) !== '0') {
                 main.classList.add('cp-sidebar-collapsed');
             }
         } catch (e) { /* ignore */ }
@@ -1229,7 +1810,9 @@
         field: cpPlayingField,
         drawZone: cpDrawZone,
         handZone: cpHandZone,
+        handCountEl: cpHandCountZone,
         discardZone: cpDiscardZone,
+        discardCountEl: cpDiscardCountZone,
         treasureZone: cpTreasureZone,
         treasureReadyCountEl: cpTreasureCountZone,
         commanderZone: cpCommanderZone,
@@ -1246,7 +1829,9 @@
         field: cpPlayingFieldP2,
         drawZone: cpDrawZoneP2,
         handZone: cpHandZoneP2,
+        handCountEl: cpHandCountZoneP2,
         discardZone: cpDiscardZoneP2,
+        discardCountEl: cpDiscardCountZoneP2,
         treasureZone: cpTreasureZoneP2,
         treasureReadyCountEl: cpTreasureCountZoneP2,
         commanderZone: cpCommanderZoneP2,
@@ -1608,11 +2193,19 @@
         });
     }
 
-    function getSelectedMultiplayerSeat() {
-        var r = document.querySelector('input[name="cpMultiplayerSeat"]:checked');
-        if (!r) return 1;
-        var n = parseInt(String(r.value), 10);
-        return n === 2 ? 2 : 1;
+    /** Pick P1 or P2 for Firebase join: reconnect own seat, else first open slot. */
+    function pickOpenMultiplayerSeat(data, uid) {
+        data = data || {};
+        var s1 = data.seat1Uid || '';
+        var s2 = data.seat2Uid || '';
+        if (s1 && s1 === uid) return 1;
+        if (s2 && s2 === uid) return 2;
+        if (!s1) return 1;
+        if (!s2) return 2;
+        throw {
+            code: 'ROOM_FULL',
+            message: 'This room is full (2 players). Try another room or wait for someone to leave.'
+        };
     }
 
     function isFirebaseSeatLocked() {
@@ -1662,13 +2255,6 @@
         if (wrapP2) wrapP2.classList.toggle('cp-board-readonly', localMultiplayerSeat === 1);
     }
 
-    function setSeatRadiosDisabled(disabled) {
-        var a = document.getElementById('cpSeatP1');
-        var b = document.getElementById('cpSeatP2');
-        if (a) a.disabled = !!disabled;
-        if (b) b.disabled = !!disabled;
-    }
-
     function newCpInstanceId() {
         return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 11);
     }
@@ -1679,6 +2265,399 @@
         } catch (e) {
             return false;
         }
+    }
+
+    var CP_SFX_MUTED_KEY = 'cpPlayerSfxMuted';
+    var CP_ONBOARDING_DISMISSED_KEY = 'cpOnboardingDismissed';
+    var cpSfxMuted = false;
+
+    function cpLoadSfxMuted() {
+        try {
+            cpSfxMuted = localStorage.getItem(CP_SFX_MUTED_KEY) === '1';
+        } catch (e) {
+            cpSfxMuted = false;
+        }
+    }
+
+    function cpSfxEnabled() {
+        return !cpPrefersReducedMotion() && !cpSfxMuted;
+    }
+
+    function cpUpdateSfxToggleUi() {
+        var btn = document.getElementById('cpSfxToggle');
+        if (!btn) return;
+        btn.textContent = cpSfxMuted ? 'Sound: off' : 'Sound: on';
+        btn.setAttribute('aria-pressed', cpSfxMuted ? 'false' : 'true');
+        btn.classList.toggle('is-muted', cpSfxMuted);
+        btn.title = cpSfxMuted ? 'Turn sound effects on' : 'Turn sound effects off';
+    }
+
+    function cpSetSfxMuted(muted) {
+        cpSfxMuted = !!muted;
+        try {
+            if (cpSfxMuted) localStorage.setItem(CP_SFX_MUTED_KEY, '1');
+            else localStorage.removeItem(CP_SFX_MUTED_KEY);
+        } catch (e) { /* ignore */ }
+        cpUpdateSfxToggleUi();
+    }
+
+    function cpClearDropHighlights(board) {
+        if (!board) return;
+        [board.handZone, board.treasureZone, board.discardZone, board.drawZone, board.commanderZone].forEach(function (z) {
+            if (!z) return;
+            z.classList.remove('cp-drop-target', 'cp-drop-target--active');
+        });
+    }
+
+    function cpUpdateDropHighlights(board, clientX, clientY, cardEl) {
+        if (!board || !canEditBoard(board)) return;
+        var specs = [
+            { el: board.handZone, pad: 24 },
+            { el: board.treasureZone, pad: 28 },
+            { el: board.discardZone, pad: 18 },
+            {
+                el: board.drawZone,
+                pad: 10,
+                ok: function () { return !!(cardEl && cardEl._cpDeckEntry); }
+            },
+            {
+                el: board.commanderZone,
+                pad: 14,
+                ok: function () { return !!(cardEl && cardEl.getAttribute('data-cp-commander') === '1'); }
+            }
+        ];
+        specs.forEach(function (spec) {
+            if (!spec.el) return;
+            var eligible = !spec.ok || spec.ok();
+            spec.el.classList.toggle('cp-drop-target', eligible);
+            spec.el.classList.toggle('cp-drop-target--active', eligible && pointInZone(clientX, clientY, spec.el, spec.pad));
+        });
+    }
+
+    function cpUpdateDeckDragHighlights(board, clientX, clientY) {
+        cpClearDropHighlights(board);
+        if (!board || !board.handZone || !canEditBoard(board)) return;
+        board.handZone.classList.add('cp-drop-target');
+        if (pointInZone(clientX, clientY, board.handZone, 20)) {
+            board.handZone.classList.add('cp-drop-target--active');
+        }
+    }
+
+    function cpFieldHasAnyCards() {
+        var i;
+        for (i = 0; i < boards.length; i++) {
+            if (boards[i].field && boards[i].field.querySelector('.cp-card-on-field')) return true;
+        }
+        return false;
+    }
+
+    function cpActiveDeckSize() {
+        var b = activePlayBoard();
+        return b && b.deck ? b.deck.length : deck.length;
+    }
+
+    function cpOnboardingDismissed() {
+        try {
+            return localStorage.getItem(CP_ONBOARDING_DISMISSED_KEY) === '1';
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function cpDismissOnboarding(persist) {
+        if (persist !== false) {
+            try {
+                localStorage.setItem(CP_ONBOARDING_DISMISSED_KEY, '1');
+            } catch (e) { /* ignore */ }
+        }
+        var el = document.getElementById('cpOnboarding');
+        if (el) el.hidden = true;
+    }
+
+    function cpExpandSidebarForOnboarding() {
+        var main = document.getElementById('cpMain');
+        var btn = document.getElementById('cpSidebarToggle');
+        if (!main || !btn || !main.classList.contains('cp-sidebar-collapsed')) return;
+        main.classList.remove('cp-sidebar-collapsed');
+        btn.setAttribute('aria-expanded', 'true');
+        btn.title = 'Hide sidebar (more room for play)';
+        btn.textContent = '\u2039';
+    }
+
+    function cpUpdateOnboarding() {
+        var el = document.getElementById('cpOnboarding');
+        if (!el) return;
+        if (cpOnboardingDismissed()) {
+            el.hidden = true;
+            return;
+        }
+        var libCount = allCards().length;
+        var deckCount = cpActiveDeckSize();
+        var hasCards = cpFieldHasAnyCards();
+        var show = !hasCards && (libCount === 0 || deckCount === 0);
+        el.hidden = !show;
+        if (!show) return;
+
+        cpExpandSidebarForOnboarding();
+
+        var stepLib = document.getElementById('cpOnboardStepLibrary');
+        var stepDeck = document.getElementById('cpOnboardStepDeck');
+        var stepDraw = document.getElementById('cpOnboardStepDraw');
+        var useAllBtn = document.getElementById('cpOnboardUseAll');
+        var draw7Btn = document.getElementById('cpOnboardDraw7');
+        if (stepLib) stepLib.classList.toggle('is-done', libCount > 0);
+        if (stepDeck) stepDeck.classList.toggle('is-done', deckCount > 0);
+        if (stepDraw) stepDraw.classList.toggle('is-done', false);
+        if (useAllBtn) useAllBtn.disabled = libCount === 0;
+        if (draw7Btn) draw7Btn.disabled = deckCount === 0;
+    }
+
+    function cpBuildRoomShareUrl(roomId) {
+        var rid = sanitizeFirebaseRoomId(roomId || '');
+        if (rid.length < 4) return null;
+        try {
+            var url = new URL(window.location.href);
+            url.searchParams.set('room', rid);
+            return url.toString();
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function cpUpdateRoomUrl(roomId) {
+        var url = cpBuildRoomShareUrl(roomId);
+        if (!url) return;
+        try {
+            history.replaceState(null, '', url);
+        } catch (e) { /* ignore */ }
+    }
+
+    function cpUpdateCopyRoomLinkUi() {
+        var btn = document.getElementById('cpCopyRoomLink');
+        var inp = document.getElementById('cpRoomId');
+        if (!btn) return;
+        var rid = sanitizeFirebaseRoomId(inp && inp.value);
+        btn.disabled = rid.length < 4;
+    }
+
+    function cpInitRoomFromUrl() {
+        try {
+            var params = new URLSearchParams(window.location.search);
+            var room = params.get('room');
+            if (!room) return;
+            var inp = document.getElementById('cpRoomId');
+            if (inp) inp.value = sanitizeFirebaseRoomId(room);
+            cpUpdateCopyRoomLinkUi();
+        } catch (e) { /* ignore */ }
+    }
+
+    function cpCopyRoomLink() {
+        var inp = document.getElementById('cpRoomId');
+        var url = cpBuildRoomShareUrl(inp && inp.value);
+        if (!url) {
+            setStatus('Room name: use at least 4 letters or numbers.');
+            return;
+        }
+        cpUpdateRoomUrl(inp && inp.value);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(function () {
+                setStatus('Room link copied — share it so others can join the same room.');
+            }).catch(function () {
+                setStatus('Could not copy link. Room: ' + sanitizeFirebaseRoomId(inp.value));
+            });
+            return;
+        }
+        setStatus('Copy this link: ' + url);
+    }
+
+    function openDrawNModal() {
+        var modal = document.getElementById('cpDrawNModal');
+        var inp = document.getElementById('cpDrawNInput');
+        var hint = document.getElementById('cpDrawNModalHint');
+        if (!modal || !inp) return;
+        var maxN = cpActiveDeckSize();
+        if (maxN <= 0) {
+            setStatus('Deck is empty — build a deck first.');
+            return;
+        }
+        inp.max = String(Math.min(99, maxN));
+        inp.value = String(Math.min(parseInt(inp.value, 10) || 1, maxN));
+        if (hint) hint.textContent = 'Draw up to ' + maxN + ' card' + (maxN === 1 ? '' : 's') + ' from your deck.';
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        window.setTimeout(function () { inp.focus(); inp.select(); }, 30);
+    }
+
+    function closeDrawNModal() {
+        var modal = document.getElementById('cpDrawNModal');
+        if (!modal) return;
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
+        var deckM = document.getElementById('cpDeckModal');
+        var cmdM = document.getElementById('cpCommanderModal');
+        var searchM = document.getElementById('cpDeckSearchModal');
+        var discM = document.getElementById('cpDiscardSearchModal');
+        var trM = document.getElementById('cpTreasureModal');
+        if ((!deckM || !deckM.classList.contains('is-open')) &&
+            (!cmdM || !cmdM.classList.contains('is-open')) &&
+            (!searchM || !searchM.classList.contains('is-open')) &&
+            (!discM || !discM.classList.contains('is-open')) &&
+            (!trM || !trM.classList.contains('is-open'))) {
+            document.body.style.overflow = '';
+        }
+    }
+
+    function cpAdjustDrawNInput(delta) {
+        var inp = document.getElementById('cpDrawNInput');
+        if (!inp) return;
+        var maxN = parseInt(inp.max, 10);
+        if (!isFinite(maxN) || maxN < 1) maxN = 99;
+        var n = parseInt(inp.value, 10);
+        if (!isFinite(n)) n = 1;
+        n = Math.max(1, Math.min(maxN, n + delta));
+        inp.value = String(n);
+    }
+
+    var CP_HIGH_RARITIES = { Legendary: 1, Mythic: 1, Fantastical: 1 };
+
+    function cardRarityFromEntry(cardEntry) {
+        var f = cardEntry && cardEntry.state && cardEntry.state.fields;
+        if (!f) return '';
+        var r = f.Rarity != null ? f.Rarity : f.rarity;
+        if (r == null) return '';
+        return String(r).trim();
+    }
+
+    function isHighRarityCardEntry(cardEntry) {
+        return !!CP_HIGH_RARITIES[cardRarityFromEntry(cardEntry)];
+    }
+
+    function cpSparkleLayerPoint(w, h, x, y) {
+        var padX = w * 0.22;
+        var padY = h * 0.22;
+        return { x: x + padX, y: y + padY };
+    }
+
+    function cpSparkleSpawnFall(layer, w, h, x, y, dir, power) {
+        var el = document.createElement('span');
+        var tone = Math.random() > 0.45 ? 'cp-sparkle-dust--gold' : 'cp-sparkle-dust--violet';
+        var bright = Math.random() > 0.65 ? ' cp-sparkle-dust--bright' : '';
+        el.className = 'cp-sparkle-dust ' + tone + bright;
+        el.setAttribute('aria-hidden', 'true');
+        var size = 2.5 + Math.random() * 4;
+        var pt = cpSparkleLayerPoint(w, h, x, y);
+        el.style.left = pt.x + 'px';
+        el.style.top = pt.y + 'px';
+        el.style.setProperty('--ds', size.toFixed(1) + 'px');
+        var p = Math.max(0.35, power || 0.5);
+        var dx = -dir * (6 + Math.random() * 30 * p) + (Math.random() - 0.5) * 18;
+        var dy = 10 + Math.random() * (22 + p * 32);
+        el.style.setProperty('--sx', dx.toFixed(1) + 'px');
+        el.style.setProperty('--sy', dy.toFixed(1) + 'px');
+        el.style.setProperty('--dur', (0.75 + Math.random() * 0.5) + 's');
+        layer.appendChild(el);
+        requestAnimationFrame(function () {
+            el.classList.add('is-falling');
+        });
+        window.setTimeout(function () {
+            if (el.parentNode) el.parentNode.removeChild(el);
+        }, 1300);
+    }
+
+    function cpSparkleSpawnFromDragEdge(layer, wrap, dragX, power) {
+        var w = wrap.offsetWidth || 60;
+        var h = wrap.offsetHeight || 84;
+        var dir = dragX > 0 ? 1 : -1;
+        var i;
+        var count = 1 + Math.floor(Math.min(Math.abs(dragX) / 18, 5));
+        for (i = 0; i < count; i++) {
+            var x;
+            var y;
+            if (Math.random() > 0.82 && power > 0.45) {
+                x = Math.random() * w;
+                y = Math.random() * 10;
+            } else if (dir > 0) {
+                x = Math.random() * 16;
+                y = h * (0.06 + Math.random() * 0.88);
+            } else {
+                x = w - Math.random() * 16;
+                y = h * (0.06 + Math.random() * 0.88);
+            }
+            cpSparkleSpawnFall(layer, w, h, x, y, dir, power);
+        }
+    }
+
+    function teardownCardSparkles(wrap) {
+        if (!wrap) return;
+        delete wrap._cpSparkleApi;
+        wrap.classList.remove('cp-card-sparkle');
+        wrap.removeAttribute('data-cp-rarity');
+        var glimmer = wrap.querySelector('.cp-card-glimmer');
+        if (glimmer) glimmer.remove();
+        var layer = wrap.querySelector('.cp-sparkle-layer');
+        if (layer) layer.remove();
+    }
+
+    function initCardSparkles(wrap, cardEntry) {
+        teardownCardSparkles(wrap);
+        if (!wrap || !isHighRarityCardEntry(cardEntry) || cpPrefersReducedMotion()) return null;
+
+        var rarity = cardRarityFromEntry(cardEntry);
+        wrap.classList.add('cp-card-sparkle');
+        wrap.setAttribute('data-cp-rarity', rarity);
+
+        var glimmer = document.createElement('div');
+        glimmer.className = 'cp-card-glimmer';
+        glimmer.setAttribute('aria-hidden', 'true');
+        var sweep = document.createElement('span');
+        sweep.className = 'cp-card-glimmer-sweep';
+        glimmer.appendChild(sweep);
+        var rotLayer = wrap.querySelector('.cp-card-rot');
+        var faceFront = wrap.querySelector('.cp-flip-face-front');
+        if (faceFront) faceFront.appendChild(glimmer);
+        else if (rotLayer) rotLayer.appendChild(glimmer);
+        else wrap.appendChild(glimmer);
+
+        var layer = document.createElement('div');
+        layer.className = 'cp-sparkle-layer';
+        layer.setAttribute('aria-hidden', 'true');
+        wrap.appendChild(layer);
+
+        var lastTrail = 0;
+
+        function shakeOff(dragX) {
+            if (Math.abs(dragX) < 4) return;
+            var now = Date.now();
+            var interval = Math.max(14, 28 - Math.abs(dragX) * 0.1);
+            if (now - lastTrail < interval) return;
+            lastTrail = now;
+            var power = Math.min(Math.abs(dragX) / 60, 1.2);
+            cpSparkleSpawnFromDragEdge(layer, wrap, dragX, power);
+        }
+
+        function shakeBurst(dragX) {
+            var dir = dragX >= 0 ? 1 : -1;
+            var power = 1.25;
+            var w = wrap.offsetWidth || 60;
+            var h = wrap.offsetHeight || 84;
+            var i;
+            for (i = 0; i < 12; i++) {
+                var x = dir > 0 ? Math.random() * 24 : w - Math.random() * 24;
+                var y = h * (0.04 + Math.random() * 0.92);
+                cpSparkleSpawnFall(layer, w, h, x, y, dir, power);
+            }
+        }
+
+        wrap._cpSparkleApi = { shakeOff: shakeOff, shakeBurst: shakeBurst };
+        return wrap._cpSparkleApi;
+    }
+
+    function cardEntryForWrap(wrap) {
+        if (!wrap) return null;
+        if (wrap._cpDeckEntry) return wrap._cpDeckEntry;
+        var libId = wrap.getAttribute('data-cp-card-lib-id');
+        return libId ? cardById(libId) : null;
     }
 
     var cpAudioCtx = null;
@@ -1699,7 +2678,7 @@
 
     /** Field-style placement thump (all card SFX use this). Muted when reduced motion is preferred. */
     function cpPlaySfx() {
-        if (cpPrefersReducedMotion()) return;
+        if (!cpSfxEnabled()) return;
         var ctx = cpEnsureAudioCtx();
         if (!ctx) return;
         if (ctx.state === 'suspended') {
@@ -1750,7 +2729,7 @@
 
     /** Paper-like flip: filtered noise whoosh + short edge “catch”. */
     function cpPlayFlipSfx() {
-        if (cpPrefersReducedMotion()) return;
+        if (!cpSfxEnabled()) return;
         var ctx = cpEnsureAudioCtx();
         if (!ctx) return;
         if (ctx.state === 'suspended') {
@@ -1792,7 +2771,7 @@
 
     /** Exhale / last-breath feel for the discard pile. */
     function cpPlayDiscardSfx() {
-        if (cpPrefersReducedMotion()) return;
+        if (!cpSfxEnabled()) return;
         var ctx = cpEnsureAudioCtx();
         if (!ctx) return;
         if (ctx.state === 'suspended') {
@@ -1910,21 +2889,20 @@
 
     function drawZoneFlyInTarget(board) {
         if (!board || !board.field || !board.drawZone) return { l: 0, t: 0 };
-        var off = offsetWithinField(board.field, board.drawZone);
-        var z = board.drawZone;
-        var zw = z.offsetWidth || 118;
-        var zh = z.offsetHeight || 165;
-        if (off) {
+        var zone = zoneOriginInField(board.field, board.drawZone);
+        var zw = zone ? zone.w : (board.drawZone.offsetWidth || 92);
+        var zh = zone ? zone.h : (board.drawZone.offsetHeight || 128);
+        if (zone) {
             return {
-                l: Math.max(0, off.l + zw * 0.5 - 44),
-                t: Math.max(0, off.t + zh * 0.32 - 58)
+                l: Math.max(0, zone.l + zw * 0.5 - CP_FIELD_CARD_W * 0.5),
+                t: Math.max(0, zone.t + zh * 0.34 - CP_FIELD_CARD_H * 0.5)
             };
         }
-        var zr = z.getBoundingClientRect();
+        var zr = board.drawZone.getBoundingClientRect();
         var fr = board.field.getBoundingClientRect();
         return {
-            l: Math.max(0, zr.left - fr.left + zw * 0.5 - 44),
-            t: Math.max(0, zr.top - fr.top + zh * 0.32 - 58)
+            l: Math.max(0, zr.left - fr.left + zw * 0.5 - CP_FIELD_CARD_W * 0.5),
+            t: Math.max(0, zr.top - fr.top + zh * 0.34 - CP_FIELD_CARD_H * 0.5)
         };
     }
 
@@ -1936,6 +2914,7 @@
     function stripCardFromPlayZones(wrap) {
         if (!wrap) return;
         wrap.classList.remove('cp-hand-card');
+        wrap._cpHandFanDeg = 0;
         wrap.removeAttribute('data-cp-discard');
         wrap.removeAttribute('data-cp-discard-order');
         wrap.removeAttribute('data-cp-treasure');
@@ -1975,23 +2954,23 @@
             if (bit & Node.DOCUMENT_POSITION_PRECEDING) return 1;
             return 0;
         });
-        var off = offsetWithinField(board.field, board.discardZone);
-        var baseL;
-        var baseT;
-        if (off) {
-            baseL = off.l + 12;
-            baseT = off.t + 36;
-        } else {
-            var zone = board.discardZone.getBoundingClientRect();
-            var fieldR = board.field.getBoundingClientRect();
-            baseL = zone.left - fieldR.left + 12;
-            baseT = zone.top - fieldR.top + 36;
-        }
+        var zone = zoneBoxInField(board.field, board.discardZone);
+        if (!zone) return [];
+        var cardW = CP_TREASURE_CARD_W;
+        var cardH = cpTreasureCardHeight();
+        var n = cards.length;
+        var padX = 8;
+        var usableW = Math.max(cardW, zone.w - padX * 2);
+        var minStep = Math.max(14, cardW - 14);
+        var spread = n > 1 ? Math.min(minStep, (usableW - cardW) / (n - 1)) : 0;
+        var rowWidth = n > 1 ? cardW + (n - 1) * spread : cardW;
+        var startL = zone.l + Math.max(padX, (zone.w - rowWidth) * 0.5);
+        var baseT = zone.t + Math.max(4, (zone.h - cardH) * 0.5);
         return cards.map(function (w, i) {
             return {
                 w: w,
-                l: Math.max(0, baseL + i * 5),
-                t: Math.max(0, baseT + i * 4),
+                l: Math.max(zone.l + 4, startL + i * spread),
+                t: Math.max(zone.t + 4, baseT),
                 z: 24 + i
             };
         });
@@ -2020,23 +2999,23 @@
             if (bit & Node.DOCUMENT_POSITION_PRECEDING) return 1;
             return 0;
         });
-        var off = offsetWithinField(board.field, board.treasureZone);
-        var baseL;
-        var baseT;
-        if (off) {
-            baseL = off.l + 12;
-            baseT = off.t + 32;
-        } else {
-            var zone = board.treasureZone.getBoundingClientRect();
-            var fieldR = board.field.getBoundingClientRect();
-            baseL = zone.left - fieldR.left + 12;
-            baseT = zone.top - fieldR.top + 32;
-        }
+        var zone = zoneBoxInField(board.field, board.treasureZone);
+        if (!zone) return [];
+        var cardW = CP_TREASURE_CARD_W;
+        var cardH = cpTreasureCardHeight();
+        var n = cards.length;
+        var padX = 12;
+        var usableW = Math.max(cardW, zone.w - padX * 2);
+        var minStep = Math.max(16, cardW - 12);
+        var spread = n > 1 ? Math.min(minStep, (usableW - cardW) / (n - 1)) : 0;
+        var rowWidth = n > 1 ? cardW + (n - 1) * spread : cardW;
+        var startL = zone.l + Math.max(padX, (zone.w - rowWidth) * 0.5);
+        var baseT = zone.t + Math.max(4, (zone.h - cardH) * 0.5);
         return cards.map(function (w, i) {
             return {
                 w: w,
-                l: Math.max(0, baseL + i * 5),
-                t: Math.max(0, baseT + i * 4),
+                l: Math.max(zone.l + 4, startL + i * spread),
+                t: Math.max(zone.t + 4, baseT),
                 z: 34 + i
             };
         });
@@ -2049,12 +3028,12 @@
         )).filter(function (w) {
             return w.getAttribute('data-cp-discard') !== '1' && w.getAttribute('data-cp-treasure') !== '1';
         });
-        var cmdOff = offsetWithinField(board.field, board.commanderZone);
+        var cmdOff = zoneOriginInField(board.field, board.commanderZone);
         var baseL;
         var baseT;
         if (cmdOff) {
-            baseL = cmdOff.l + 10;
-            baseT = cmdOff.t + 36;
+            baseL = cmdOff.l + 8;
+            baseT = cmdOff.t + 28;
         } else {
             var zone = board.commanderZone.getBoundingClientRect();
             var fieldR = board.field.getBoundingClientRect();
@@ -2074,31 +3053,26 @@
     function handLayoutItems(board) {
         if (!board || !board.handZone || !board.field) return [];
         var list = Array.prototype.slice.call(board.field.querySelectorAll('.cp-card-on-field.cp-hand-card'));
-        var hOff = offsetWithinField(board.field, board.handZone);
-        var baseLeft;
-        var baseTop;
-        var maxW;
-        if (hOff) {
-            baseLeft = hOff.l + 8;
-            baseTop = hOff.t + 18;
-            maxW = Math.max(40, board.handZone.offsetWidth - 20);
-        } else {
-            var zr = board.handZone.getBoundingClientRect();
-            var fr = board.field.getBoundingClientRect();
-            baseLeft = zr.left - fr.left + 8;
-            baseTop = zr.top - fr.top + 18;
-            maxW = Math.max(40, zr.width - 20);
-        }
-        var step = 34;
-        if (list.length > 1) {
-            step = Math.min(44, Math.max(22, (maxW - 48) / (list.length - 1)));
-        }
+        var zone = zoneBoxInField(board.field, board.handZone);
+        if (!zone || !list.length) return [];
+        var cardW = CP_HAND_CARD_W;
+        var cardH = cpHandCardHeight();
+        var n = list.length;
+        var maxW = Math.max(48, zone.w - 8);
+        var centerX = zone.l + zone.w * 0.5 - cardW * 0.5;
+        var baseY = zone.t + zone.h - cardH - 4;
+        var spread = n > 1 ? Math.min(32, Math.max(14, maxW / (n - 1))) : 0;
+        var maxAngle = Math.min(18, 2 + n * 1.5);
+        var mid = (n - 1) * 0.5;
         return list.map(function (w, i) {
+            var angle = n > 1 ? ((i - mid) / Math.max(mid, 1)) * maxAngle : 0;
+            var x = centerX + (i - mid) * spread;
             return {
                 w: w,
-                l: Math.max(0, baseLeft + i * step),
-                t: Math.max(0, baseTop),
-                z: 28 + i
+                l: Math.max(zone.l + 4, x),
+                t: Math.max(zone.t + 4, baseY),
+                z: 28 + i,
+                rot: angle
             };
         });
     }
@@ -2108,6 +3082,12 @@
             it.w.style.left = it.l + 'px';
             it.w.style.top = it.t + 'px';
             it.w.style.zIndex = String(it.z);
+            if (typeof it.rot === 'number' && it.w.classList.contains('cp-hand-card')) {
+                it.w._cpHandFanDeg = it.rot;
+            } else if (!it.w.classList.contains('cp-hand-card')) {
+                it.w._cpHandFanDeg = 0;
+            }
+            applyCardFanAndRotation(it.w);
         });
     }
 
@@ -2143,7 +3123,9 @@
                 it.w.style.zIndex = String(it.z);
             }
         });
-        return Promise.all(promises);
+        return Promise.all(promises).then(function () {
+            relayoutHandCardsBoard(board);
+        });
     }
 
     function setStatus(msg) {
@@ -2418,12 +3400,45 @@
         }
         if (cpDeckCountZone) cpDeckCountZone.textContent = String(deck.length);
         if (cpDeckCountZoneP2) cpDeckCountZoneP2.textContent = String(deckP2.length);
+        cpUpdateOnboarding();
+        cpUpdateCopyRoomLinkUi();
     }
 
     function pointInEl(clientX, clientY, el) {
+        return pointInZone(clientX, clientY, el, 0);
+    }
+
+    function pointInZone(clientX, clientY, el, pad) {
         if (!el) return false;
+        var p = pad == null ? 0 : pad;
         var r = el.getBoundingClientRect();
-        return clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom;
+        return clientX >= r.left - p && clientX <= r.right + p &&
+            clientY >= r.top - p && clientY <= r.bottom + p;
+    }
+
+    /** Zone box in field-local px (handles rotated/scaled play mats). */
+    function zoneOriginInField(field, zoneEl) {
+        if (!field || !zoneEl) return null;
+        var fr = field.getBoundingClientRect();
+        if (!fr.width || !fr.height) return null;
+        var zr = zoneEl.getBoundingClientRect();
+        var scaleX = field.clientWidth / fr.width;
+        var scaleY = field.clientHeight / fr.height;
+        return {
+            l: (zr.left - fr.left) * scaleX,
+            t: (zr.top - fr.top) * scaleY,
+            w: zr.width * scaleX,
+            h: zr.height * scaleY
+        };
+    }
+
+    function applyCardFanAndRotation(wrap) {
+        if (!wrap) return;
+        var rotLayer = wrap.querySelector('.cp-card-rot');
+        if (!rotLayer) return;
+        var exhaust = wrap._cpRotationDeg || 0;
+        var fan = wrap.classList.contains('cp-hand-card') ? (wrap._cpHandFanDeg || 0) : 0;
+        rotLayer.style.transform = 'rotate(' + (exhaust + fan) + 'deg)';
     }
 
     /** Top-left of el relative to field, in field local px (correct when field is inside a rotated wrapper). */
@@ -2474,12 +3489,15 @@
 
     function relayoutTreasurePileBoard(board) {
         applyLayoutItemPositions(treasurePileLayoutItems(board));
+        if (!board || !board.field) return;
+        board.field.querySelectorAll('.cp-card-on-field[data-cp-treasure="1"]').forEach(syncTreasureExhaustedClass);
     }
 
     function relayoutZonePilesBoard(board) {
         relayoutTreasurePileBoard(board);
         relayoutDiscardPileBoard(board);
         updateTreasureZoneBadgesBoard(board);
+        updateDiscardZoneBadgesBoard(board);
     }
 
     function normalizeRotationDeg(deg) {
@@ -2489,6 +3507,46 @@
 
     function isTreasureCardUnexhausted(wrap) {
         return normalizeRotationDeg(wrap && wrap._cpRotationDeg) === 0;
+    }
+
+    function syncTreasureExhaustedClass(wrap) {
+        if (!wrap) return;
+        wrap.classList.toggle(
+            'cp-treasure-exhausted',
+            wrap.getAttribute('data-cp-treasure') === '1' && !isTreasureCardUnexhausted(wrap)
+        );
+    }
+
+    function toggleTreasureCard(wrap) {
+        if (!wrap || wrap.getAttribute('data-cp-treasure') !== '1') return false;
+        if (!canEditBoard(wrap._cpBoard)) return false;
+        if (isTreasureCardUnexhausted(wrap)) {
+            wrap._cpRotationDeg = 90;
+        } else {
+            wrap._cpRotationDeg = 0;
+        }
+        applyCardFanAndRotation(wrap);
+        syncTreasureExhaustedClass(wrap);
+        if (wrap._cpBoard) updateTreasureZoneBadgesBoard(wrap._cpBoard);
+        return true;
+    }
+
+    function useOneReadyTreasure(board) {
+        if (!board || !board.field) return false;
+        var items = treasurePileLayoutItems(board);
+        for (var i = 0; i < items.length; i++) {
+            var w = items[i].w;
+            if (isTreasureCardUnexhausted(w)) {
+                w._cpRotationDeg = 90;
+                applyCardFanAndRotation(w);
+                syncTreasureExhaustedClass(w);
+                updateTreasureZoneBadgesBoard(board);
+                cpPlayFlipSfx();
+                scheduleMultiplayerPush();
+                return true;
+            }
+        }
+        return false;
     }
 
     function countTreasureCardsOnBoard(board) {
@@ -2505,12 +3563,32 @@
     function updateTreasureZoneBadgesBoard(board) {
         if (!board || !board.treasureReadyCountEl) return;
         var c = countTreasureCardsOnBoard(board);
-        board.treasureReadyCountEl.textContent = String(c.ready);
-        board.treasureReadyCountEl.title = c.total ? c.ready + ' ready of ' + c.total + ' treasures' : 'No treasures';
+        board.treasureReadyCountEl.textContent = c.total ? (c.ready + '/' + c.total) : '0';
+        board.treasureReadyCountEl.title = c.total
+            ? c.ready + ' ready · click to manage treasures'
+            : 'No treasures · click to open manager';
     }
 
     function updateAllTreasureZoneBadges() {
         boards.forEach(updateTreasureZoneBadgesBoard);
+    }
+
+    function countDiscardCardsOnBoard(board) {
+        if (!board || !board.field) return 0;
+        return board.field.querySelectorAll('.cp-card-on-field[data-cp-discard="1"]').length;
+    }
+
+    function updateDiscardZoneBadgesBoard(board) {
+        if (!board || !board.discardCountEl) return;
+        var n = countDiscardCardsOnBoard(board);
+        board.discardCountEl.textContent = String(n);
+        board.discardCountEl.title = n
+            ? n + ' in discard · click to search'
+            : 'Discard · drop cards here';
+    }
+
+    function updateAllDiscardZoneBadges() {
+        boards.forEach(updateDiscardZoneBadgesBoard);
     }
 
     function relayoutDiscardPile() {
@@ -2531,7 +3609,7 @@
         var r = wrap.getBoundingClientRect();
         var cx = (r.left + r.right) / 2;
         var cy = (r.top + r.bottom) / 2;
-        if (pointInEl(cx, cy, board.treasureZone)) {
+        if (pointInZone(cx, cy, board.treasureZone, 28)) {
             wrap.removeAttribute('data-cp-discard');
             wrap.removeAttribute('data-cp-discard-order');
             var wasTr = wrap.getAttribute('data-cp-treasure') === '1';
@@ -2540,6 +3618,7 @@
                 wrap.setAttribute('data-cp-treasure-order', String(nextTreasureStackSeq(board)));
                 cpPlaySfx();
             }
+            syncTreasureExhaustedClass(wrap);
             relayoutZonePilesBoard(board);
             return true;
         }
@@ -2552,7 +3631,7 @@
         var r = wrap.getBoundingClientRect();
         var cx = (r.left + r.right) / 2;
         var cy = (r.top + r.bottom) / 2;
-        if (pointInEl(cx, cy, board.discardZone)) {
+        if (pointInZone(cx, cy, board.discardZone, 16)) {
             wrap.removeAttribute('data-cp-treasure');
             wrap.removeAttribute('data-cp-treasure-order');
             var wasDisc = wrap.getAttribute('data-cp-discard') === '1';
@@ -2575,12 +3654,12 @@
         updateStats();
         setStatus('Drawing…');
         var fieldR = board.field.getBoundingClientRect();
-        var halfW = 66;
-        var halfH = 92;
+        var halfW = CP_FIELD_CARD_W * 0.5;
+        var halfH = CP_FIELD_CARD_H * 0.5;
         var x = clientX - fieldR.left - halfW;
         var y = clientY - fieldR.top - halfH;
-        x = Math.max(0, Math.min(board.field.clientWidth - 107, x));
-        y = Math.max(0, Math.min(board.field.clientHeight - 147, y));
+        x = Math.max(0, Math.min(board.field.clientWidth - CP_FIELD_CARD_W, x));
+        y = Math.max(0, Math.min(board.field.clientHeight - CP_FIELD_CARD_H, y));
         getOrRenderCardPlayFaceUrl(card).then(function (url) {
             if (!url) {
                 board.deck.push(card);
@@ -2972,7 +4051,8 @@
         var searchM = document.getElementById('cpDeckSearchModal');
         var discM = document.getElementById('cpDiscardSearchModal');
         var trM = document.getElementById('cpTreasureModal');
-        if ((!deckM || !deckM.classList.contains('is-open')) && (!searchM || !searchM.classList.contains('is-open')) && (!discM || !discM.classList.contains('is-open')) && (!trM || !trM.classList.contains('is-open'))) {
+        var drawNM = document.getElementById('cpDrawNModal');
+        if ((!deckM || !deckM.classList.contains('is-open')) && (!searchM || !searchM.classList.contains('is-open')) && (!discM || !discM.classList.contains('is-open')) && (!trM || !trM.classList.contains('is-open')) && (!drawNM || !drawNM.classList.contains('is-open'))) {
             document.body.style.overflow = '';
         }
     }
@@ -3056,6 +4136,7 @@
         var elW = 0, elH = 0, maxLeft = 0, maxTop = 0;
         var dragMoveRaf = null;
         var pendingClientX = 0, pendingClientY = 0;
+        var wasTreasureAtDown = false;
         function detachDragWindowListeners() {
             window.removeEventListener('pointermove', move);
             window.removeEventListener('pointerup', up);
@@ -3065,10 +4146,12 @@
             if (ev.button !== 0) return;
             if (!canEditBoard(board)) return;
             dragging = true;
+            wasTreasureAtDown = el.getAttribute('data-cp-treasure') === '1';
             startX = ev.clientX;
             startY = ev.clientY;
             origLeft = el.offsetLeft;
             origTop = el.offsetTop;
+            el.classList.add('cp-card-dragging');
             elW = el.offsetWidth;
             elH = el.offsetHeight;
             maxLeft = Math.max(0, field.clientWidth - elW);
@@ -3076,6 +4159,7 @@
             pendingClientX = startX;
             pendingClientY = startY;
             el.style.zIndex = String(4000 + (Date.now() % 1000));
+            cpUpdateDropHighlights(board, startX, startY, el);
             ev.preventDefault();
             window.addEventListener('pointermove', move, { passive: true });
             window.addEventListener('pointerup', up);
@@ -3093,6 +4177,8 @@
                 var dy = pendingClientY - startY;
                 el.style.left = Math.max(0, Math.min(maxLeft, origLeft + dx)) + 'px';
                 el.style.top = Math.max(0, Math.min(maxTop, origTop + dy)) + 'px';
+                if (el._cpSparkleApi) el._cpSparkleApi.shakeOff(dx);
+                cpUpdateDropHighlights(board, pendingClientX, pendingClientY, el);
             });
         }
         function up(ev) {
@@ -3103,6 +4189,8 @@
             }
             if (!dragging) return;
             dragging = false;
+            el.classList.remove('cp-card-dragging');
+            cpClearDropHighlights(board);
             var fdx = pendingClientX - startX;
             var fdy = pendingClientY - startY;
             el.style.left = Math.max(0, Math.min(maxLeft, origLeft + fdx)) + 'px';
@@ -3110,10 +4198,11 @@
             if (!ev) return;
             var handledSfx = false;
             var posChanged = Math.abs(el.offsetLeft - origLeft) + Math.abs(el.offsetTop - origTop) > 2;
+            if (posChanged && el._cpSparkleApi) el._cpSparkleApi.shakeBurst(fdx);
             var r = el.getBoundingClientRect();
             var cx = (r.left + r.right) / 2;
             var cy = (r.top + r.bottom) / 2;
-            if (pointInEl(cx, cy, board.drawZone) && el._cpDeckEntry) {
+            if (pointInZone(cx, cy, board.drawZone, 10) && el._cpDeckEntry) {
                 var deckEntry = el._cpDeckEntry;
                 function finishDeckReturn() {
                     board.deck.push(deckEntry);
@@ -3144,8 +4233,10 @@
                 });
                 return;
             }
-            if (board.treasureZone && pointInEl(cx, cy, board.treasureZone)) {
+            if (board.treasureZone && pointInZone(cx, cy, board.treasureZone, 28)) {
                 el.classList.remove('cp-hand-card');
+                el._cpHandFanDeg = 0;
+                applyCardFanAndRotation(el);
                 relayoutHandCardsBoard(board);
                 el.removeAttribute('data-cp-discard');
                 el.removeAttribute('data-cp-discard-order');
@@ -3154,6 +4245,7 @@
                 if (!wasTrEl) {
                     el.setAttribute('data-cp-treasure-order', String(nextTreasureStackSeq(board)));
                 }
+                syncTreasureExhaustedClass(el);
                 handledSfx = true;
                 if (cpPrefersReducedMotion()) {
                     cpPlaySfx();
@@ -3192,8 +4284,10 @@
                 });
                 return;
             }
-            if (pointInEl(cx, cy, board.discardZone)) {
+            if (pointInZone(cx, cy, board.discardZone, 18)) {
                 el.classList.remove('cp-hand-card');
+                el._cpHandFanDeg = 0;
+                applyCardFanAndRotation(el);
                 relayoutHandCardsBoard(board);
                 el.removeAttribute('data-cp-treasure');
                 el.removeAttribute('data-cp-treasure-order');
@@ -3241,10 +4335,12 @@
                 return;
             }
             var wasHand = el.classList.contains('cp-hand-card');
-            var inHand = board.handZone && pointInEl(cx, cy, board.handZone);
+            var inHand = board.handZone && pointInZone(cx, cy, board.handZone, 24);
             var droppedFromHandToField = false;
             if (wasHand && !inHand) {
                 el.classList.remove('cp-hand-card');
+                el._cpHandFanDeg = 0;
+                applyCardFanAndRotation(el);
                 relayoutHandCardsBoard(board);
                 handledSfx = true;
                 droppedFromHandToField = true;
@@ -3292,6 +4388,8 @@
                 });
                 el.style.zIndex = '6400';
                 animateOpponentCardLayout(el, hTarget.l, hTarget.t, hTarget.z).then(function () {
+                    if (typeof hTarget.rot === 'number') el._cpHandFanDeg = hTarget.rot;
+                    applyCardFanAndRotation(el);
                     cpPlaySfx();
                     relayoutZonePilesBoard(board);
                     relayoutCommanderZoneBoard(board);
@@ -3299,20 +4397,25 @@
                 });
                 return;
             }
-            if (el.getAttribute('data-cp-discard') === '1' && !pointInEl(cx, cy, board.discardZone)) {
+            if (wasHand && inHand) {
+                relayoutHandCardsBoard(board);
+                scheduleMultiplayerPush();
+                return;
+            }
+            if (el.getAttribute('data-cp-discard') === '1' && !pointInZone(cx, cy, board.discardZone, 12)) {
                 el.removeAttribute('data-cp-discard');
                 el.removeAttribute('data-cp-discard-order');
                 relayoutZonePilesBoard(board);
                 relayoutCommanderZoneBoard(board);
             }
-            if (board.treasureZone && el.getAttribute('data-cp-treasure') === '1' && !pointInEl(cx, cy, board.treasureZone)) {
+            if (board.treasureZone && el.getAttribute('data-cp-treasure') === '1' && !pointInZone(cx, cy, board.treasureZone, 16)) {
                 el.removeAttribute('data-cp-treasure');
                 el.removeAttribute('data-cp-treasure-order');
                 relayoutZonePilesBoard(board);
                 relayoutCommanderZoneBoard(board);
             }
             if (el.getAttribute('data-cp-commander') === '1' && el.getAttribute('data-cp-discard') !== '1' && el.getAttribute('data-cp-treasure') !== '1') {
-                if (board.commanderZone && pointInEl(cx, cy, board.commanderZone)) {
+                if (board.commanderZone && pointInZone(cx, cy, board.commanderZone, 14)) {
                     el.setAttribute('data-cp-commander-in-zone', '1');
                     el.classList.remove('cp-hand-card');
                     relayoutHandCardsBoard(board);
@@ -3348,6 +4451,20 @@
                 }
                 relayoutCommanderZoneBoard(board);
             }
+            if (
+                wasTreasureAtDown &&
+                el.getAttribute('data-cp-treasure') === '1' &&
+                board.treasureZone &&
+                pointInZone(cx, cy, board.treasureZone, 24) &&
+                Math.hypot(fdx, fdy) < 8 &&
+                !posChanged
+            ) {
+                if (toggleTreasureCard(el)) {
+                    cpPlayFlipSfx();
+                    scheduleMultiplayerPush();
+                    return;
+                }
+            }
             if (!handledSfx && posChanged) cpPlayFlipSfx();
             scheduleMultiplayerPush();
         }
@@ -3376,6 +4493,7 @@
                     board.ghost.style.display = 'block';
                     board.ghost.style.left = deckGhostClientX + 'px';
                     board.ghost.style.top = deckGhostClientY + 'px';
+                    cpUpdateDeckDragHighlights(board, deckGhostClientX, deckGhostClientY);
                 });
             }
         }
@@ -3384,6 +4502,7 @@
                 cancelAnimationFrame(deckGhostMoveRaf);
                 deckGhostMoveRaf = null;
             }
+            cpClearDropHighlights(board);
             var d = board.deckDrag;
             if (!d.active) return;
             d.active = false;
@@ -3399,7 +4518,7 @@
                 setStatus('Drag out of the deck, then release to draw a card.');
                 return;
             }
-            if (board.handZone && canEditBoard(board) && pointInEl(ev.clientX, ev.clientY, board.handZone)) {
+            if (board.handZone && canEditBoard(board) && pointInZone(ev.clientX, ev.clientY, board.handZone, 20)) {
                 drawCardToHand(board);
                 return;
             }
@@ -3434,14 +4553,17 @@
 
     function attachDiscardZoneSearch(board) {
         if (!board || !board.discardZone) return;
-        board.discardZone.addEventListener('contextmenu', function (ev) {
-            ev.preventDefault();
+        function openIfMine(ev) {
             if (!canEditBoard(board)) {
                 setStatus('You can only search your own discard pile.');
                 return;
             }
+            if (ev.type === 'contextmenu') ev.preventDefault();
+            ev.stopPropagation();
             openDiscardSearchModal(board);
-        });
+        }
+        board.discardZone.addEventListener('click', openIfMine);
+        board.discardZone.addEventListener('contextmenu', openIfMine);
     }
 
     /**
@@ -3468,14 +4590,20 @@
 
     function attachTreasureZoneContextMenu(board) {
         if (!board || !board.treasureZone) return;
-        board.treasureZone.addEventListener('contextmenu', function (ev) {
-            ev.preventDefault();
+        function openIfMine(ev) {
             if (!canEditBoard(board)) {
                 setStatus('You can only manage treasures on your own mat.');
                 return;
             }
+            if (ev.type === 'contextmenu') ev.preventDefault();
+            ev.stopPropagation();
             openTreasureModal(board);
-        });
+        }
+        board.treasureZone.addEventListener('click', openIfMine);
+        if (board.treasureReadyCountEl) {
+            board.treasureReadyCountEl.addEventListener('click', openIfMine);
+        }
+        board.treasureZone.addEventListener('contextmenu', openIfMine);
     }
 
     /**
@@ -3504,8 +4632,9 @@
             ev.preventDefault();
             if (!canEditBoard(wrap._cpBoard)) return;
             wrap._cpRotationDeg = (wrap._cpRotationDeg + 90) % 360;
-            rotLayer.style.transform = 'rotate(' + wrap._cpRotationDeg + 'deg)';
+            applyCardFanAndRotation(wrap);
             if (wrap.getAttribute('data-cp-treasure') === '1' && wrap._cpBoard) {
+                syncTreasureExhaustedClass(wrap);
                 updateTreasureZoneBadgesBoard(wrap._cpBoard);
             }
             scheduleMultiplayerPush();
@@ -3540,6 +4669,7 @@
         });
         wrap.addEventListener('dblclick', function (ev) {
             if (ev.target && ev.target.closest && ev.target.closest('button')) return;
+            if (wrap.classList.contains('cp-hand-card')) return;
             ev.preventDefault();
             toggleFlip();
         });
@@ -3550,7 +4680,7 @@
      */
     function fitEnlargedCardAbsolute(wrap) {
         if (!wrap || !wrap.classList.contains('cp-card-enlarged')) return;
-        var margin = 14;
+        var margin = 16;
         wrap.style.setProperty('--cp-enlarge-shift', '0px');
         var r = wrap.getBoundingClientRect();
         var delta = 0;
@@ -3562,6 +4692,25 @@
             delta += margin - (r.top + delta);
         }
         wrap.style.setProperty('--cp-enlarge-shift', delta + 'px');
+        r = wrap.getBoundingClientRect();
+        var dx = parseFloat(wrap.style.getPropertyValue('--cp-enlarge-dx')) || 0;
+        var dy = parseFloat(wrap.style.getPropertyValue('--cp-enlarge-dy')) || 0;
+        if (r.left < margin) {
+            dx += margin - r.left;
+        } else if (r.right > window.innerWidth - margin) {
+            dx -= r.right - (window.innerWidth - margin);
+        }
+        wrap.style.setProperty('--cp-enlarge-dx', dx + 'px');
+        wrap.style.setProperty('--cp-enlarge-dy', dy + 'px');
+    }
+
+    function positionFloatingPreviewRight(el) {
+        var margin = 16;
+        var vw = window.innerWidth;
+        var vh = window.innerHeight;
+        var popW = el.offsetWidth || Math.min(260, vw * 0.5);
+        el.style.left = (vw - margin - popW * 0.5) + 'px';
+        el.style.top = Math.max(margin + 100, Math.min(vh * 0.4, vh - margin - 180)) + 'px';
     }
 
     /** True when this card sits on the opponent’s mat (multiplayer). */
@@ -3634,28 +4783,38 @@
         );
     }
 
-    function showOpponentFloatingPreviewFrom(wrap) {
+    function showOpponentFloatingPreviewFrom(wrap, opts) {
+        opts = opts || {};
         if (!wrap || !document.body.contains(wrap)) return;
         if (opponentHandPreviewBlocked(wrap)) return;
         var el = ensureOpponentPreviewPopEl();
         var img = el.querySelector('img');
         img.src = opponentPreviewFaceSrc(wrap);
         var r = wrap.getBoundingClientRect();
-        positionOpponentPreviewNearCard(el, r);
+        if (opts.rightSide) {
+            positionFloatingPreviewRight(el);
+        } else {
+            positionOpponentPreviewNearCard(el, r);
+        }
         el.classList.remove('cp-opponent-preview-pop--visible');
         void el.offsetHeight;
         var epochAtSchedule = cpOppPvEpoch;
         requestAnimationFrame(function () {
             if (epochAtSchedule !== cpOppPvEpoch) return;
             if (!document.body.contains(wrap)) return;
-            positionOpponentPreviewNearCard(el, wrap.getBoundingClientRect());
+            if (opts.rightSide) {
+                positionFloatingPreviewRight(el);
+            } else {
+                positionOpponentPreviewNearCard(el, wrap.getBoundingClientRect());
+            }
             cpOpponentPreviewSourceWrap = wrap;
             el.classList.add('cp-opponent-preview-pop--visible');
         });
     }
 
     /** Hover preview for opponent cards: fixed overlay, does not transform the card (avoids rotated-mat + pointer bugs). */
-    function attachOpponentHoverPreview(wrap) {
+    function attachFloatingCardPreview(wrap, opts) {
+        opts = opts || {};
         ensureOpponentPreviewGlobalDismiss();
         var hoverTimer = null;
         function hoverDelayMs() {
@@ -3664,7 +4823,7 @@
                 reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             } catch (e) { /* ignore */ }
             if (reduced) return 0;
-            return wrap.classList.contains('cp-hand-card') ? 320 : 520;
+            return wrap.classList.contains('cp-hand-card') ? 280 : 480;
         }
         function arm() {
             if (opponentHandPreviewBlocked(wrap)) {
@@ -3684,14 +4843,14 @@
                 requestAnimationFrame(function () {
                     if (epochArm !== cpOppPvEpoch) return;
                     if (!document.body.contains(wrap)) return;
-                    showOpponentFloatingPreviewFrom(wrap);
+                    showOpponentFloatingPreviewFrom(wrap, opts);
                 });
                 return;
             }
             hoverTimer = setTimeout(function () {
                 hoverTimer = null;
                 if (epochArm !== cpOppPvEpoch) return;
-                if (document.body.contains(wrap)) showOpponentFloatingPreviewFrom(wrap);
+                if (document.body.contains(wrap)) showOpponentFloatingPreviewFrom(wrap, opts);
             }, d);
         }
         function closeOpponentPreviewForCard() {
@@ -3723,6 +4882,10 @@
         wrap.addEventListener('pointerdown', function (ev) {
             if (ev.button === 0) closeOpponentPreviewForCard();
         });
+    }
+
+    function attachOpponentHoverPreview(wrap) {
+        attachFloatingCardPreview(wrap, {});
     }
 
     /**
@@ -3793,6 +4956,10 @@
                 return;
             }
             attachOpponentHoverPreview(wrap);
+            return;
+        }
+        if (wrap.classList.contains('cp-hand-card')) {
+            attachFloatingCardPreview(wrap, { rightSide: true });
             return;
         }
         var hoverTimer = null;
@@ -3916,10 +5083,65 @@
         attachRotateOnRightClick(wrap, rotLayer);
         attachMiddleClickFlip(wrap, flipInner);
         attachHoverEnlarge(wrap);
+        initCardSparkles(wrap, cardEntryForWrap(wrap));
+        wrap.addEventListener('pointerenter', function () {
+            if (wrap.getAttribute('data-cp-treasure') !== '1') return;
+            wrap.classList.add('cp-treasure-hover');
+        });
+        wrap.addEventListener('pointerleave', function () {
+            if (!wrap.classList.contains('cp-treasure-hover')) return;
+            wrap.classList.remove('cp-treasure-hover');
+            if (wrap.getAttribute('data-cp-treasure') === '1' && wrap._cpBoard) {
+                relayoutTreasurePileBoard(wrap._cpBoard);
+            }
+        });
+        wrap.addEventListener('dblclick', function (ev) {
+            if (wrap.classList.contains('cp-hand-card')) {
+                if (!canEditBoard(board)) return;
+                ev.preventDefault();
+                var field = board.field;
+                var destL = Math.max(18, field.clientWidth * 0.38 - CP_FIELD_CARD_W * 0.5);
+                var destT = Math.max(18, field.clientHeight * 0.18 - CP_FIELD_CARD_H * 0.5);
+                wrap.classList.remove('cp-hand-card');
+                wrap._cpHandFanDeg = 0;
+                applyCardFanAndRotation(wrap);
+                relayoutHandCardsBoard(board);
+                if (cpPrefersReducedMotion()) {
+                    wrap.style.left = destL + 'px';
+                    wrap.style.top = destT + 'px';
+                } else {
+                    animateOpponentCardLayout(wrap, destL, destT);
+                }
+                cpPlaySfx();
+                scheduleMultiplayerPush();
+                return;
+            }
+            if (wrap.getAttribute('data-cp-treasure') === '1') {
+                ev.preventDefault();
+                openTreasureModal(board);
+            }
+        });
     }
 
     function relayoutHandCardsBoard(board) {
         applyLayoutItemPositions(handLayoutItems(board));
+        updateHandZoneBadgesBoard(board);
+    }
+
+    function countHandCardsOnBoard(board) {
+        if (!board || !board.field) return 0;
+        return board.field.querySelectorAll('.cp-card-on-field.cp-hand-card').length;
+    }
+
+    function updateHandZoneBadgesBoard(board) {
+        if (!board || !board.handCountEl) return;
+        var n = countHandCardsOnBoard(board);
+        board.handCountEl.textContent = String(n);
+        board.handCountEl.title = n ? n + ' cards in hand' : 'Your hand is empty';
+    }
+
+    function updateAllHandZoneBadges() {
+        boards.forEach(updateHandZoneBadgesBoard);
     }
 
     function relayoutHandCards() {
@@ -3931,9 +5153,9 @@
         var field = board.field;
         var parts = buildCardWrap(dataUrl, cardEntry);
         var wrap = parts.wrap;
-        var margin = 24;
-        var maxX = Math.max(margin, field.clientWidth - margin - 107);
-        var maxY = Math.max(margin, field.clientHeight - margin - 147);
+        var margin = 18;
+        var maxX = Math.max(margin, field.clientWidth - margin - CP_FIELD_CARD_W);
+        var maxY = Math.max(margin, field.clientHeight - margin - CP_FIELD_CARD_H);
         if (typeof left === 'number' && typeof top === 'number') {
             wrap.style.left = left + 'px';
             wrap.style.top = top + 'px';
@@ -3950,9 +5172,9 @@
     function randomFieldPositionForCard(board) {
         board = board || boardP1;
         var field = board.field;
-        var margin = 24;
-        var maxX = Math.max(margin, field.clientWidth - margin - 107);
-        var maxY = Math.max(margin, field.clientHeight - margin - 147);
+        var margin = 18;
+        var maxX = Math.max(margin, field.clientWidth - margin - CP_FIELD_CARD_W);
+        var maxY = Math.max(margin, field.clientHeight - margin - CP_FIELD_CARD_H);
         return {
             l: margin + Math.random() * Math.max(1, maxX - margin),
             t: margin + Math.random() * Math.max(1, maxY - margin)
@@ -4027,6 +5249,8 @@
         });
 
         return animateOpponentCardLayout(wrap, target.l, target.t, target.z).then(function () {
+            if (typeof target.rot === 'number') wrap._cpHandFanDeg = target.rot;
+            applyCardFanAndRotation(wrap);
             cpPlaySfx();
             return wrap;
         });
@@ -4215,11 +5439,8 @@
         if (!board || !instanceId) return;
         var w = findTreasureWrapByInstanceId(board, instanceId);
         if (!w) return;
-        var rotLayer = w.querySelector('.cp-card-rot');
-        w._cpRotationDeg = ((w._cpRotationDeg || 0) + 90) % 360;
-        if (rotLayer) rotLayer.style.transform = 'rotate(' + w._cpRotationDeg + 'deg)';
+        toggleTreasureCard(w);
         cpPlayFlipSfx();
-        updateTreasureZoneBadgesBoard(board);
         scheduleMultiplayerPush();
     }
 
@@ -4227,8 +5448,8 @@
         if (!board || !board.field) return;
         board.field.querySelectorAll('.cp-card-on-field[data-cp-treasure="1"]').forEach(function (w) {
             w._cpRotationDeg = 0;
-            var rotLayer = w.querySelector('.cp-card-rot');
-            if (rotLayer) rotLayer.style.transform = 'rotate(0deg)';
+            applyCardFanAndRotation(w);
+            syncTreasureExhaustedClass(w);
         });
         updateTreasureZoneBadgesBoard(board);
         scheduleMultiplayerPush();
@@ -4240,14 +5461,17 @@
         if (!stats || !row || !treasureModalBoard) return;
         var board = treasureModalBoard;
         var cts = countTreasureCardsOnBoard(board);
-        stats.textContent = 'Ready (rotation 0°): ' + cts.ready + ' of ' + cts.total;
+        stats.textContent = 'Ready: ' + cts.ready + ' of ' + cts.total;
         var items = treasurePileLayoutItems(board);
+        row.innerHTML = '';
         if (!items.length) {
-            row.innerHTML = '';
-            closeTreasureModal();
+            var empty = document.createElement('p');
+            empty.className = 'drive-modal-hint';
+            empty.style.margin = '0';
+            empty.textContent = 'No treasures yet. Drag any card onto the gold treasure row at the bottom (left of discard), or click Close and try again.';
+            row.appendChild(empty);
             return;
         }
-        row.innerHTML = '';
         items.forEach(function (it) {
             var w = it.w;
             var instanceId = w.getAttribute('data-cp-instance-id') || '';
@@ -4259,7 +5483,7 @@
             var cell = document.createElement('div');
             cell.className = 'cp-treasure-modal-cell';
             cell.setAttribute('role', 'listitem');
-            cell.title = 'Right-click to rotate 90° (exhaust)';
+            cell.title = 'Click to tap or untap';
             var thumbWrap = document.createElement('div');
             thumbWrap.className = 'cp-treasure-modal-thumb-wrap';
             var inner = document.createElement('div');
@@ -4288,12 +5512,23 @@
             cell.appendChild(thumbWrap);
             cell.appendChild(cap);
             cell.appendChild(pill);
+            cell.addEventListener('click', function (ev) {
+                if (ev.button !== 0) return;
+                if (!treasureModalBoard || treasureModalBoard !== board) return;
+                if (!canEditBoard(board)) return;
+                toggleTreasureCard(w);
+                cpPlayFlipSfx();
+                rebuildTreasureModalContent();
+                scheduleMultiplayerPush();
+            });
             cell.addEventListener('contextmenu', function (ev) {
                 ev.preventDefault();
                 if (!treasureModalBoard || treasureModalBoard !== board) return;
                 if (!canEditBoard(board)) return;
-                rotateTreasureInstance90(board, instanceId);
+                toggleTreasureCard(w);
+                cpPlayFlipSfx();
                 rebuildTreasureModalContent();
+                scheduleMultiplayerPush();
             });
             row.appendChild(cell);
         });
@@ -4303,11 +5538,6 @@
         board = board || boardP1;
         if (!canEditBoard(board)) {
             setStatus('You can only manage treasures on your own mat.');
-            return;
-        }
-        var items = treasurePileLayoutItems(board);
-        if (!items.length) {
-            setStatus(board.id === 'p2' ? 'Player 2 has no treasure cards.' : 'No treasure cards in the pile.');
             return;
         }
         var modal = document.getElementById('cpTreasureModal');
@@ -4693,8 +5923,8 @@
             if (w.getAttribute('data-cp-discard') === '1') return;
             if ((w._cpRotationDeg || 0) === 0) return;
             w._cpRotationDeg = 0;
-            var rotLayer = w.querySelector('.cp-card-rot');
-            if (rotLayer) rotLayer.style.transform = 'rotate(0deg)';
+            applyCardFanAndRotation(w);
+            syncTreasureExhaustedClass(w);
             n++;
         });
         updateTreasureZoneBadgesBoard(board);
@@ -4960,6 +6190,7 @@
 
         var c = cardById(entry.lib);
         wrap._cpDeckEntry = entry.fromDeck && c ? c : null;
+        initCardSparkles(wrap, c);
 
         if (entry.h) wrap.classList.add('cp-hand-card'); else wrap.classList.remove('cp-hand-card');
         wrap.removeAttribute('data-cp-discard');
@@ -4984,13 +6215,14 @@
         var rotLayer = wrap.querySelector('.cp-card-rot');
         var flipInner = wrap.querySelector('.cp-flip-inner');
         wrap._cpRotationDeg = entry.rot || 0;
-        if (rotLayer) rotLayer.style.transform = 'rotate(' + wrap._cpRotationDeg + 'deg)';
+        if (rotLayer) applyCardFanAndRotation(wrap);
+        syncTreasureExhaustedClass(wrap);
         wrap._cpShowingBack = !!entry.back;
         if (flipInner) flipInner.classList.toggle('cp-flip-inner--back', wrap._cpShowingBack);
         applyOpponentHandPrivacy(wrap, board);
 
         var playedZone = false;
-        if (playOpponentSfx && !cpPrefersReducedMotion()) {
+        if (playOpponentSfx && cpSfxEnabled()) {
             if (!!entry.d && !wasDisc) {
                 cpPlayDiscardSfx();
                 playedZone = true;
@@ -5026,7 +6258,7 @@
 
         if (wAnim) {
             var p = animateOpponentCardLayout(wrap, l, t);
-            if (playOpponentSfx && !cpPrefersReducedMotion() && !playedZone && freeAfter && posCh) {
+            if (playOpponentSfx && cpSfxEnabled() && !playedZone && freeAfter && posCh) {
                 return p.then(function () {
                     cpPlayFlipSfx();
                 });
@@ -5038,7 +6270,7 @@
         }
         wrap.style.left = Math.max(0, l) + 'px';
         wrap.style.top = Math.max(0, t) + 'px';
-        if (playOpponentSfx && !cpPrefersReducedMotion() && !playedZone && freeAfter && posCh) {
+        if (playOpponentSfx && cpSfxEnabled() && !playedZone && freeAfter && posCh) {
             cpPlayFlipSfx();
         }
         return Promise.resolve();
@@ -5092,11 +6324,12 @@
             var rotLayer = wrap.querySelector('.cp-card-rot');
             var flipInner = wrap.querySelector('.cp-flip-inner');
             wrap._cpRotationDeg = entry.rot || 0;
-            if (rotLayer) rotLayer.style.transform = 'rotate(' + wrap._cpRotationDeg + 'deg)';
+            if (rotLayer) applyCardFanAndRotation(wrap);
+            syncTreasureExhaustedClass(wrap);
             wrap._cpShowingBack = !!entry.back;
             if (flipInner) flipInner.classList.toggle('cp-flip-inner--back', wrap._cpShowingBack);
             applyOpponentHandPrivacy(wrap, board);
-            if (playOpponentSfx && !skipRestoreSfx && !cpPrefersReducedMotion()) {
+            if (playOpponentSfx && !skipRestoreSfx && cpSfxEnabled()) {
                 if (entry.d) cpPlayDiscardSfx();
                 else if (entry.tr) cpPlaySfx();
                 else if (entry.h) cpPlaySfx();
@@ -5176,7 +6409,7 @@
             if (!pendingDeckFly.length) return Promise.resolve();
             return Promise.all(pendingDeckFly.map(function (w) {
                 return animateCardFlyToDrawZoneThenRemove(w, board).then(function () {
-                    if (playOpponentSfx && !cpPrefersReducedMotion()) cpPlaySfx();
+                    if (playOpponentSfx && cpSfxEnabled()) cpPlaySfx();
                 });
             }));
         });
@@ -5379,7 +6612,6 @@
         firebaseMultiplayerDbRef = null;
         localMultiplayerSeat = null;
         applyMultiplayerSeatUi();
-        setSeatRadiosDisabled(false);
         if (firebaseMultiplayerPushTimer) {
             clearTimeout(firebaseMultiplayerPushTimer);
             firebaseMultiplayerPushTimer = null;
@@ -5406,7 +6638,7 @@
         if (btnC) btnC.disabled = false;
         if (btnD) btnD.disabled = true;
         if (roomInp) roomInp.disabled = false;
-        if (st) st.textContent = 'Ready — enter a room name and Connect';
+        if (st) st.textContent = 'Ready — enter a room name to join (open seat assigned automatically)';
         resetFirestoreSliceCache();
         updateStats();
     }
@@ -5428,7 +6660,7 @@
             btnConnect.disabled = true;
             return;
         }
-        if (statusEl) statusEl.textContent = 'Ready — enter a room name and Connect';
+        if (statusEl) statusEl.textContent = 'Ready — enter a room name to join (open seat assigned automatically)';
         var app;
         try {
             app = firebase.apps && firebase.apps.length ? firebase.app() : firebase.initializeApp(cfg);
@@ -5457,21 +6689,26 @@
                 return;
             }
             if (statusEl) statusEl.textContent = 'Connecting…';
-            var chosenSeat = getSelectedMultiplayerSeat();
             auth.signInAnonymously().then(function () {
                 var ref = db.collection('cardPlayerRooms').doc(rid);
                 var uid = auth.currentUser.uid;
-                var seatKey = chosenSeat === 1 ? 'seat1Uid' : 'seat2Uid';
                 return db.runTransaction(function (transaction) {
                     return transaction.get(ref).then(function (doc) {
+                        var chosenSeat;
                         if (!doc.exists) {
+                            chosenSeat = 1;
                             transaction.set(ref, buildFreshV2RoomDoc(chosenSeat, uid));
-                            return;
+                            return chosenSeat;
                         }
                         var data = doc.data() || {};
+                        chosenSeat = pickOpenMultiplayerSeat(data, uid);
+                        var seatKey = chosenSeat === 1 ? 'seat1Uid' : 'seat2Uid';
                         var taken = data[seatKey];
                         if (taken && taken !== uid) {
-                            throw { code: 'SEAT_TAKEN', message: 'That seat is taken. Pick the other player or another room.' };
+                            throw {
+                                code: 'ROOM_FULL',
+                                message: 'This room is full (2 players). Try another room or wait for someone to leave.'
+                            };
                         }
                         var hasP1 = Object.prototype.hasOwnProperty.call(data, 'p1');
                         var hasP2 = Object.prototype.hasOwnProperty.call(data, 'p2');
@@ -5480,16 +6717,16 @@
                             var migrated = v1RoomDataToV2MergePayload(data);
                             migrated[seatKey] = uid;
                             transaction.set(ref, migrated, { merge: true });
-                            return;
+                            return chosenSeat;
                         }
                         var claim = { v: 2 };
                         claim[seatKey] = uid;
                         transaction.set(ref, claim, { merge: true });
+                        return chosenSeat;
                     });
-                }).then(function () {
+                }).then(function (chosenSeat) {
                     localMultiplayerSeat = chosenSeat;
                     applyMultiplayerSeatUi();
-                    setSeatRadiosDisabled(true);
                     resetFirestoreSliceCache();
                     firebaseMultiplayerDbRef = ref;
                     if (firebaseMultiplayerUnsub) {
@@ -5512,15 +6749,16 @@
                         enqueueFirestoreRemoteApply(dat);
                     });
                     setConnUi(true);
+                    cpUpdateRoomUrl(rid);
+                    cpUpdateCopyRoomLinkUi();
                     if (statusEl) statusEl.textContent = 'Room “' + rid + '” — you are P' + chosenSeat + ' · live sync';
                     scheduleMultiplayerPush();
                 }).catch(function (err) {
                     firebaseMultiplayerDbRef = null;
                     localMultiplayerSeat = null;
                     applyMultiplayerSeatUi();
-                    setSeatRadiosDisabled(false);
-                    if (err && err.code === 'SEAT_TAKEN') {
-                        var sm = err.message || 'That seat is taken. Pick the other player or another room.';
+                    if (err && (err.code === 'ROOM_FULL' || err.code === 'SEAT_TAKEN')) {
+                        var sm = err.message || 'This room is full (2 players). Try another room or wait for someone to leave.';
                         if (statusEl) statusEl.textContent = sm;
                         setStatus(sm);
                         return;
@@ -5545,6 +6783,9 @@
                 setStatus('Library: ' + library.length + ' from cache + ' + imported.length + ' imported.');
                 warmCardFaceUrlCacheIdle();
                 updateAllTreasureZoneBadges();
+                updateAllDiscardZoneBadges();
+                updateAllHandZoneBadges();
+                cpUpdateOnboarding();
             })
             .catch(function () {
                 clearCardFaceUrlCache();
@@ -5554,6 +6795,9 @@
                 renderLibraryList();
                 restoreCommanderFromLibrary();
                 updateAllTreasureZoneBadges();
+                updateAllDiscardZoneBadges();
+                updateAllHandZoneBadges();
+                cpUpdateOnboarding();
             });
     }
 
@@ -6253,6 +7497,12 @@
 
     document.addEventListener('keydown', function (e) {
         if (e.key !== 'Escape') return;
+        var drawNM = document.getElementById('cpDrawNModal');
+        if (drawNM && drawNM.classList.contains('is-open')) {
+            closeDrawNModal();
+            e.preventDefault();
+            return;
+        }
         var cmdM = document.getElementById('cpCommanderModal');
         if (cmdM && cmdM.classList.contains('is-open')) {
             closeCommanderModal();
@@ -6295,10 +7545,34 @@
     }
     var cpDrawNBtn = document.getElementById('cpDrawN');
     if (cpDrawNBtn) {
-        cpDrawNBtn.addEventListener('click', function () {
-            var raw = window.prompt('Draw how many cards to hand?', '1');
-            if (raw == null) return;
-            drawNToHand(activePlayBoard(), parseInt(raw, 10));
+        cpDrawNBtn.addEventListener('click', openDrawNModal);
+    }
+    var cpDrawNConfirm = document.getElementById('cpDrawNConfirm');
+    if (cpDrawNConfirm) {
+        cpDrawNConfirm.addEventListener('click', function () {
+            var inp = document.getElementById('cpDrawNInput');
+            var n = inp ? parseInt(inp.value, 10) : 1;
+            closeDrawNModal();
+            drawNToHand(activePlayBoard(), n);
+        });
+    }
+    var cpDrawNCancel = document.getElementById('cpDrawNCancel');
+    if (cpDrawNCancel) cpDrawNCancel.addEventListener('click', closeDrawNModal);
+    var cpDrawNModalClose = document.getElementById('cpDrawNModalClose');
+    if (cpDrawNModalClose) cpDrawNModalClose.addEventListener('click', closeDrawNModal);
+    var cpDrawNModalBackdrop = document.getElementById('cpDrawNModalBackdrop');
+    if (cpDrawNModalBackdrop) cpDrawNModalBackdrop.addEventListener('click', closeDrawNModal);
+    var cpDrawNMinus = document.getElementById('cpDrawNMinus');
+    if (cpDrawNMinus) cpDrawNMinus.addEventListener('click', function () { cpAdjustDrawNInput(-1); });
+    var cpDrawNPlus = document.getElementById('cpDrawNPlus');
+    if (cpDrawNPlus) cpDrawNPlus.addEventListener('click', function () { cpAdjustDrawNInput(1); });
+    var cpDrawNInput = document.getElementById('cpDrawNInput');
+    if (cpDrawNInput) {
+        cpDrawNInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                cpDrawNConfirm && cpDrawNConfirm.click();
+            }
         });
     }
     var cpUntapAllBtn = document.getElementById('cpUntapAll');
@@ -6355,6 +7629,7 @@
             restoreCommanderFromLibrary();
             setStatus('Imported ' + added + ' file(s). Total library: ' + allCards().length + '.');
             if (added > 0) warmCardFaceUrlCacheIdle();
+            cpUpdateOnboarding();
             scheduleMultiplayerPush();
         });
     });
@@ -6403,6 +7678,14 @@
         unexhaustAllTreasuresOnBoard(treasureModalBoard);
         rebuildTreasureModalContent();
     });
+    document.getElementById('cpTreasureUseOne').addEventListener('click', function () {
+        if (!treasureModalBoard) return;
+        if (!useOneReadyTreasure(treasureModalBoard)) {
+            setStatus('No ready treasures to use.');
+            return;
+        }
+        rebuildTreasureModalContent();
+    });
 
     document.getElementById('cpCommanderApply').addEventListener('click', function () {
         var sel = document.getElementById('cpCommanderSelect');
@@ -6442,6 +7725,9 @@
     attachTreasureZoneContextMenu(boardP2);
     attachTreasurePileFieldContextMenu(boardP1);
     attachTreasurePileFieldContextMenu(boardP2);
+    updateAllTreasureZoneBadges();
+    updateAllDiscardZoneBadges();
+    updateAllHandZoneBadges();
     refreshLibrary().then(function () {
         startCardLibraryDriveAutoSync();
         requestSyncLibraryCardsFromDrive();
@@ -6450,6 +7736,57 @@
         requestSyncLibraryCardsFromDrive();
     });
     initCardPlayerFirebaseMultiplayer();
+
+    cpLoadSfxMuted();
+    cpUpdateSfxToggleUi();
+    cpInitRoomFromUrl();
+    cpUpdateCopyRoomLinkUi();
+
+    var cpSfxToggleBtn = document.getElementById('cpSfxToggle');
+    if (cpSfxToggleBtn) {
+        cpSfxToggleBtn.addEventListener('click', function () {
+            cpSetSfxMuted(!cpSfxMuted);
+        });
+    }
+    var cpCopyRoomLinkBtn = document.getElementById('cpCopyRoomLink');
+    if (cpCopyRoomLinkBtn) cpCopyRoomLinkBtn.addEventListener('click', cpCopyRoomLink);
+    var cpRoomIdInp = document.getElementById('cpRoomId');
+    if (cpRoomIdInp) {
+        cpRoomIdInp.addEventListener('input', cpUpdateCopyRoomLinkUi);
+        cpRoomIdInp.addEventListener('change', cpUpdateCopyRoomLinkUi);
+    }
+    var cpOnboardImport = document.getElementById('cpOnboardImport');
+    if (cpOnboardImport) {
+        cpOnboardImport.addEventListener('click', function () {
+            cpDismissOnboarding(false);
+            document.getElementById('cpImportBtn') && document.getElementById('cpImportBtn').click();
+        });
+    }
+    var cpOnboardQuickDeck = document.getElementById('cpOnboardQuickDeck');
+    if (cpOnboardQuickDeck) {
+        cpOnboardQuickDeck.addEventListener('click', function () {
+            cpDismissOnboarding(false);
+            document.getElementById('cpOpenDeckModal') && document.getElementById('cpOpenDeckModal').click();
+        });
+    }
+    var cpOnboardUseAll = document.getElementById('cpOnboardUseAll');
+    if (cpOnboardUseAll) {
+        cpOnboardUseAll.addEventListener('click', function () {
+            useAllAsDeck();
+            cpUpdateOnboarding();
+        });
+    }
+    var cpOnboardDraw7 = document.getElementById('cpOnboardDraw7');
+    if (cpOnboardDraw7) {
+        cpOnboardDraw7.addEventListener('click', function () {
+            cpDismissOnboarding(true);
+            drawNToHand(activePlayBoard(), 7);
+        });
+    }
+    var cpOnboardDismiss = document.getElementById('cpOnboardDismiss');
+    if (cpOnboardDismiss) cpOnboardDismiss.addEventListener('click', function () { cpDismissOnboarding(true); });
+
+    cpUpdateOnboarding();
 })();
     </script>
 </body>
