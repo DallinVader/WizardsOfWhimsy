@@ -3306,7 +3306,7 @@
             spmCardGrid.innerHTML = items.map(function (p) {
                 var nameShort = displaySaveLabel(p.file.name);
                 var cardTitle = cardListTitle(p) || nameShort || '(untitled)';
-                var openHref = 'index.html?openDriveFile=' + encodeURIComponent(p.file.id);
+                var openHref = 'editor.html?openDriveFile=' + encodeURIComponent(p.file.id);
                 var chk = selectedProjectIds.has(p.file.id) ? 'checked' : '';
                 var isDup = !p._loading && (dupSets.dupTitle.has(p.file.id) || dupSets.dupNum.has(p.file.id));
                 var classes = 'spm-card';

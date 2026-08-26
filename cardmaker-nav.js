@@ -6,7 +6,7 @@
     'use strict';
 
     var PAGES = [
-        { id: 'editor', href: 'index.html', label: 'Card Maker' },
+        { id: 'editor', href: 'editor.html', label: 'Card Maker' },
         { id: 'saved', href: 'saved-projects.html', label: 'Saved cards' },
         { id: 'deck', href: 'deck-builder.html', label: 'Deck builder' },
         { id: 'play', href: 'card-player.html', label: 'Play cards' },
@@ -14,7 +14,7 @@
     ];
 
     function pageIdFromLocation() {
-        var path = (window.location.pathname || '').split('/').pop() || 'index.html';
+        var path = (window.location.pathname || '').split('/').pop() || 'editor.html';
         if (!path || path === '/') return 'editor';
         var i;
         for (i = 0; i < PAGES.length; i++) {
@@ -46,7 +46,7 @@
         return (
             '<header class="cm-app-nav" id="cmAppNav" role="banner">' +
                 '<div class="cm-app-nav-inner">' +
-                    '<a class="cm-app-nav-brand" href="index.html">Card Maker</a>' +
+                    '<a class="cm-app-nav-brand" href="index.html">Wizards of Whimsy</a>' +
                     '<span class="cm-app-nav-spacer" aria-hidden="true"></span>' +
                     '<nav class="cm-app-nav-links" aria-label="App sections">' + links + '</nav>' +
                     '<label class="cm-app-nav-jump">' +
