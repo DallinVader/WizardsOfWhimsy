@@ -1,0 +1,907 @@
+/* Card stack gallery — landing + pack reveal */
+:root {
+    --wcs-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --wcs-amber: #e6a23c;
+    --wcs-amber-hot: #f0c06a;
+    --wcs-violet-glow: #9b7ad4;
+    --wcs-parchment: #e8f0eb;
+}
+
+.wow-gallery-stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(1.5rem, 8vw, 3.5rem);
+    overflow: visible;
+}
+
+.wow-gallery-nav {
+    position: relative;
+    z-index: 20;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(220, 232, 225, 0.22);
+    border-radius: 10px;
+    background: rgba(6, 22, 20, 0.55);
+    color: var(--wcs-parchment);
+    font-size: 1.65rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.25s var(--wcs-ease-out);
+}
+
+.wow-gallery-nav:hover:not(:disabled) {
+    background: rgba(230, 162, 60, 0.15);
+    border-color: rgba(230, 162, 60, 0.45);
+    transform: translateY(-1px);
+}
+
+.wow-gallery-nav:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.wow-gallery-nav.is-sparkle {
+    animation: wcs-nav-wiggle 0.42s var(--wcs-ease-out);
+    border-color: rgba(196, 168, 255, 0.55);
+    box-shadow: 0 0 22px rgba(155, 122, 212, 0.25);
+}
+
+@keyframes wcs-nav-wiggle {
+    0% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(-8deg) scale(1.06); }
+    50% { transform: rotate(7deg) scale(1.04); }
+    75% { transform: rotate(-3deg) scale(1.02); }
+    100% { transform: rotate(0deg) scale(1); }
+}
+
+.wow-card-stack {
+    position: relative;
+    flex: 0 1 auto;
+    width: min(100%, 300px);
+    aspect-ratio: 5 / 7;
+    perspective: 1300px;
+    touch-action: none;
+    cursor: grab;
+    user-select: none;
+    overflow: visible;
+}
+
+.wow-pack-modal .wow-card-stack {
+    width: min(72vw, 320px);
+}
+
+.wow-card-stack.is-dragging {
+    cursor: grabbing;
+}
+
+.wow-card-stack.is-dragging-left::after,
+.wow-card-stack.is-dragging-right::after {
+    content: '';
+    position: absolute;
+    top: 8%;
+    bottom: 8%;
+    width: 38%;
+    pointer-events: none;
+    z-index: 14;
+    opacity: 0.85;
+    animation: wcs-drag-glow 0.45s ease-in-out infinite alternate;
+}
+
+.wow-card-stack.is-dragging-left::after {
+    left: -12%;
+    background: radial-gradient(ellipse at 100% 50%, rgba(196, 168, 255, 0.35), transparent 68%);
+}
+
+.wow-card-stack.is-dragging-right::after {
+    right: -12%;
+    background: radial-gradient(ellipse at 0% 50%, rgba(240, 192, 106, 0.32), transparent 68%);
+}
+
+@keyframes wcs-drag-glow {
+    0% { opacity: 0.45; }
+    100% { opacity: 0.95; }
+}
+
+.wow-dust-layer {
+    position: absolute;
+    inset: -18%;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 30;
+}
+
+.wow-dust {
+    position: absolute;
+    width: var(--ds, 4px);
+    height: var(--ds, 4px);
+    border-radius: 50%;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+    pointer-events: none;
+}
+
+.wow-dust--gold {
+    background: radial-gradient(circle at 32% 32%, #fff 0%, #ffe8a8 42%, rgba(240, 192, 106, 0.25) 72%, transparent 100%);
+    box-shadow: 0 0 7px 2px rgba(240, 192, 106, 0.65);
+}
+
+.wow-dust--violet {
+    background: radial-gradient(circle at 32% 32%, #fff 0%, #ddd0ff 44%, rgba(196, 168, 255, 0.22) 72%, transparent 100%);
+    box-shadow: 0 0 7px 2px rgba(196, 168, 255, 0.55);
+}
+
+.wow-dust--bright {
+    box-shadow: 0 0 5px 2px rgba(255, 248, 230, 0.85), 0 0 14px 3px rgba(240, 192, 106, 0.5);
+}
+
+.wow-dust.is-falling {
+    animation: wcs-dust-fall var(--dur, 0.85s) cubic-bezier(0.22, 0.85, 0.35, 1) forwards;
+}
+
+@keyframes wcs-dust-fall {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.35); }
+    10% { opacity: 1; transform: translate(calc(-50% + var(--sx) * 0.06), calc(-50% + var(--sy) * 0.04)) scale(1.1); }
+    100% { opacity: 0; transform: translate(calc(-50% + var(--sx)), calc(-50% + var(--sy))) scale(0.1); }
+}
+
+.wow-stack-card {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    transition: transform 0.48s var(--wcs-ease-out), filter 0.48s ease, opacity 0.48s ease;
+    pointer-events: none;
+}
+
+.wow-stack-card.is-active {
+    z-index: 12;
+    filter: brightness(1) saturate(1);
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    pointer-events: auto;
+}
+
+.wow-stack-card.is-left {
+    z-index: 8;
+    filter: brightness(0.36) saturate(0.8);
+    opacity: 0.9;
+    transform: translate3d(-22%, 3%, -50px) scale(0.89) rotateY(13deg);
+}
+
+.wow-stack-card.is-right {
+    z-index: 8;
+    filter: brightness(0.36) saturate(0.8);
+    opacity: 0.9;
+    transform: translate3d(22%, 3%, -50px) scale(0.89) rotateY(-13deg);
+}
+
+.wow-stack-card.is-back {
+    z-index: 4;
+    filter: brightness(0.2) saturate(0.65);
+    opacity: 0.45;
+    transform: translate3d(0, 5%, -90px) scale(0.84);
+}
+
+.wow-stack-card.is-grabbing .wow-card-tilt-inner img {
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(230, 162, 60, 0.35), 0 0 36px rgba(155, 122, 212, 0.28);
+}
+
+.wow-stack-card.is-arriving .wow-card-tilt-inner {
+    animation: wcs-card-arrive 0.58s var(--wcs-ease-out);
+}
+
+@keyframes wcs-card-arrive {
+    0% { transform: scale(0.9) rotate(-2.5deg); }
+    55% { transform: scale(1.05) rotate(1.2deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+.wow-card-tilt-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.12s var(--wcs-ease-out);
+}
+
+.wow-card-tilt-inner img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 3.5% / 2.5%;
+    background: rgba(4, 16, 14, 0.65);
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(230, 162, 60, 0.2);
+    user-select: none;
+    pointer-events: none;
+}
+
+.wow-stack-card.is-active.wow-stack-rarity--Rare .wow-card-tilt-inner img,
+.wow-stack-card.is-active.wow-stack-rarity--Epic .wow-card-tilt-inner img,
+.wow-stack-card.is-active.wow-stack-rarity--Legendary .wow-card-tilt-inner img,
+.wow-stack-card.is-active.wow-stack-rarity--Mythic .wow-card-tilt-inner img,
+.wow-stack-card.is-active.wow-stack-rarity--Fantastical .wow-card-tilt-inner img {
+    box-shadow:
+        0 28px 70px rgba(0, 0, 0, 0.55),
+        0 0 0 1px rgba(230, 162, 60, 0.35),
+        0 0 42px rgba(155, 122, 212, 0.35);
+}
+
+.wow-stack-card.is-active.wow-stack-rarity--Legendary .wow-card-tilt-inner img,
+.wow-stack-card.is-active.wow-stack-rarity--Mythic .wow-card-tilt-inner img,
+.wow-stack-card.is-active.wow-stack-rarity--Fantastical .wow-card-tilt-inner img {
+    box-shadow:
+        0 28px 70px rgba(0, 0, 0, 0.55),
+        0 0 0 1px rgba(240, 192, 106, 0.55),
+        0 0 52px rgba(240, 192, 106, 0.45);
+}
+
+.wow-card-shine {
+    position: absolute;
+    inset: 0;
+    border-radius: 3.5% / 2.5%;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    mix-blend-mode: soft-light;
+}
+
+.wow-stack-card.is-tilting .wow-card-shine {
+    opacity: 1;
+}
+
+.wow-gallery-meta {
+    text-align: center;
+    margin-top: 1.5rem;
+}
+
+.wow-gallery-name {
+    margin: 0 0 0.35rem;
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: clamp(1.2rem, 3vw, 1.55rem);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: #f4faf6;
+}
+
+.wow-gallery-name.is-pop {
+    animation: wcs-name-pop 0.48s var(--wcs-ease-out);
+}
+
+@keyframes wcs-name-pop {
+    0% { transform: scale(1); }
+    35% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+}
+
+.wow-gallery-sub {
+    margin: 0 0 0.65rem;
+    font-size: 0.95rem;
+    color: rgba(220, 232, 225, 0.62);
+}
+
+.wow-gallery-sub.wow-stack-rarity--Rare { color: #93c5fd; }
+.wow-gallery-sub.wow-stack-rarity--Epic { color: #c4b5fd; }
+.wow-gallery-sub.wow-stack-rarity--Legendary { color: #fbbf24; }
+.wow-gallery-sub.wow-stack-rarity--Mythic { color: #f87171; }
+.wow-gallery-sub.wow-stack-rarity--Fantastical { color: #34d399; }
+
+.wow-gallery-counter {
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 650;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(230, 162, 60, 0.75);
+    font-variant-numeric: tabular-nums;
+}
+
+.wow-gallery-thumbs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.65rem;
+    margin-top: 1.25rem;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.wow-gallery-thumb {
+    appearance: none;
+    padding: 0;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    background: rgba(6, 22, 20, 0.5);
+    cursor: pointer;
+    width: 52px;
+    aspect-ratio: 5 / 7;
+    overflow: hidden;
+    opacity: 0.65;
+    transition: opacity 0.2s ease, border-color 0.2s ease, transform 0.25s var(--wcs-ease-out);
+}
+
+.wow-gallery-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.wow-gallery-thumb:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+.wow-gallery-thumb.is-active {
+    opacity: 1;
+    border-color: var(--wcs-amber);
+    box-shadow: 0 8px 20px rgba(230, 162, 60, 0.2);
+}
+
+.wow-pack-modal .wow-pack-modal-panel {
+    max-width: min(920px, 100%);
+}
+
+.wow-pack-reveal-peel,
+.wow-pack-summary {
+    background:
+        radial-gradient(ellipse 70% 50% at 50% 0%, rgba(155, 122, 212, 0.14), transparent 55%),
+        radial-gradient(ellipse 50% 40% at 80% 100%, rgba(230, 162, 60, 0.1), transparent 50%);
+    border-radius: 12px;
+    padding: 8px 4px 4px;
+    overflow: hidden;
+}
+
+.wow-pack-reveal-kicker {
+    margin: 0 0 1rem;
+    text-align: center;
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--wcs-violet-glow);
+}
+
+.wow-pack-reveal-kicker::before {
+    content: '✦ ';
+    color: var(--wcs-amber-hot);
+}
+
+.wow-pack-reveal-best {
+    display: none;
+    margin: 0.35rem 0 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--wcs-amber-hot);
+    animation: wcs-best-pulse 1.2s ease-in-out infinite alternate;
+}
+
+.wow-pack-reveal-best.is-show {
+    display: block;
+}
+
+@keyframes wcs-best-pulse {
+    0% { opacity: 0.75; transform: scale(1); }
+    100% { opacity: 1; transform: scale(1.03); }
+}
+
+.wow-pack-reveal-hint {
+    margin: 1rem 0 0;
+    text-align: center;
+    font-size: 12px;
+    color: #94a3b8;
+    line-height: 1.45;
+}
+
+.wow-pack-modal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+.wow-pack-modal-actions .wow-account-btn--ghost {
+    margin-right: auto;
+}
+
+.wow-account-btn--ghost {
+    background: transparent;
+    border-color: rgba(148, 163, 184, 0.35);
+    color: #cbd5e1;
+}
+
+/* Pack peel — swipe top card away (not carousel) */
+.wow-pack-reveal-stage {
+    display: flex;
+    justify-content: center;
+    padding: 0.5rem 0 0.25rem;
+    overflow: hidden;
+}
+
+.wow-peel-stack {
+    position: relative;
+    width: min(72vw, 320px);
+    aspect-ratio: 5 / 7;
+    touch-action: none;
+    cursor: grab;
+    user-select: none;
+    overflow: hidden;
+    contain: layout style paint;
+    perspective: 1100px;
+    perspective-origin: 50% 42%;
+}
+
+.wow-peel-stack.is-dragging {
+    cursor: grabbing;
+}
+
+.wow-peel-stack.is-finished {
+    cursor: default;
+}
+
+.wow-peel-card {
+    position: absolute;
+    inset: 0;
+    border-radius: 3.5% / 2.5%;
+    overflow: visible;
+    transform-origin: center center;
+    will-change: auto;
+    pointer-events: none;
+    box-shadow: none;
+}
+
+.wow-peel-flip {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    filter: drop-shadow(0 12px 32px rgba(0, 0, 0, 0.4));
+}
+
+.wow-peel-flip-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    border-radius: inherit;
+    transition: transform 0.58s cubic-bezier(0.22, 1, 0.36, 1);
+    transform: rotateY(0deg);
+}
+
+.wow-peel-flip-inner.is-flipped {
+    transform: rotateY(180deg);
+}
+
+.wow-peel-card.is-top.is-revealing .wow-peel-flip-inner {
+    transition: transform 0.58s cubic-bezier(0.34, 1.35, 0.48, 1);
+}
+
+.wow-peel-card.is-top.is-revealing {
+    animation: wcs-flip-lift 0.58s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes wcs-flip-lift {
+    0% { transform: translateY(0) scale(1); }
+    35% { transform: translateY(-10px) scale(1.03); }
+    100% { transform: translateY(0) scale(1); }
+}
+
+.wow-peel-face {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(230, 162, 60, 0.18);
+}
+
+.wow-peel-face--back {
+    transform: rotateY(0deg);
+}
+
+.wow-peel-face--front {
+    transform: rotateY(180deg);
+}
+
+.wow-peel-face--front .wow-peel-new {
+    position: absolute;
+    top: 8%;
+    right: 6%;
+    z-index: 4;
+}
+
+.wow-peel-face img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    background: rgba(4, 16, 14, 0.65);
+    pointer-events: none;
+    user-select: none;
+}
+
+.wow-peel-face--back img {
+    object-fit: cover;
+}
+
+.wow-peel-card.is-top.is-revealing .wow-peel-face--front img {
+    animation: wcs-face-shine 0.58s ease 0.28s;
+}
+
+@keyframes wcs-face-shine {
+    0% { filter: brightness(1); }
+    45% { filter: brightness(1.35); }
+    100% { filter: brightness(1); }
+}
+
+.wow-pack-reveal-peel .wow-gallery-meta {
+    margin-top: 1rem;
+}
+
+.wow-peel-card.is-top {
+    z-index: 12;
+    pointer-events: auto;
+}
+
+.wow-peel-card.is-grabbing {
+    will-change: transform;
+}
+
+.wow-peel-card.is-snapping {
+    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.wow-peel-card--depth-1 {
+    z-index: 9;
+    transform: translate3d(0, 10px, 0) scale(0.96);
+    opacity: 0.88;
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease;
+    pointer-events: none;
+}
+
+.wow-peel-card--depth-2 {
+    z-index: 6;
+    transform: translate3d(0, 20px, 0) scale(0.92);
+    opacity: 0.72;
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease;
+    pointer-events: none;
+}
+
+.wow-peel-card.is-top.is-grabbing {
+    transition: none;
+}
+
+.wow-peel-stack.is-peeling .wow-peel-card--depth-1 {
+    transform: translate3d(0, 4px, 0) scale(0.98);
+    opacity: 0.95;
+}
+
+.wow-peel-stack.is-peeling .wow-peel-card--depth-2 {
+    transform: translate3d(0, 12px, 0) scale(0.94);
+    opacity: 0.82;
+}
+
+.wow-peel-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    background: rgba(4, 16, 14, 0.65);
+    pointer-events: none;
+    user-select: none;
+}
+
+.wow-peel-card.is-top:not(:has(.wow-peel-flip)) {
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(230, 162, 60, 0.18);
+    overflow: hidden;
+}
+
+.wow-peel-card.is-top.wow-stack-rarity--Rare .wow-peel-flip,
+.wow-peel-card.is-top.wow-stack-rarity--Epic .wow-peel-flip,
+.wow-peel-card.is-top.wow-stack-rarity--Legendary .wow-peel-flip,
+.wow-peel-card.is-top.wow-stack-rarity--Mythic .wow-peel-flip,
+.wow-peel-card.is-top.wow-stack-rarity--Fantastical .wow-peel-flip {
+    filter: drop-shadow(0 20px 50px rgba(0, 0, 0, 0.45)) drop-shadow(0 0 36px rgba(155, 122, 212, 0.28));
+}
+
+.wow-peel-card.is-top.wow-stack-rarity--Legendary .wow-peel-flip,
+.wow-peel-card.is-top.wow-stack-rarity--Mythic .wow-peel-flip,
+.wow-peel-card.is-top.wow-stack-rarity--Fantastical .wow-peel-flip {
+    filter: drop-shadow(0 20px 50px rgba(0, 0, 0, 0.45)) drop-shadow(0 0 44px rgba(240, 192, 106, 0.35));
+}
+
+.wow-pack-reveal-body .wow-gallery-meta {
+    margin-top: 1rem;
+}
+
+.wow-peel-stack:focus {
+    outline: 2px solid rgba(230, 162, 60, 0.55);
+    outline-offset: 4px;
+}
+
+.wow-peel-stack.is-opening {
+    animation: wcs-pack-open 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+}
+
+@keyframes wcs-pack-open {
+    0% { transform: scale(0.88) rotate(-2deg); }
+    35% { transform: scale(1.04) rotate(1.5deg); }
+    65% { transform: scale(0.98) rotate(-0.5deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+.wow-peel-stack.is-rarity-flash {
+    animation: wcs-rarity-flash 0.55s ease;
+}
+
+.wow-peel-stack.is-rarity-flash--epic {
+    animation: wcs-epic-flash 0.65s ease;
+}
+
+.wow-peel-stack.is-finale-flash {
+    animation: wcs-finale-flash 0.9s ease;
+}
+
+@keyframes wcs-rarity-flash {
+    0%, 100% { filter: none; }
+    40% { filter: drop-shadow(0 0 18px rgba(147, 197, 253, 0.55)); }
+}
+
+@keyframes wcs-epic-flash {
+    0%, 100% { filter: none; }
+    45% { filter: drop-shadow(0 0 24px rgba(196, 181, 253, 0.65)); }
+}
+
+@keyframes wcs-finale-flash {
+    0%, 100% { filter: none; }
+    30% { filter: drop-shadow(0 0 28px rgba(251, 191, 36, 0.75)); }
+    60% { filter: drop-shadow(0 0 20px rgba(240, 192, 106, 0.5)); }
+}
+
+.wow-peel-new {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #0f172a;
+    background: linear-gradient(135deg, #fde68a, #fbbf24);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+    animation: wcs-new-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.wow-pack-reveal-new-tag {
+    display: inline-block;
+    margin: 0 0 0.35rem;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #0f172a;
+    background: linear-gradient(135deg, #fde68a, #fbbf24);
+    box-shadow: 0 4px 14px rgba(251, 191, 36, 0.35);
+    animation: wcs-new-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.wow-pack-reveal-new-tag[hidden] {
+    display: none;
+}
+
+@keyframes wcs-new-pop {
+    0% { opacity: 0; transform: scale(0.75); }
+    60% { opacity: 1; transform: scale(1.08); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.wow-peel-card.is-back-face img {
+    object-fit: cover;
+}
+
+.wow-pack-progress {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 0.85rem;
+    padding: 0 8px;
+}
+
+.wow-pack-progress-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(148, 163, 184, 0.35);
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.wow-pack-progress-dot.is-done {
+    background: rgba(230, 162, 60, 0.55);
+}
+
+.wow-pack-progress-dot.is-current {
+    background: var(--wcs-amber-hot);
+    transform: scale(1.25);
+    box-shadow: 0 0 8px rgba(240, 192, 106, 0.55);
+}
+
+.wow-pack-reveal-toolbar {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 0.75rem;
+}
+
+.wow-pack-sound-btn,
+.wow-pack-reveal-all-btn {
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: rgba(15, 23, 42, 0.65);
+    color: #cbd5e1;
+    cursor: pointer;
+}
+
+.wow-pack-sound-btn:hover,
+.wow-pack-reveal-all-btn:hover {
+    border-color: rgba(230, 162, 60, 0.45);
+    color: #f8fafc;
+}
+
+.wow-pack-reveal-all-btn {
+    border-color: rgba(196, 168, 255, 0.35);
+    color: #ddd6fe;
+}
+
+.wow-pack-summary {
+    padding: 12px 8px 8px;
+}
+
+.wow-pack-summary-title {
+    margin: 0 0 4px;
+    text-align: center;
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 1.15rem;
+    color: #f8fafc;
+}
+
+.wow-pack-summary-sub {
+    margin: 0 0 14px;
+    text-align: center;
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+.wow-pack-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+    gap: 10px;
+    max-height: min(36vh, 280px);
+    overflow: hidden;
+    padding: 4px;
+}
+
+.wow-pack-summary-card {
+    position: relative;
+    text-align: center;
+}
+
+.wow-pack-summary-art {
+    position: relative;
+    aspect-ratio: 5 / 7;
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(4, 16, 14, 0.65);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.wow-pack-summary-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.wow-pack-summary-placeholder {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    font-size: 1.5rem;
+}
+
+.wow-pack-summary-new {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #0f172a;
+    background: #fbbf24;
+}
+
+.wow-pack-summary-name {
+    margin: 6px 0 2px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #e2e8f0;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wow-pack-summary-rarity {
+    margin: 0;
+    font-size: 9px;
+    color: #94a3b8;
+    text-transform: capitalize;
+}
+
+.wow-pack-summary-num {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    color: #0f172a;
+    background: rgba(230, 162, 60, 0.9);
+}
+
+.wow-pack-summary-card.wow-stack-rarity--Rare .wow-pack-summary-art {
+    border-color: rgba(147, 197, 253, 0.45);
+}
+
+.wow-pack-summary-card.wow-stack-rarity--Epic .wow-pack-summary-art {
+    border-color: rgba(196, 181, 253, 0.5);
+}
+
+.wow-pack-summary-card.wow-stack-rarity--Legendary .wow-pack-summary-art,
+.wow-pack-summary-card.wow-stack-rarity--Mythic .wow-pack-summary-art,
+.wow-pack-summary-card.wow-stack-rarity--Fantastical .wow-pack-summary-art {
+    border-color: rgba(251, 191, 36, 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wow-peel-stack.is-opening,
+    .wow-peel-stack.is-rarity-flash,
+    .wow-peel-stack.is-rarity-flash--epic,
+    .wow-peel-stack.is-finale-flash {
+        animation: none;
+    }
+
+    .wow-peel-card--depth-1,
+    .wow-peel-card--depth-2 {
+        transition: none;
+    }
+
+    .wow-peel-flip-inner {
+        transition: none;
+    }
+
+    .wow-peel-card.is-top.is-revealing {
+        animation: none;
+    }
+
+    .wow-peel-card.is-top.is-revealing .wow-peel-face--front img {
+        animation: none;
+    }
+}

@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,650;1,9..144,500&family=Outfit:wght@400;500;650&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="landing.css">
+    <link rel="stylesheet" href="css/landing.css">
 </head>
 <body class="wow-landing">
     <a class="wow-skip" href="#main">Skip to content</a>
@@ -38,7 +38,7 @@
                 <p class="wow-hero-support">Build a deck, grow your treasury, and strike until the rival commander falls — then brag about it with style.</p>
                 <div class="wow-cta-row">
                     <a class="wow-btn wow-btn-primary" href="#waitlist">Join the waitlist</a>
-                    <a class="wow-btn wow-btn-ghost" href="editor.html">Open Card Studio</a>
+                    <a class="wow-btn wow-btn-ghost" href="deck-builder.html">Build a deck</a>
                 </div>
             </div>
             <p class="wow-scroll-hint" aria-hidden="true">Scroll</p>
@@ -103,7 +103,7 @@
                     </div>
                     <div class="wow-gallery-thumbs" id="wowGalleryThumbs" role="tablist" aria-label="Choose a card"></div>
                 </div>
-                <p class="wow-gallery-empty" id="wowGalleryEmpty" hidden>No showcase cards yet — add PNG exports to <code>landing-cards.json</code>.</p>
+                <p class="wow-gallery-empty" id="wowGalleryEmpty" hidden>No showcase cards yet — add PNG exports to <code>assets/landing/landing-cards.json</code>.</p>
             </div>
         </section>
 
@@ -131,13 +131,14 @@
         <div class="wow-footer-inner">
             <p><strong>Wizards of Whimsy</strong> · Original fantasy TCG</p>
             <p>
-                <a href="editor.html">Card Studio</a>
+                <a href="deck-builder.html">Deck builder</a>
                 ·
-                <a href="card-player.html">Playtest table</a>
+                <a href="card-player.html">Play cards</a>
             </p>
         </div>
     </footer>
 
-    <script src="landing.js" defer></script>
+    <script src="js/wow-card-stack.js" defer></script>
+    <script src="js/landing.js" defer></script>
 </body>
 </html>

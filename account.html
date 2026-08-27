@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>My account – Wizards of Whimsy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/cardmaker-nav.css">
+    <link rel="stylesheet" href="wow/wow-auth.css">
+    <link rel="stylesheet" href="css/cardmaker-buttons.css">
+    <link rel="stylesheet" href="css/wow-card-stack.css">
+    <script src="wow/wow-auth-config.js"></script>
+    <script src="wow/wow-card-catalog.js"></script>
+    <script src="wow/wow-pack-open.js"></script>
+    <script src="js/wow-pack-reveal.js"></script>
+    <script src="wow/wow-auth.js"></script>
+    <script>WowAuth.gatePage();</script>
+    <script src="js/cardmaker-nav.js" defer></script>
+</head>
+<body class="wow-account-page">
+    <div class="wow-account-wrap">
+        <div class="wow-account-header">
+            <div>
+                <h1 id="wowAccountName">My account</h1>
+                <p class="wow-account-email" id="wowAccountEmail"></p>
+            </div>
+            <div class="wow-account-actions">
+                <button type="button" class="wow-account-btn wow-account-btn--danger" id="wowAdminResetCards" hidden title="Admin only: remove all owned cards from inventory">Reset all cards</button>
+                <button type="button" class="wow-account-btn" id="wowAccountRefresh">Refresh</button>
+            </div>
+        </div>
+
+        <div class="wow-account-stats">
+            <div class="wow-account-stat">
+                <span class="wow-account-stat-label">QuestCoins</span>
+                <span class="wow-account-stat-value" id="wowAccountCoins">—</span>
+            </div>
+            <div class="wow-account-stat">
+                <span class="wow-account-stat-label">Cards owned</span>
+                <span class="wow-account-stat-value wow-account-stat-value--count" id="wowAccountCardCount">—</span>
+            </div>
+            <div class="wow-account-stat">
+                <span class="wow-account-stat-label">In catalog</span>
+                <span class="wow-account-stat-value" id="wowAccountCatalogTotal">—</span>
+            </div>
+            <div class="wow-account-stat">
+                <span class="wow-account-stat-label">My items</span>
+                <span class="wow-account-stat-value wow-account-stat-value--items" id="wowAccountItemCount">—</span>
+            </div>
+        </div>
+
+        <section class="wow-account-section" aria-labelledby="wowAccountCollectionHeading">
+            <h2 id="wowAccountCollectionHeading">Collection</h2>
+
+            <div class="wow-account-tabs" role="tablist" aria-label="Collection type">
+                <button type="button" class="wow-account-tab is-active" id="wowTabCards" role="tab" aria-selected="true" aria-controls="wowPanelCards">Card catalog</button>
+                <button type="button" class="wow-account-tab" id="wowTabItems" role="tab" aria-selected="false" aria-controls="wowPanelItems">My items</button>
+            </div>
+
+            <p class="wow-account-status" id="wowAccountStatus" aria-live="polite">Loading your collection…</p>
+            <p class="wow-account-admin-hint" id="wowAccountAdminHint" hidden>Admin: use <strong>Remove</strong> on owned cards, or <strong>Reset all cards</strong> to clear your test inventory.</p>
+
+            <div class="wow-account-panel" id="wowPanelCards" role="tabpanel" aria-labelledby="wowTabCards">
+                <div class="wow-account-grid" id="wowAccountCardsGrid" hidden></div>
+                <div class="wow-account-empty" id="wowAccountCardsEmpty" hidden>
+                    No cards in the site catalog yet. As admin, export saves from Google Drive to <code>catalog/wow-card-catalog.json</code>.
+                </div>
+            </div>
+
+            <div class="wow-account-panel" id="wowPanelItems" role="tabpanel" aria-labelledby="wowTabItems" hidden>
+                <div class="wow-account-grid wow-account-grid--items" id="wowAccountItemsGrid" hidden></div>
+                <div class="wow-account-empty" id="wowAccountItemsEmpty" hidden>
+                    No Questline items in your inventory yet.
+                </div>
+            </div>
+        </section>
+
+        <section class="wow-account-section wow-account-shop" aria-labelledby="wowAccountShopHeading">
+            <h2 id="wowAccountShopHeading">Booster packs</h2>
+            <p class="wow-account-shop-note">Spend QuestCoins to open packs and add cards to your collection. Pack opening requires a Questline pack API — not live yet.</p>
+            <div class="wow-account-shop-grid">
+                <article class="wow-account-pack is-disabled" aria-disabled="true">
+                    <div class="wow-account-pack-art" aria-hidden="true">📦</div>
+                    <div class="wow-account-pack-body">
+                        <p class="wow-account-pack-name">Whimsy booster</p>
+                        <p class="wow-account-pack-meta">10 random cards · common–rare pool</p>
+                        <p class="wow-account-pack-price"><span id="wowPackPriceCoins">50</span> QuestCoins</p>
+                        <button type="button" class="wow-account-pack-btn" id="wowPackOpenBtn" disabled title="Pack API coming soon">Open pack</button>
+                        <button type="button" class="wow-account-pack-btn wow-account-pack-btn--test" id="wowPackTestOpenBtn" hidden title="Admin only: grant cards without spending QuestCoins">Test open pack</button>
+                        <p class="wow-account-pack-soon" id="wowPackSoonNote">Coming soon</p>
+                    </div>
+                </article>
+                <article class="wow-account-pack is-disabled" aria-disabled="true">
+                    <div class="wow-account-pack-art wow-account-pack-art--premium" aria-hidden="true">✨</div>
+                    <div class="wow-account-pack-body">
+                        <p class="wow-account-pack-name">Legendary pack</p>
+                        <p class="wow-account-pack-meta">3 cards · guaranteed rare+</p>
+                        <p class="wow-account-pack-price"><span>200</span> QuestCoins</p>
+                        <button type="button" class="wow-account-pack-btn" disabled title="Pack API coming soon">Open pack</button>
+                        <p class="wow-account-pack-soon">Coming soon</p>
+                    </div>
+                </article>
+            </div>
+        </section>
+    </div>
+
+    <div id="wowPackRevealModal" class="wow-pack-modal" aria-hidden="true">
+        <div class="wow-pack-modal-backdrop" data-wow-pack-close></div>
+        <div class="wow-pack-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="wowPackRevealTitle">
+            <div class="wow-pack-modal-panel">
+                <button type="button" class="wow-pack-modal-close" data-wow-pack-close aria-label="Close">&times;</button>
+                <h2 id="wowPackRevealTitle">Pack opened</h2>
+                <div class="wow-pack-reveal-peel" id="wowPackRevealPeel">
+                    <p class="wow-pack-reveal-kicker" id="wowPackRevealKicker">Building to your best pull…</p>
+                    <p class="wow-pack-modal-note" id="wowPackRevealNote"></p>
+                    <div class="wow-pack-reveal-stage">
+                        <div class="wow-peel-stack" id="wowPackRevealStack" tabindex="0" aria-label="Pack cards — swipe to reveal"></div>
+                    </div>
+                    <div class="wow-gallery-meta">
+                        <h3 class="wow-gallery-name" id="wowPackRevealName"></h3>
+                        <p class="wow-pack-reveal-new-tag" id="wowPackRevealNew" hidden>NEW</p>
+                        <p class="wow-gallery-sub" id="wowPackRevealSub"></p>
+                        <p class="wow-pack-reveal-best" id="wowPackRevealBest" aria-live="polite">✦ Best pull! ✦</p>
+                        <p class="wow-gallery-counter">
+                            <span id="wowPackRevealIndex">1</span> / <span id="wowPackRevealTotal">1</span>
+                        </p>
+                    </div>
+                    <div class="wow-pack-progress" id="wowPackRevealProgress" role="img" aria-label="Pack progress"></div>
+                    <p class="wow-pack-reveal-hint" id="wowPackRevealHint">Swipe the card away to reveal the next pull →</p>
+                    <div class="wow-pack-reveal-toolbar">
+                        <button type="button" class="wow-pack-sound-btn" id="wowPackSoundBtn" aria-pressed="false">Sound on</button>
+                        <button type="button" class="wow-pack-reveal-all-btn" id="wowPackRevealAll" hidden>Reveal all</button>
+                    </div>
+                </div>
+                <div class="wow-pack-summary" id="wowPackRevealSummary" hidden>
+                    <h3 class="wow-pack-summary-title">Pack complete</h3>
+                    <p class="wow-pack-summary-sub" id="wowPackSummarySub"></p>
+                    <div class="wow-pack-summary-grid" id="wowPackSummaryGrid"></div>
+                </div>
+                <div class="wow-pack-modal-actions">
+                    <button type="button" class="wow-account-btn wow-account-btn--ghost" id="wowPackRevealRestart">Start over</button>
+                    <button type="button" class="wow-account-btn" data-wow-pack-close>Done</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+(function () {
+    'use strict';
+
+    var nameEl = document.getElementById('wowAccountName');
+    var emailEl = document.getElementById('wowAccountEmail');
+    var coinsEl = document.getElementById('wowAccountCoins');
+    var cardCountEl = document.getElementById('wowAccountCardCount');
+    var catalogTotalEl = document.getElementById('wowAccountCatalogTotal');
+    var itemCountEl = document.getElementById('wowAccountItemCount');
+    var statusEl = document.getElementById('wowAccountStatus');
+    var cardsGridEl = document.getElementById('wowAccountCardsGrid');
+    var itemsGridEl = document.getElementById('wowAccountItemsGrid');
+    var cardsEmptyEl = document.getElementById('wowAccountCardsEmpty');
+    var itemsEmptyEl = document.getElementById('wowAccountItemsEmpty');
+    var refreshBtn = document.getElementById('wowAccountRefresh');
+    var tabCards = document.getElementById('wowTabCards');
+    var tabItems = document.getElementById('wowTabItems');
+    var panelCards = document.getElementById('wowPanelCards');
+    var panelItems = document.getElementById('wowPanelItems');
+    var packTestOpenBtn = document.getElementById('wowPackTestOpenBtn');
+    var packSoonNote = document.getElementById('wowPackSoonNote');
+    var packRevealModal = document.getElementById('wowPackRevealModal');
+    var packRevealNote = document.getElementById('wowPackRevealNote');
+    var packRevealTitle = document.getElementById('wowPackRevealTitle');
+    var packRevealKicker = document.getElementById('wowPackRevealKicker');
+    var packRevealBest = document.getElementById('wowPackRevealBest');
+    var packRevealRestart = document.getElementById('wowPackRevealRestart');
+    var packStackController = null;
+    var packFocusRelease = null;
+    var packRevealCards = [];
+    var packOwnedBefore = Object.create(null);
+    var adminHintEl = document.getElementById('wowAccountAdminHint');
+    var adminResetCardsBtn = document.getElementById('wowAdminResetCards');
+    var activeTab = 'cards';
+    var adminRemoveEnabled = false;
+    var NEW_CARDS_KEY = 'wow_new_card_ids_v1';
+
+    function cardInventoryId(card) {
+        if (!card) return '';
+        if (card.questlineItemId) return String(card.questlineItemId).trim();
+        if (card.itemId) return String(card.itemId).trim();
+        if (card.id) return String(card.id).trim();
+        return '';
+    }
+
+    function loadNewCardIds() {
+        try {
+            var raw = sessionStorage.getItem(NEW_CARDS_KEY);
+            var list = raw ? JSON.parse(raw) : [];
+            return Array.isArray(list) ? list : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function markNewCardsFromPack(stackCards) {
+        var ids = (stackCards || []).filter(function (c) { return c && c.isNew; }).map(cardInventoryId).filter(Boolean);
+        if (!ids.length) return;
+        var set = Object.create(null);
+        loadNewCardIds().forEach(function (id) { set[id] = true; });
+        ids.forEach(function (id) { set[id] = true; });
+        sessionStorage.setItem(NEW_CARDS_KEY, JSON.stringify(Object.keys(set)));
+    }
+
+    function isNewlyObtained(entry) {
+        var id = cardInventoryId(entry);
+        if (!id) return false;
+        return loadNewCardIds().indexOf(id) !== -1;
+    }
+
+    function escapeHtml(s) {
+        return String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function setStatus(msg, isError) {
+        statusEl.textContent = msg || '';
+        statusEl.classList.toggle('is-error', !!isError);
+    }
+
+    function rarityLabel(rarity) {
+        if (rarity === '' || rarity == null) return '';
+        var s = String(rarity).trim();
+        if (!s) return '';
+        return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+    }
+
+    function rarityClass(rarity) {
+        var label = rarityLabel(rarity);
+        return label ? 'wow-account-rarity--' + label : '';
+    }
+
+    function renderGrid(gridEl, emptyEl, entries, kind) {
+        if (!entries.length) {
+            gridEl.hidden = true;
+            gridEl.innerHTML = '';
+            emptyEl.hidden = false;
+            return;
+        }
+        emptyEl.hidden = true;
+        gridEl.hidden = false;
+        var placeholder = kind === 'card' ? '🃏' : '📦';
+        gridEl.innerHTML = entries.map(function (entry) {
+            var rarity = rarityLabel(entry.rarity);
+            var rarityCls = rarityClass(entry.rarity);
+            var artContent = entry.imageUrl
+                ? '<img src="' + escapeHtml(entry.imageUrl) + '" alt="" loading="lazy">'
+                : '<span class="wow-account-card-placeholder" aria-hidden="true">' + placeholder + '</span>';
+            var newBadge = (kind === 'card' && isNewlyObtained(entry))
+                ? '<span class="wow-account-card-new">NEW</span>'
+                : '';
+            var meta = [];
+            if (rarity) meta.push('<span class="' + rarityCls.trim() + '">' + escapeHtml(rarity) + '</span>');
+            if (entry.type) meta.push(escapeHtml(entry.type));
+            var qty = parseInt(entry.quantity, 10) || 0;
+            var qtyCls = 'wow-account-card-qty' + (qty > 0 ? ' is-owned' : ' is-unowned');
+            var qtyLabel = kind === 'card'
+                ? (qty > 0 ? 'Own ×' + qty : 'Not owned')
+                : (qty > 1 ? '×' + qty : '');
+            var cardCls = 'wow-account-card' + (kind === 'card' && !entry.owned ? ' wow-account-card--unowned' : '');
+            var invId = entry.questlineItemId
+                ? String(entry.questlineItemId).trim()
+                : (entry.owned && entry.itemId ? String(entry.itemId).trim() : '');
+            if (!invId && kind === 'item' && entry.itemId) {
+                invId = String(entry.itemId).trim();
+            }
+            var itemQty = kind === 'item' ? (parseInt(entry.quantity, 10) || 1) : qty;
+            var adminActions = '';
+            if (adminRemoveEnabled && qty > 0 && invId && kind === 'card') {
+                adminActions =
+                    '<div class="wow-account-card-admin">' +
+                        '<button type="button" class="wow-account-remove-btn" data-remove-id="' + escapeHtml(invId) + '" data-remove-qty="1" data-remove-name="' + escapeHtml(entry.name) + '">Remove 1</button>' +
+                        (qty > 1
+                            ? '<button type="button" class="wow-account-remove-btn wow-account-remove-btn--all" data-remove-id="' + escapeHtml(invId) + '" data-remove-qty="' + qty + '" data-remove-name="' + escapeHtml(entry.name) + '">Remove all</button>'
+                            : '') +
+                    '</div>';
+            } else if (adminRemoveEnabled && kind === 'item' && invId && itemQty > 0) {
+                adminActions =
+                    '<div class="wow-account-card-admin">' +
+                        '<button type="button" class="wow-account-remove-btn" data-remove-id="' + escapeHtml(invId) + '" data-remove-qty="1" data-remove-name="' + escapeHtml(entry.name) + '">Remove 1</button>' +
+                        (itemQty > 1
+                            ? '<button type="button" class="wow-account-remove-btn wow-account-remove-btn--all" data-remove-id="' + escapeHtml(invId) + '" data-remove-qty="' + itemQty + '" data-remove-name="' + escapeHtml(entry.name) + '">Remove all</button>'
+                            : '') +
+                    '</div>';
+            }
+            return (
+                '<article class="' + cardCls + '">' +
+                    '<div class="wow-account-card-art">' + artContent + newBadge + '</div>' +
+                    '<div class="wow-account-card-body">' +
+                        '<p class="wow-account-card-name">' + escapeHtml(entry.name) + '</p>' +
+                        (meta.length ? '<p class="wow-account-card-meta">' + meta.join(' · ') + '</p>' : '') +
+                        (kind === 'card' || qty > 1
+                            ? '<span class="' + qtyCls + '">' + escapeHtml(qtyLabel) + '</span>'
+                            : '') +
+                        adminActions +
+                    '</div>' +
+                '</article>'
+            );
+        }).join('');
+    }
+
+    function showTab(tab) {
+        activeTab = tab;
+        var cardsActive = tab === 'cards';
+        tabCards.classList.toggle('is-active', cardsActive);
+        tabItems.classList.toggle('is-active', !cardsActive);
+        tabCards.setAttribute('aria-selected', cardsActive ? 'true' : 'false');
+        tabItems.setAttribute('aria-selected', cardsActive ? 'false' : 'true');
+        panelCards.hidden = !cardsActive;
+        panelItems.hidden = cardsActive;
+    }
+
+    function isAdminUser() {
+        var session = WowAuth.getSession && WowAuth.getSession();
+        return !!(session && session.user && WowAuth.isAdmin(session.user));
+    }
+
+    function updatePackAdminUi() {
+        var admin = isAdminUser();
+        adminRemoveEnabled = admin;
+        if (packTestOpenBtn) {
+            packTestOpenBtn.hidden = !admin;
+        }
+        if (packSoonNote) {
+            packSoonNote.hidden = admin;
+        }
+        if (adminHintEl) {
+            adminHintEl.hidden = !admin;
+        }
+        if (adminResetCardsBtn) {
+            adminResetCardsBtn.hidden = !admin;
+        }
+    }
+
+    function handleResetAllCards() {
+        if (!isAdminUser()) return;
+        if (!WowAuth.clearOwnedCards) {
+            setStatus('Reset is not available.', true);
+            return;
+        }
+        if (!window.confirm(
+            'Remove ALL owned cards from your inventory? This clears every catalog card (and other card-type items) on your account.'
+        )) {
+            return;
+        }
+        if (adminResetCardsBtn) adminResetCardsBtn.disabled = true;
+        setStatus('Resetting card inventory…');
+        WowAuth.clearOwnedCards().then(function () {
+            try { sessionStorage.removeItem(NEW_CARDS_KEY); } catch (e) { /* ignore */ }
+            setStatus('All owned cards removed from inventory.');
+            return loadAccount();
+        }).catch(function (err) {
+            setStatus(err && err.message ? err.message : 'Could not reset inventory.', true);
+            return loadAccount();
+        }).finally(function () {
+            if (adminResetCardsBtn) adminResetCardsBtn.disabled = false;
+        });
+    }
+
+    function handleRemoveClick(btn) {
+        if (!isAdminUser() || !btn) return;
+        var itemId = btn.getAttribute('data-remove-id');
+        var qty = parseInt(btn.getAttribute('data-remove-qty'), 10) || 1;
+        var name = btn.getAttribute('data-remove-name') || 'this card';
+        if (!itemId) return;
+        if (!window.confirm('Remove ' + qty + ' × "' + name + '" from your inventory?')) return;
+        btn.disabled = true;
+        setStatus('Removing from inventory…');
+        WowAuth.removeOwnedItem(itemId, qty).then(function () {
+            setStatus('');
+            return loadAccount();
+        }).catch(function (err) {
+            setStatus(err && err.message ? err.message : 'Could not remove item.', true);
+            btn.disabled = false;
+        });
+    }
+
+    function snapshotOwned(cards) {
+        var map = Object.create(null);
+        (cards || []).forEach(function (c) {
+            var id = cardInventoryId(c);
+            if (id) map[id] = parseInt(c.quantity, 10) || 0;
+        });
+        return map;
+    }
+
+    function cardToStackEntry(card) {
+        var rarity = rarityLabel(card && card.rarity);
+        var subtitle = rarity;
+        if (card && card.type) subtitle = subtitle ? subtitle + ' · ' + card.type : card.type;
+        var invId = cardInventoryId(card);
+        var ownedQty = invId ? (packOwnedBefore[invId] || 0) : 0;
+        return {
+            name: card && card.name ? card.name : 'Unknown card',
+            subtitle: subtitle,
+            image: card && card.imageUrl ? card.imageUrl : '',
+            rarity: card && card.rarity ? card.rarity : '',
+            isNew: invId ? ownedQty < 1 : false,
+            questlineItemId: invId
+        };
+    }
+
+    function isRarePlus(rarity) {
+        if (typeof WowPackOpen === 'undefined' || !WowPackOpen.normalizeRarity) return false;
+        var idx = WowPackOpen.RARITY_ORDER.indexOf(WowPackOpen.normalizeRarity(rarity));
+        return idx >= 2;
+    }
+
+    function updatePackRevealBestPull(index) {
+        if (!packRevealBest || !packRevealCards.length) return;
+        var onLast = index === packRevealCards.length - 1;
+        var card = packRevealCards[index];
+        packRevealBest.classList.toggle('is-show', onLast && isRarePlus(card && card.rarity));
+    }
+
+    function mountPackRevealStack(cards, startIndex) {
+        if (packStackController && packStackController.destroy) {
+            packStackController.destroy();
+            packStackController = null;
+        }
+        if (typeof WowPackReveal === 'undefined' || !WowPackReveal.init) return;
+        var stackCards = cards.map(cardToStackEntry);
+        markNewCardsFromPack(stackCards);
+        packStackController = WowPackReveal.init({
+            stackEl: document.getElementById('wowPackRevealStack'),
+            cards: stackCards,
+            cardBackUrl: 'assets/cards/Card Back.png',
+            peelPhaseEl: document.getElementById('wowPackRevealPeel'),
+            summaryEl: document.getElementById('wowPackRevealSummary'),
+            summaryGridEl: document.getElementById('wowPackSummaryGrid'),
+            nameEl: document.getElementById('wowPackRevealName'),
+            newEl: document.getElementById('wowPackRevealNew'),
+            subEl: document.getElementById('wowPackRevealSub'),
+            indexEl: document.getElementById('wowPackRevealIndex'),
+            totalEl: document.getElementById('wowPackRevealTotal'),
+            hintEl: document.getElementById('wowPackRevealHint'),
+            progressEl: document.getElementById('wowPackRevealProgress'),
+            revealAllBtn: document.getElementById('wowPackRevealAll'),
+            soundBtn: document.getElementById('wowPackSoundBtn'),
+            escapeHtml: escapeHtml,
+            onChange: function (index) {
+                updatePackRevealBestPull(index);
+            },
+            onComplete: function (cards) {
+                var newCount = cards.filter(function (c) { return c.isNew; }).length;
+                var sub = document.getElementById('wowPackSummarySub');
+                if (sub) {
+                    sub.textContent = newCount > 0
+                        ? newCount + ' new card' + (newCount === 1 ? '' : 's') + ' added to your collection!'
+                        : 'All pulls added to your collection.';
+                }
+            }
+        });
+        updatePackRevealBestPull(0);
+    }
+
+    function openPackRevealModal(result) {
+        if (!packRevealModal) return;
+        var cards = result && result.cards ? result.cards : [];
+        if (typeof WowPackOpen !== 'undefined' && WowPackOpen.sortCardsForReveal) {
+            cards = WowPackOpen.sortCardsForReveal(cards);
+        }
+        packRevealCards = cards;
+        var packName = result && result.packName ? result.packName : 'Pack';
+        if (packRevealTitle) packRevealTitle.textContent = packName + ' opened';
+        if (packRevealKicker) {
+            packRevealKicker.textContent = cards.length > 1
+                ? 'Peel cards away — commons first, rarest on top'
+                : 'Your pull from the pack';
+        }
+        var note = result && result.testMode
+            ? 'Test open — no QuestCoins spent. Cards were added to your inventory.'
+            : '';
+        if (packRevealNote) packRevealNote.textContent = note;
+        if (packRevealBest) packRevealBest.classList.remove('is-show');
+        if (packRevealRestart) packRevealRestart.hidden = cards.length <= 1;
+        var peelEl = document.getElementById('wowPackRevealPeel');
+        var summaryEl = document.getElementById('wowPackRevealSummary');
+        if (peelEl) peelEl.hidden = false;
+        if (summaryEl) summaryEl.hidden = true;
+        mountPackRevealStack(cards, 0);
+        packRevealModal.classList.add('is-open');
+        packRevealModal.setAttribute('aria-hidden', 'false');
+        document.documentElement.classList.add('wow-pack-modal-open');
+        if (packFocusRelease) packFocusRelease();
+        if (typeof WowPackReveal !== 'undefined' && WowPackReveal.trapFocus) {
+            packFocusRelease = WowPackReveal.trapFocus(packRevealModal);
+        }
+    }
+
+    function closePackRevealModal() {
+        if (!packRevealModal) return;
+        if (packFocusRelease) {
+            packFocusRelease();
+            packFocusRelease = null;
+        }
+        if (packStackController && packStackController.destroy) {
+            packStackController.destroy();
+            packStackController = null;
+        }
+        packRevealCards = [];
+        packRevealModal.classList.remove('is-open');
+        packRevealModal.setAttribute('aria-hidden', 'true');
+        document.documentElement.classList.remove('wow-pack-modal-open');
+        loadAccount();
+    }
+
+    function snapshotOwnedFromSession() {
+        var session = WowAuth.getSession && WowAuth.getSession();
+        var user = session && session.user ? session.user : {};
+        var map = Object.create(null);
+        (user.ownedItems || []).forEach(function (entry) {
+            var id = entry && entry.itemId != null ? String(entry.itemId).trim() : '';
+            if (!id) return;
+            var q = parseInt(entry.quantity, 10);
+            if (!isFinite(q) || q < 1) q = 1;
+            map[id] = (map[id] || 0) + q;
+        });
+        return map;
+    }
+
+    function testOpenWhimsyPack() {
+        if (!isAdminUser()) return;
+        if (typeof WowPackOpen === 'undefined' || !WowPackOpen.openPack) {
+            setStatus('Pack module failed to load.', true);
+            return;
+        }
+        if (packTestOpenBtn) packTestOpenBtn.disabled = true;
+        setStatus('Opening test pack…');
+        packOwnedBefore = snapshotOwnedFromSession();
+        WowPackOpen.openPack('whimsy', { testMode: true }).then(function (result) {
+            openPackRevealModal(result);
+            setStatus('');
+            var grant = result && result.grantPromise ? result.grantPromise : Promise.resolve();
+            return grant.then(function () {
+                return loadAccount();
+            }, function () {
+                return loadAccount();
+            });
+        }).catch(function (err) {
+            setStatus(err && err.message ? err.message : 'Could not open pack.', true);
+        }).finally(function () {
+            if (packTestOpenBtn) packTestOpenBtn.disabled = false;
+        });
+    }
+
+    function renderAccount(data) {
+        var user = data.user || {};
+        var profile = user.profile || {};
+        nameEl.textContent = WowAuth.userDisplayName(user);
+        emailEl.textContent = profile.email || '';
+        coinsEl.textContent = String(data.questCoin != null ? data.questCoin : 0);
+        var cfg = window.WowAuthConfig || {};
+        var whimsyPack = cfg.packs && cfg.packs.whimsy ? cfg.packs.whimsy : null;
+        var packPriceEl = document.getElementById('wowPackPriceCoins');
+        if (packPriceEl) {
+            packPriceEl.textContent = String(whimsyPack && whimsyPack.priceQuestCoins != null ? whimsyPack.priceQuestCoins : 50);
+        }
+        var ownedTypes = (data.cards || []).filter(function (c) { return (parseInt(c.quantity, 10) || 0) > 0; }).length;
+        var ownedCopies = (data.cards || []).reduce(function (sum, c) {
+            return sum + (parseInt(c.quantity, 10) || 0);
+        }, 0);
+        cardCountEl.textContent = ownedTypes + ' types · ' + ownedCopies + ' copies';
+        catalogTotalEl.textContent = String(data.catalogTotal != null ? data.catalogTotal : (data.cards || []).length);
+        itemCountEl.textContent = String(data.items ? data.items.length : 0);
+
+        updatePackAdminUi();
+        renderGrid(cardsGridEl, cardsEmptyEl, data.cards || [], 'card');
+        renderGrid(itemsGridEl, itemsEmptyEl, data.items || [], 'item');
+        setStatus('');
+        showTab(activeTab);
+    }
+
+    function loadAccount() {
+        refreshBtn.disabled = true;
+        setStatus('Loading your collection…');
+        cardsGridEl.hidden = true;
+        itemsGridEl.hidden = true;
+        cardsEmptyEl.hidden = true;
+        itemsEmptyEl.hidden = true;
+        WowAuth.loadAccountData().then(function (data) {
+            renderAccount(data);
+        }).catch(function (err) {
+            setStatus(err && err.message ? err.message : 'Could not load account.', true);
+        }).finally(function () {
+            refreshBtn.disabled = false;
+        });
+    }
+
+    tabCards.addEventListener('click', function () { showTab('cards'); });
+    tabItems.addEventListener('click', function () { showTab('items'); });
+    refreshBtn.addEventListener('click', loadAccount);
+    if (adminResetCardsBtn) {
+        adminResetCardsBtn.addEventListener('click', handleResetAllCards);
+    }
+    cardsGridEl.addEventListener('click', function (e) {
+        var btn = e.target.closest && e.target.closest('.wow-account-remove-btn');
+        if (btn) {
+            e.preventDefault();
+            handleRemoveClick(btn);
+        }
+    });
+    itemsGridEl.addEventListener('click', function (e) {
+        var btn = e.target.closest && e.target.closest('.wow-account-remove-btn');
+        if (btn) {
+            e.preventDefault();
+            handleRemoveClick(btn);
+        }
+    });
+    if (packTestOpenBtn) {
+        packTestOpenBtn.addEventListener('click', testOpenWhimsyPack);
+    }
+    if (packRevealModal) {
+        packRevealModal.addEventListener('click', function (e) {
+            if (e.target.closest('[data-wow-pack-close]')) closePackRevealModal();
+        });
+        packRevealModal.addEventListener('wheel', function (e) {
+            e.preventDefault();
+        }, { passive: false });
+        packRevealModal.addEventListener('touchmove', function (e) {
+            if (!e.target.closest('.wow-peel-stack')) e.preventDefault();
+        }, { passive: false });
+    }
+    if (packRevealRestart) {
+        packRevealRestart.addEventListener('click', function () {
+            if (!packStackController || !packRevealCards.length) return;
+            var peelEl = document.getElementById('wowPackRevealPeel');
+            var summaryEl = document.getElementById('wowPackRevealSummary');
+            if (peelEl) peelEl.hidden = false;
+            if (summaryEl) summaryEl.hidden = true;
+            packStackController.reset();
+            updatePackRevealBestPull(0);
+        });
+    }
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') return;
+        if (!packRevealModal || !packRevealModal.classList.contains('is-open')) return;
+        closePackRevealModal();
+    });
+    loadAccount();
+    if (typeof WowCardCatalog !== 'undefined' && WowCardCatalog.loadSharedCatalog) {
+        WowCardCatalog.loadSharedCatalog().catch(function () { /* warm cache */ });
+    }
+})();
+    </script>
+</body>
+</html>

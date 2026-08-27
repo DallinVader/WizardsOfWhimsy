@@ -4,10 +4,14 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
         <title>Card Maker</title>
-        <link rel="stylesheet" href="style.css">
-        <link rel="stylesheet" href="cardmaker-nav.css">
-        <link rel="stylesheet" href="cardmaker-buttons.css">
-        <script src="cardmaker-nav.js" defer></script>
+        <link rel="stylesheet" href="css/style.css">
+        <link rel="stylesheet" href="css/cardmaker-nav.css">
+        <link rel="stylesheet" href="wow/wow-auth.css">
+        <link rel="stylesheet" href="css/cardmaker-buttons.css">
+        <script src="wow/wow-auth-config.js"></script>
+        <script src="wow/wow-auth.js"></script>
+        <script>WowAuth.gatePage();</script>
+        <script src="js/cardmaker-nav.js" defer></script>
     </head>
     <body class="cm-page">
         <div class="top-bar-under">
@@ -261,9 +265,9 @@
                             <div class="input-group cm-cardbase-group">
                                 <label for="CardBase">Card base / frame</label>
                                 <select id="CardBase" onchange="applyCardBaseFromSelect()">
-                                    <option value="CardFrame.png">Standard</option>
-                                    <option value="CardFrame Old.png">Classic</option>
-                                    <option value="Full Art Card Frame.png">Full Art</option>
+                                    <option value="assets/cards/CardFrame.png">Standard</option>
+                                    <option value="assets/cards/CardFrame Old.png">Classic</option>
+                                    <option value="assets/cards/Full Art Card Frame.png">Full Art</option>
                                     <option value="__custom__">Custom…</option>
                                 </select>
                                 <div id="CardBaseCustomWrap" class="cm-cardbase-custom-wrap" hidden>
@@ -456,16 +460,16 @@
 
     <script src="https://apis.google.com/js/api.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="cardmaker-fonts.js"></script>
-    <script src="cardmaker-fonts-drive.js"></script>
-    <script src="card-render.js"></script>
-    <script src="cardmaker-perf.js"></script>
-    <script src="cardmaker-drive-auth.js"></script>
-    <script src="cardmaker-cookie-consent.js"></script>
-    <script src="cardmaker-sets.js"></script>
-    <script src="cardmaker-sets-drive.js"></script>
-    <script src="cardmaker-field-options.js"></script>
-    <script src="cardmaker-field-options-drive.js"></script>
+    <script src="js/cardmaker-fonts.js"></script>
+    <script src="js/cardmaker-fonts-drive.js"></script>
+    <script src="js/card-render.js"></script>
+    <script src="js/cardmaker-perf.js"></script>
+    <script src="js/cardmaker-drive-auth.js"></script>
+    <script src="js/cardmaker-cookie-consent.js"></script>
+    <script src="js/cardmaker-sets.js"></script>
+    <script src="js/cardmaker-sets-drive.js"></script>
+    <script src="js/cardmaker-field-options.js"></script>
+    <script src="js/cardmaker-field-options-drive.js"></script>
     <script>
         // Optional: not used for Drive save/load (OAuth only). Restricted API keys often break gapi if passed to init.
         const GOOGLE_API_KEY = '';
@@ -494,6 +498,7 @@
         let projectDirty = false;
         let suppressDirtyTracking = false;
         let editorReadyForDirty = false;
+        let cleanStateSnapshot = null;
         let editorDraftTimer = null;
         const EDITOR_DRAFT_DEBOUNCE_MS = 1800;
         const FULL_CANVAS_W = 2500;
@@ -588,8 +593,40 @@
         // Scale factor is 2.75 / 2.5 = 1.1
         const BLEED_SCALE = 1.1;
 
+        function buildDirtyCheckState() {
+            var state = buildProjectState();
+            if (state.fields) {
+                delete state.fields.downloadFormat;
+                delete state.fields.exportIncludeBleed;
+                delete state.fields.exportWidth;
+                delete state.fields.exportWidthInput;
+                delete state.fields.jpegQuality;
+            }
+            delete state.updatedAt;
+            return state;
+        }
+
+        function snapshotProjectState(state) {
+            return JSON.stringify(state || buildDirtyCheckState());
+        }
+
+        function captureCleanSnapshot() {
+            cleanStateSnapshot = snapshotProjectState(buildDirtyCheckState());
+        }
+
+        function hasSignificantUnsavedChanges() {
+            if (!editorReadyForDirty || suppressDirtyTracking) return false;
+            if (!cleanStateSnapshot) return projectDirty;
+            return snapshotProjectState(buildDirtyCheckState()) !== cleanStateSnapshot;
+        }
+
         function markProjectDirty() {
             if (suppressDirtyTracking || !editorReadyForDirty) return;
+            if (!hasSignificantUnsavedChanges()) {
+                projectDirty = false;
+                updateDirtyUi();
+                return;
+            }
             projectDirty = true;
             scheduleEditorDraftAutosave();
             updateDirtyUi();
@@ -597,17 +634,34 @@
 
         function clearProjectDirty() {
             projectDirty = false;
+            captureCleanSnapshot();
             updateDirtyUi();
         }
 
         function updateDirtyUi() {
             var st = document.getElementById('driveStatusText');
             if (!st) return;
+            var dirty = hasSignificantUnsavedChanges();
+            projectDirty = dirty;
             var base = st.getAttribute('data-base-status');
             if (base == null) base = st.textContent || '';
-            if (projectDirty && String(st.textContent || '').indexOf('(unsaved)') === -1) {
-                st.setAttribute('data-base-status', base);
+            if (dirty && String(st.textContent || '').indexOf('(unsaved)') === -1) {
+                st.setAttribute('data-base-status', base.replace(/\s*\(unsaved\)$/, ''));
+                base = st.getAttribute('data-base-status') || base;
                 st.textContent = (base ? base + ' ' : '') + '(unsaved)';
+            } else if (!dirty) {
+                base = (base || st.textContent || '').replace(/\s*\(unsaved\)$/, '');
+                st.setAttribute('data-base-status', base);
+                st.textContent = base;
+            }
+        }
+
+        function bootEditorDirtyTracking(keepDirty) {
+            editorReadyForDirty = true;
+            if (keepDirty) {
+                updateDirtyUi();
+            } else {
+                clearProjectDirty();
             }
         }
 
@@ -631,14 +685,14 @@
         }
 
         async function maybeRestoreEditorDraft() {
-            if (typeof CardMakerPerf === 'undefined') return;
+            if (typeof CardMakerPerf === 'undefined') return false;
             try {
                 var draft = await CardMakerPerf.readEditorDraft();
-                if (!draft || !draft.state || !draft.state.fields) return;
+                if (!draft || !draft.state || !draft.state.fields) return false;
                 if (!confirm('Restore unsaved draft from this browser?\n\nSaved locally at ' +
                     (draft.savedAt ? new Date(draft.savedAt).toLocaleString() : 'unknown') + '.')) {
                     await CardMakerPerf.clearEditorDraft();
-                    return;
+                    return false;
                 }
                 suppressDirtyTracking = true;
                 await new Promise(function (resolve) {
@@ -647,19 +701,37 @@
                 currentDriveFileId = draft.driveFileId || null;
                 currentDriveFileName = draft.driveFileName || '';
                 suppressDirtyTracking = false;
-                projectDirty = true;
-                updateDirtyUi();
                 setDriveStatus(currentDriveFileId
                     ? 'Restored local draft (linked to Drive save).'
                     : 'Restored local draft (not yet on Drive).');
+                return true;
             } catch (e) {
                 console.warn('Restore draft', e);
                 suppressDirtyTracking = false;
+                return false;
             }
         }
 
+        document.addEventListener('input', function (e) {
+            if (!editorReadyForDirty || suppressDirtyTracking) return;
+            var t = e.target;
+            if (!t || !t.closest) return;
+            if (t.closest('#driveProjectsModal, #cmFontsModal, .drive-modal')) return;
+            if (t.id === 'driveSaveNameInput' || t.id === 'cmFontsUploadName') return;
+            if (t.matches('input, textarea, select')) markProjectDirty();
+        }, true);
+
+        document.addEventListener('change', function (e) {
+            if (!editorReadyForDirty || suppressDirtyTracking) return;
+            var t = e.target;
+            if (!t || !t.closest) return;
+            if (t.closest('#driveProjectsModal, #cmFontsModal, .drive-modal')) return;
+            if (t.id === 'driveSaveNameInput' || t.id === 'cmFontsUpload' || t.id === 'cmFontsUploadName') return;
+            if (t.matches('input, textarea, select')) markProjectDirty();
+        }, true);
+
         window.addEventListener('beforeunload', function (e) {
-            if (!projectDirty) return;
+            if (!hasSignificantUnsavedChanges()) return;
             e.preventDefault();
             e.returnValue = '';
         });
@@ -1087,6 +1159,7 @@
         
         // Mouse up event
         canvas.addEventListener('mouseup', function(e) {
+            var wasEditing = isDragging || isResizing || isDraggingText || isResizingTextWrap;
             isDragging = false;
             isResizing = false;
             isDraggingText = false;
@@ -1094,10 +1167,12 @@
             textDragKind = '';
             canvas.style.cursor = 'default';
             redrawCanvas();
+            if (wasEditing) markProjectDirty();
         });
         
         // Mouse leave event
         canvas.addEventListener('mouseleave', function(e) {
+            var wasEditing = isDragging || isResizing || isDraggingText || isResizingTextWrap;
             isDragging = false;
             isResizing = false;
             isDraggingText = false;
@@ -1105,28 +1180,29 @@
             textDragKind = '';
             canvas.style.cursor = 'default';
             redrawCanvas();
+            if (wasEditing) markProjectDirty();
         });
         
         // Note: Hover border removed per user request
 
         const images = [];
         let MainImage = new Image();
-        MainImage.src = "CardFrame.png"
+        MainImage.src = "assets/cards/CardFrame.png"
         MainImage.hy = 0;
         MainImage.wx = 0;
         DamageImg = new Image();
-        DamageImg.src = "Damage.png"
+        DamageImg.src = "assets/cards/Damage.png"
         DamageImg.hy = 0;
         DamageImg.wx = 0;
         const RareityImg = new Image();
-        RareityImg.src = 'Rareity.png';
+        RareityImg.src = 'assets/cards/Rareity.png';
         RareityImg.hy = 0;
         RareityImg.wx = 0;
         RareityImg.onload = function () { redrawCanvas(); };
         ArtImage = new Image();
         ArtImage.hy = 0;
         ArtImage.wx = 0;
-        ArtImage.src = "The lIch King.png";
+        ArtImage.src = "assets/cards/The lIch King.png";
         ArtImage.onload = function() {
             ImageSizeNoRedraw();
             // Set initial background image
@@ -1140,6 +1216,7 @@
         function ToggelSwitch() {
             IsSwitchedOn = !IsSwitchedOn;
             console.log("Switched " + IsSwitchedOn)
+            markProjectDirty();
             redrawCanvas();
         }
 
@@ -1181,7 +1258,7 @@
             }
             
             var cardBaseSel = document.getElementById('CardBase');
-            if (cardBaseSel) cardBaseSel.value = 'CardFrame.png';
+            if (cardBaseSel) cardBaseSel.value = 'assets/cards/CardFrame.png';
             removeCardBaseDynamicOption();
             setCardBaseCustomVisible(false);
             document.getElementById("Art").value = '';
@@ -1257,7 +1334,7 @@
             
             // Reset images to defaults
             MainImage = new Image();
-            MainImage.src = "CardFrame.png";
+            MainImage.src = "assets/cards/CardFrame.png";
             MainImage.hy = 0;
             MainImage.wx = 0;
             MainImage.onload = function() {
@@ -1265,7 +1342,7 @@
             };
             
             ArtImage = new Image();
-            ArtImage.src = "The lIch King.png";
+            ArtImage.src = "assets/cards/The lIch King.png";
             ArtImage.hy = 0;
             ArtImage.wx = 0;
             ArtImage.onload = function() {
@@ -1286,7 +1363,7 @@
             const statusEl = document.getElementById('driveStatusText');
             if (!statusEl) return;
             statusEl.setAttribute('data-base-status', message || '');
-            statusEl.textContent = (message || '') + (projectDirty ? ' (unsaved)' : '');
+            statusEl.textContent = (message || '') + (hasSignificantUnsavedChanges() ? ' (unsaved)' : '');
         }
 
         function hasDriveConfig() {
@@ -2600,10 +2677,10 @@
             try {
                 params = new URLSearchParams(window.location.search || '');
             } catch (e) {
-                return;
+                return false;
             }
             var fileId = params.get('openDriveFile');
-            if (!fileId || !hasDriveConfig()) return;
+            if (!fileId || !hasDriveConfig()) return false;
 
             var file = { id: fileId, name: fileId + '.cardmaker.json' };
             var label = displaySaveLabel(file.name);
@@ -2655,7 +2732,7 @@
                                 console.warn('Background Drive refresh after cache open:', bgErr);
                             }
                         })();
-                        return;
+                        return true;
                     }
                 }
 
@@ -2663,7 +2740,7 @@
                 showCardLoadingBar('Connecting to Google Drive…');
                 if (!(await ensureDriveTokenBeforeDriveOp()) || !driveAccessToken) {
                     setDriveStatus('Sign in with Google to open this save (link from Saved Projects Manager).');
-                    return;
+                    return false;
                 }
                 showCardLoadingBar('Downloading “' + label + '”…');
                 await loadProjectFromDriveByFile(file);
@@ -2672,11 +2749,13 @@
                     u.searchParams.delete('openDriveFile');
                     history.replaceState({}, '', u.pathname + u.search + u.hash);
                 } catch (e2) { /* ignore */ }
+                return true;
             } catch (err) {
                 console.error(err);
                 var msg = err && err.message ? err.message : String(err);
                 setDriveStatus('Could not open linked save: ' + msg.slice(0, 120));
                 alert('Could not open this save from the link.\n\n' + msg);
+                return false;
             } finally {
                 hideCardLoadingBar();
             }
@@ -3015,9 +3094,9 @@
         }
 
         var BUILTIN_CARD_BASES = {
-            'CardFrame.png': true,
-            'CardFrame Old.png': true,
-            'Full Art Card Frame.png': true
+            'assets/cards/CardFrame.png': true,
+            'assets/cards/CardFrame Old.png': true,
+            'assets/cards/Full Art Card Frame.png': true
         };
 
         function builtinCardBaseFilename(src) {
@@ -3086,10 +3165,11 @@
             var img = new Image();
             img.hy = MainImage && MainImage.hy != null ? MainImage.hy : 0;
             img.wx = MainImage && MainImage.wx != null ? MainImage.wx : 0;
-            img.onload = function () {
-                MainImage = img;
-                redrawCanvas();
-            };
+                img.onload = function () {
+                    MainImage = img;
+                    markProjectDirty();
+                    redrawCanvas();
+                };
             img.onerror = function () {
                 syncCardBaseSelectFromMainImage();
             };
@@ -3116,6 +3196,7 @@
                     MainImage = img;
                     MainImage.hy = 0;
                     MainImage.wx = 0;
+                    markProjectDirty();
                     redrawCanvas();
                 };
                 img.src = dataUrl;
@@ -3145,6 +3226,7 @@
                     ArtImage = img;
                     ArtImage.hy = ExtraHight;
                     ImageSizeNoRedraw();
+                    markProjectDirty();
                     redrawCanvas();
                 };
                 img.src = dataUrl;
@@ -3256,7 +3338,6 @@
             redrawCanvasNow();
         }
         function redrawCanvas() {
-            markProjectDirty();
             if (redrawCanvasRaf != null) return;
             redrawCanvasRaf = requestAnimationFrame(function () {
                 redrawCanvasRaf = null;
@@ -3676,10 +3757,6 @@
         updateExportBleedHint();
         updateDriveButtons();
         initDriveProjectsModalUi();
-        setTimeout(function () {
-            editorReadyForDirty = true;
-            clearProjectDirty();
-        }, 800);
 
         // If opening a card from SPM, show the loader immediately (before Google scripts / auth).
         (function showOpenLoaderEarly() {
@@ -3700,18 +3777,30 @@
             } else if (!(new URLSearchParams(window.location.search || '').get('openDriveFile'))) {
                 setDriveStatus('Not signed in. Click "Sign in with Google" to connect Drive.');
             }
-            // Open the linked card ASAP (cache-first); restore session in parallel for Drive fallback/refresh.
             var openPromise = maybeOpenDriveFileFromQuery();
             tryRestoreDriveSession()
                 .then(function () { return openPromise; })
-                .then(function () {
-                    var params = new URLSearchParams(window.location.search || '');
-                    if (!params.get('openDriveFile')) return maybeRestoreEditorDraft();
+                .then(function (openedFromQuery) {
+                    if (openedFromQuery) {
+                        bootEditorDirtyTracking(false);
+                        return;
+                    }
+                    return maybeRestoreEditorDraft().then(function (restoredDraft) {
+                        bootEditorDirtyTracking(restoredDraft);
+                    });
                 })
-                .catch(function (e) { console.error(e); });
+                .catch(function (e) {
+                    console.error(e);
+                    bootEditorDirtyTracking(false);
+                });
         } else {
             setDriveStatus('Set GOOGLE_CLIENT_ID in editor.html first.');
-            maybeRestoreEditorDraft().catch(function (e) { console.error(e); });
+            maybeRestoreEditorDraft()
+                .then(function (restoredDraft) { bootEditorDirtyTracking(restoredDraft); })
+                .catch(function (e) {
+                    console.error(e);
+                    bootEditorDirtyTracking(false);
+                });
         }
         
         // Download the final card at the selected format (optional black bleed within selected size)

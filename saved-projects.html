@@ -4,10 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Saved Projects Manager – Card Maker</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="cardmaker-nav.css">
-    <link rel="stylesheet" href="cardmaker-buttons.css">
-    <script src="cardmaker-nav.js" defer></script>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/cardmaker-nav.css">
+    <link rel="stylesheet" href="wow/wow-auth.css">
+    <link rel="stylesheet" href="css/cardmaker-buttons.css">
+    <script src="wow/wow-auth-config.js"></script>
+    <script src="wow/wow-auth.js"></script>
+    <script>WowAuth.gatePage();</script>
+    <script src="js/cardmaker-nav.js" defer></script>
     <style>
         body { background: #0b1220; color: #e2e8f0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; }
         .spm-wrap { max-width: min(1960px, calc(100vw - 24px)); margin: 0 auto; padding: 22px max(18px, env(safe-area-inset-right)) 40px max(18px, env(safe-area-inset-left)); }
@@ -71,6 +75,13 @@
             font-size: 11px;
         }
         .spm-summary-fold:not([open]) > summary::after { content: ' ▸'; }
+        .spm-catalog-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        .spm-catalog-opt {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 12px; color: #cbd5e1; cursor: pointer; user-select: none;
+        }
+        .spm-catalog-opt input { accent-color: #6366f1; }
+        .spm-catalog-btn { width: 100%; margin-bottom: 8px; }
         @media (min-width: 981px) {
             .spm-summary-fold > summary { display: none; }
             .spm-summary-fold { display: block; }
@@ -1047,6 +1058,14 @@
                     <div class="v" id="spmStatus">Not connected</div>
                 </div>
 
+                <h3 class="spm-list-heading">Site catalog</h3>
+                <p class="spm-muted" style="font-size:12px; line-height:1.45; margin:0 0 10px;">Export your Drive library to <code style="color:#93c5fd">catalog/wow-card-catalog.json</code> plus <code style="color:#93c5fd">catalog/thumbs/</code> images. Publish downloads a zip — extract it to the repo root.</p>
+                <div class="spm-catalog-options">
+                    <label class="spm-catalog-opt"><input type="checkbox" id="spmPublishSyncQuestline" checked> Sync Questline items</label>
+                    <label class="spm-catalog-opt"><input type="checkbox" id="spmPublishFirestore"> Push to Firestore</label>
+                </div>
+                <button type="button" class="spm-btn spm-primary spm-catalog-btn" id="spmPublishCatalogBtn" disabled title="Build catalog from loaded saves">Publish catalog</button>
+
                 <details class="spm-summary-fold">
                     <summary>Sets, types &amp; counts</summary>
                 <h3 class="spm-list-heading">Named sets</h3>
@@ -1386,16 +1405,18 @@
         <div class="spm-zoom-hint">Swipe left/right for a smooth slide · arrows or Esc</div>
     </div>
 
-    <script src="cardmaker-fonts.js"></script>
-    <script src="cardmaker-fonts-drive.js"></script>
-    <script src="card-render.js"></script>
-    <script src="cardmaker-perf.js"></script>
-    <script src="cardmaker-drive-auth.js"></script>
-    <script src="cardmaker-cookie-consent.js"></script>
-    <script src="cardmaker-sets.js"></script>
-    <script src="cardmaker-sets-drive.js"></script>
-    <script src="cardmaker-field-options.js"></script>
-    <script src="cardmaker-field-options-drive.js"></script>
+    <script src="js/cardmaker-fonts.js"></script>
+    <script src="js/cardmaker-fonts-drive.js"></script>
+    <script src="js/card-render.js"></script>
+    <script src="js/cardmaker-perf.js"></script>
+    <script src="js/cardmaker-drive-auth.js"></script>
+    <script src="js/cardmaker-cookie-consent.js"></script>
+    <script src="js/cardmaker-sets.js"></script>
+    <script src="js/cardmaker-sets-drive.js"></script>
+    <script src="js/cardmaker-field-options.js"></script>
+    <script src="js/cardmaker-field-options-drive.js"></script>
+    <script src="wow/wow-card-catalog.js"></script>
+    <script src="wow/wow-catalog-publish.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
         const GOOGLE_CLIENT_ID = '984239146057-o6ujksfj9qk8tmqm9c8msrpidgm6492r.apps.googleusercontent.com';
@@ -1412,6 +1433,9 @@
         const spmSignOutBtn = document.getElementById('spmSignOutBtn');
         const spmRefreshBtn = document.getElementById('spmRefreshBtn');
         const spmNewCardBtn = document.getElementById('spmNewCardBtn');
+        const spmPublishCatalogBtn = document.getElementById('spmPublishCatalogBtn');
+        const spmPublishSyncQuestline = document.getElementById('spmPublishSyncQuestline');
+        const spmPublishFirestore = document.getElementById('spmPublishFirestore');
         const spmStatus = document.getElementById('spmStatus');
         const spmMessage = document.getElementById('spmMessage');
 
@@ -1887,6 +1911,81 @@
             if (spmNewCardBtn) spmNewCardBtn.disabled = !signedIn;
             spmSignInBtn.disabled = signedIn;
             spmSignInBtn.textContent = signedIn ? 'Connected' : 'Connect Google';
+            if (spmPublishCatalogBtn) {
+                var canPublish = projects.length > 0 || saveCacheById.size > 0;
+                spmPublishCatalogBtn.disabled = !canPublish;
+            }
+        }
+
+        async function publishSiteCatalog() {
+            if (typeof WowCatalogPublish === 'undefined' || !WowCatalogPublish.runPublish) {
+                setMessage('Catalog publish module failed to load.', true);
+                return;
+            }
+            var syncQl = spmPublishSyncQuestline && spmPublishSyncQuestline.checked;
+            var pushFirestore = spmPublishFirestore && spmPublishFirestore.checked;
+            if (syncQl && (!window.WowAuth || !WowAuth.isSignedIn())) {
+                setMessage('Sign in with Questline (top nav) to create Items.', true);
+                return;
+            }
+            if (spmPublishCatalogBtn) spmPublishCatalogBtn.disabled = true;
+            setMessage('');
+            try {
+                var liteIds = projects.filter(function (p) {
+                    return p && p._lite && p.file && p.file.id;
+                }).map(function (p) { return p.file.id; });
+                var i;
+                for (i = 0; i < liteIds.length; i++) {
+                    spmStatus.textContent = 'Loading save ' + (i + 1) + ' / ' + liteIds.length + '…';
+                    await ensureProjectHydrated(liteIds[i]);
+                }
+                var cacheRows = null;
+                if (!projects.length && typeof CardMakerPerf !== 'undefined' && CardMakerPerf.readAllSaveCache) {
+                    cacheRows = await CardMakerPerf.readAllSaveCache();
+                }
+                var result = await WowCatalogPublish.runPublish({
+                    projects: projects,
+                    cacheRows: cacheRows,
+                    syncQuestline: syncQl,
+                    pushFirestore: pushFirestore,
+                    onStatus: function (msg) {
+                        spmStatus.textContent = msg;
+                    }
+                });
+                var sync = result.sync || {};
+                var msg = 'Published ' + result.cardCount + ' card(s).';
+                if (result.deliveredAs === 'zip') {
+                    msg += ' Downloaded wow-catalog-publish.zip — extract to repo root (JSON + catalog/thumbs/).';
+                } else {
+                    msg += ' JSON downloaded.';
+                }
+                if (result.imageCount != null) {
+                    msg += ' Images: ' + result.imageCount + '/' + result.cardCount + '.';
+                }
+                var isError = false;
+                if (syncQl) {
+                    msg += ' Questline: ' + (sync.created || 0) + ' created, ' + (sync.skipped || 0) + ' skipped.';
+                    if (sync.errors && sync.errors.length) {
+                        msg += ' ' + sync.errors.length + ' error(s) — see console.';
+                        console.warn('Questline sync errors:', sync.errors);
+                        isError = true;
+                    }
+                }
+                if (result.firestore === true) {
+                    msg += ' Firestore updated.';
+                } else if (result.firestore && result.firestore.firestoreError) {
+                    msg += ' Firestore: ' + result.firestore.firestoreError;
+                    isError = true;
+                }
+                setMessage(msg, isError);
+                spmStatus.textContent = 'Ready';
+            } catch (e) {
+                console.error(e);
+                setMessage('Publish failed: ' + (e && e.message ? e.message : String(e)), true);
+                spmStatus.textContent = 'Publish failed';
+            } finally {
+                updateButtons();
+            }
         }
 
         function initTokenClient() {
@@ -2054,6 +2153,9 @@
         spmSignInBtn.addEventListener('click', handleSignIn);
         spmSignOutBtn.addEventListener('click', handleSignOut);
         spmRefreshBtn.addEventListener('click', function () { refreshAll(); });
+        if (spmPublishCatalogBtn) {
+            spmPublishCatalogBtn.addEventListener('click', function () { publishSiteCatalog(); });
+        }
         if (spmNewCardBtn) {
             spmNewCardBtn.addEventListener('click', function () {
                 createNewCardOnDrive().catch(function (e) { console.error(e); });
@@ -2768,7 +2870,7 @@
                     showDamageStats: true
                 },
                 images: {
-                    cardBaseSrc: 'CardFrame.png',
+                    cardBaseSrc: 'assets/cards/CardFrame.png',
                     artSrc: ''
                 }
             };
@@ -2862,6 +2964,7 @@
             applyFiltersAndRender();
             if (statusText) spmStatus.textContent = statusText;
             if (messageText != null) setMessage(messageText);
+            updateButtons();
         }
 
         var saveCacheMapPromise = null;
@@ -2905,6 +3008,7 @@
                 'Library: ' + projects.length + ' cached card(s).',
                 ''
             );
+            updateButtons();
         }
 
         function projectFromDriveFile(file) {

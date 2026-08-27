@@ -2,21 +2,21 @@
     {
         "name": "The Great Estate",
         "subtitle": "Holding · Economy · Legendary",
-        "image": "landing-cards/great-estate.jpg"
+        "image": "assets/landing/cards/great-estate.jpg"
     },
     {
         "name": "Peasents",
         "subtitle": "Unit · Economy · Common",
-        "image": "landing-cards/peasants.jpg"
+        "image": "assets/landing/cards/peasants.jpg"
     },
     {
         "name": "Wizzlewick the Learned",
         "subtitle": "Spell · Divination · Common",
-        "image": "landing-cards/wizzlewick.jpg"
+        "image": "assets/landing/cards/wizzlewick.jpg"
     },
     {
         "name": "Mighty Bow",
         "subtitle": "Equipment · Weapon · Rare",
-        "image": "landing-cards/mighty-bow.jpg"
+        "image": "assets/landing/cards/mighty-bow.jpg"
     }
 ]

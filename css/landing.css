@@ -180,7 +180,7 @@ a:hover {
     position: absolute;
     inset: 0;
     background:
-        url('Card Back.png') right -5% center / min(72vw, 780px) auto no-repeat;
+        url('assets/cards/Card Back.png') right -5% center / min(72vw, 780px) auto no-repeat;
     opacity: 0.55;
     filter: saturate(1.05) contrast(1.05);
     animation: wow-hero-breathe 14s ease-in-out infinite;

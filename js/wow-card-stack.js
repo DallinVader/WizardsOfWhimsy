@@ -1,38 +1,8 @@
 /**
- * Landing page: reveal-on-scroll, card gallery tilt, waitlist mailto bridge.
+ * Swipeable tilt card stack — shared by landing gallery and pack reveal.
  */
-(function () {
+(function (global) {
     'use strict';
-
-    var WAITLIST_TO = 'hello@wizardsofwhimsy.com';
-
-    function reveal() {
-        var nodes = document.querySelectorAll('.wow-reveal');
-        if (!nodes.length) return;
-
-        if (!('IntersectionObserver' in window)) {
-            nodes.forEach(function (el) {
-                el.classList.add('is-in');
-            });
-            return;
-        }
-
-        var io = new IntersectionObserver(
-            function (entries) {
-                entries.forEach(function (entry) {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('is-in');
-                        io.unobserve(entry.target);
-                    }
-                });
-            },
-            { rootMargin: '0px 0px -8% 0px', threshold: 0.12 }
-        );
-
-        nodes.forEach(function (el) {
-            io.observe(el);
-        });
-    }
 
     function signedOffset(i, active, len) {
         var d = i - active;
@@ -48,8 +18,16 @@
         return 'is-back';
     }
 
+    function encodeSrc(path) {
+        if (!path) return '';
+        if (/^data:|^https?:|^blob:/i.test(String(path))) return String(path);
+        return String(path).split('/').map(function (part) {
+            return encodeURIComponent(part);
+        }).join('/');
+    }
+
     function initStackTilt(stackEl) {
-        if (!stackEl || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        if (!stackEl || global.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
         var maxTilt = 14;
         var raf = null;
@@ -109,7 +87,7 @@
 
     function initWhimsySparkles(stackEl) {
         var noop = { shakeOff: function () {}, shakeBurst: function () {}, puff: function () {} };
-        if (!stackEl || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        if (!stackEl || global.matchMedia('(prefers-reduced-motion: reduce)').matches) {
             return noop;
         }
 
@@ -167,8 +145,9 @@
             var dir = dragX > 0 ? 1 : -1;
             var power = Math.min(Math.abs(dragX) / 65, 1.25);
             var count = 2 + Math.floor(power * 6);
+            var i;
 
-            for (var i = 0; i < count; i++) {
+            for (i = 0; i < count; i++) {
                 var edgeX;
                 var edgeY;
                 if (Math.random() > 0.82 && power > 0.45) {
@@ -260,7 +239,7 @@
             clearDragDirection();
         }
 
-        function onMove(clientX, clientY) {
+        function onMove(clientX) {
             if (!dragging || !activeEl) return;
             dragX = clientX - startX;
             var tilt = Math.max(-9, Math.min(9, dragX * 0.07));
@@ -271,7 +250,7 @@
             whimsy.shakeOff(dragX, activeEl);
         }
 
-        function onEnd(clientX, clientY) {
+        function onEnd(clientX) {
             if (!dragging) return;
             var releaseDragX = dragX;
             var releaseCard = activeEl;
@@ -289,7 +268,7 @@
                 resetActiveTransform();
                 onStep(-1, 'swipe');
             } else if (activeEl) {
-                activeEl.style.transition = 'transform 0.35s var(--ease-out)';
+                activeEl.style.transition = 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)';
                 activeEl.style.transform = 'translate3d(0, 0, 0) rotate(0deg) scale(1)';
                 window.setTimeout(function () {
                     if (activeEl) activeEl.style.transition = '';
@@ -307,47 +286,74 @@
         });
         stackEl.addEventListener('pointermove', function (e) {
             if (!dragging) return;
-            onMove(e.clientX, e.clientY);
+            onMove(e.clientX);
         });
         stackEl.addEventListener('pointerup', function (e) {
-            onEnd(e.clientX, e.clientY);
+            onEnd(e.clientX);
         });
         stackEl.addEventListener('pointercancel', function (e) {
-            onEnd(e.clientX, e.clientY);
+            onEnd(e.clientX);
         });
     }
 
-    function initGallery(cards, gallery, empty) {
-        var stackEl = document.getElementById('wowCardStack');
-        var nameEl = document.getElementById('wowGalleryName');
-        var subEl = document.getElementById('wowGallerySub');
-        var indexEl = document.getElementById('wowGalleryIndex');
-        var totalEl = document.getElementById('wowGalleryTotal');
-        var thumbsEl = document.getElementById('wowGalleryThumbs');
-        var prevBtn = document.getElementById('wowGalleryPrev');
-        var nextBtn = document.getElementById('wowGalleryNext');
+    /**
+     * @param {object} opts
+     * @param {HTMLElement} opts.stackEl
+     * @param {Array<{name:string,subtitle?:string,image?:string,rarity?:string}>} opts.cards
+     * @param {HTMLElement} [opts.nameEl]
+     * @param {HTMLElement} [opts.subEl]
+     * @param {HTMLElement} [opts.indexEl]
+     * @param {HTMLElement} [opts.totalEl]
+     * @param {HTMLElement} [opts.thumbsEl]
+     * @param {HTMLElement} [opts.prevBtn]
+     * @param {HTMLElement} [opts.nextBtn]
+     * @param {function(number, object)} [opts.onChange]
+     * @param {number} [opts.startIndex]
+     * @param {boolean} [opts.enableKeyboard]
+     */
+    function init(opts) {
+        opts = opts || {};
+        var stackEl = opts.stackEl;
+        var cards = opts.cards || [];
+        var nameEl = opts.nameEl;
+        var subEl = opts.subEl;
+        var indexEl = opts.indexEl;
+        var totalEl = opts.totalEl;
+        var thumbsEl = opts.thumbsEl;
+        var prevBtn = opts.prevBtn;
+        var nextBtn = opts.nextBtn;
+        var onChange = typeof opts.onChange === 'function' ? opts.onChange : null;
         var cardEls = [];
         var index = 0;
+        var keyHandler = null;
 
-        if (empty) empty.hidden = true;
-        gallery.hidden = false;
+        if (!stackEl || !cards.length) {
+            return { show: function () {}, step: function () {}, getIndex: function () { return 0; }, destroy: function () {} };
+        }
+
         if (totalEl) totalEl.textContent = String(cards.length);
 
-        function encodeSrc(path) {
-            return String(path).split('/').map(function (part) {
-                return encodeURIComponent(part);
-            }).join('/');
+        function rarityClass(rarity) {
+            if (!rarity) return '';
+            var s = String(rarity).trim();
+            if (!s) return '';
+            return 'wow-stack-rarity--' + s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
         }
 
         function updateStackClasses() {
             cardEls.forEach(function (el, i) {
                 var role = stackRole(signedOffset(i, index, cards.length));
-                el.className = 'wow-stack-card ' + role;
+                var card = cards[i];
+                var rarityCls = card && card.rarity ? rarityClass(card.rarity) : '';
+                el.className = 'wow-stack-card ' + role + (rarityCls && role === 'is-active' ? ' ' + rarityCls : '');
                 el.setAttribute('aria-hidden', role === 'is-active' ? 'false' : 'true');
             });
             var card = cards[index];
-            if (nameEl) nameEl.textContent = card.name;
-            if (subEl) subEl.textContent = card.subtitle || '';
+            if (nameEl) nameEl.textContent = card.name || '';
+            if (subEl) {
+                subEl.textContent = card.subtitle || '';
+                subEl.className = 'wow-gallery-sub' + (card.rarity ? ' ' + rarityClass(card.rarity) : '');
+            }
             if (indexEl) indexEl.textContent = String(index + 1);
             if (thumbsEl) {
                 var btns = thumbsEl.querySelectorAll('.wow-gallery-thumb');
@@ -356,6 +362,7 @@
                     btn.setAttribute('aria-selected', bi === index ? 'true' : 'false');
                 });
             }
+            if (onChange) onChange(index, card);
         }
 
         function popMeta() {
@@ -387,16 +394,16 @@
             btn.classList.add('is-sparkle');
         }
 
-        function show(i, opts) {
-            opts = opts || {};
+        function show(i, optsShow) {
+            optsShow = optsShow || {};
             var next = (i + cards.length) % cards.length;
-            if (next === index && !opts.force) return;
+            if (next === index && !optsShow.force) return;
             var dir = signedOffset(next, index, cards.length);
-            if (dir === 0 && opts.dir) dir = opts.dir;
+            if (dir === 0 && optsShow.dir) dir = optsShow.dir;
             index = next;
             updateStackClasses();
-            if (opts.animate !== false) {
-                celebrateArrival(dir > 0 ? 1 : -1, opts.source);
+            if (optsShow.animate !== false) {
+                celebrateArrival(dir > 0 ? 1 : -1, optsShow.source);
             }
         }
 
@@ -409,41 +416,39 @@
 
         var whimsy = null;
 
-        if (stackEl) {
-            stackEl.innerHTML = '';
-            cards.forEach(function (card, ci) {
-                var el = document.createElement('article');
-                el.className = 'wow-stack-card';
-                el.dataset.index = String(ci);
-                el.setAttribute('aria-label', card.name);
+        stackEl.innerHTML = '';
+        cards.forEach(function (card, ci) {
+            var el = document.createElement('article');
+            el.className = 'wow-stack-card';
+            el.dataset.index = String(ci);
+            el.setAttribute('aria-label', card.name || 'Card');
 
-                var inner = document.createElement('div');
-                inner.className = 'wow-card-tilt-inner';
+            var inner = document.createElement('div');
+            inner.className = 'wow-card-tilt-inner';
 
-                var img = document.createElement('img');
-                img.src = encodeSrc(card.image);
-                img.alt = card.name + (card.subtitle ? ' — ' + card.subtitle : '');
-                img.width = 400;
-                img.height = 560;
-                img.decoding = 'async';
-                img.draggable = false;
-                if (ci > 0) img.loading = 'lazy';
+            var img = document.createElement('img');
+            img.src = encodeSrc(card.image);
+            img.alt = card.name + (card.subtitle ? ' — ' + card.subtitle : '');
+            img.width = 400;
+            img.height = 560;
+            img.decoding = 'async';
+            img.draggable = false;
+            if (ci > 0) img.loading = 'lazy';
 
-                var shine = document.createElement('div');
-                shine.className = 'wow-card-shine';
-                shine.setAttribute('aria-hidden', 'true');
+            var shine = document.createElement('div');
+            shine.className = 'wow-card-shine';
+            shine.setAttribute('aria-hidden', 'true');
 
-                inner.appendChild(img);
-                el.appendChild(inner);
-                el.appendChild(shine);
-                stackEl.appendChild(el);
-                cardEls.push(el);
-            });
+            inner.appendChild(img);
+            el.appendChild(inner);
+            el.appendChild(shine);
+            stackEl.appendChild(el);
+            cardEls.push(el);
+        });
 
-            initStackTilt(stackEl);
-            whimsy = initWhimsySparkles(stackEl);
-            initStackSwipe(stackEl, step, whimsy);
-        }
+        initStackTilt(stackEl);
+        whimsy = initWhimsySparkles(stackEl);
+        initStackSwipe(stackEl, step, whimsy);
 
         if (thumbsEl) {
             thumbsEl.innerHTML = '';
@@ -452,7 +457,7 @@
                 btn.type = 'button';
                 btn.className = 'wow-gallery-thumb' + (ci === 0 ? ' is-active' : '');
                 btn.setAttribute('role', 'tab');
-                btn.setAttribute('aria-label', card.name);
+                btn.setAttribute('aria-label', card.name || 'Card');
                 btn.setAttribute('aria-selected', ci === 0 ? 'true' : 'false');
                 var thumbImg = document.createElement('img');
                 thumbImg.src = encodeSrc(card.image);
@@ -474,100 +479,43 @@
         }
 
         if (prevBtn) {
-            prevBtn.addEventListener('click', function () {
-                step(-1, 'nav');
-            });
+            prevBtn.addEventListener('click', function () { step(-1, 'nav'); });
         }
         if (nextBtn) {
-            nextBtn.addEventListener('click', function () {
-                step(1, 'nav');
-            });
+            nextBtn.addEventListener('click', function () { step(1, 'nav'); });
         }
         if (prevBtn) prevBtn.disabled = cards.length <= 1;
         if (nextBtn) nextBtn.disabled = cards.length <= 1;
 
-        document.addEventListener('keydown', function (ev) {
-            if (gallery.hidden) return;
-            var tag = ev.target && ev.target.tagName ? ev.target.tagName.toLowerCase() : '';
-            if (tag === 'input' || tag === 'textarea') return;
-            if (ev.key === 'ArrowLeft') step(-1, 'key');
-            else if (ev.key === 'ArrowRight') step(1, 'key');
-        });
-
-        show(0, { animate: false, force: true });
-    }
-
-    function cardGallery() {
-        var gallery = document.getElementById('wowGallery');
-        var empty = document.getElementById('wowGalleryEmpty');
-        if (!gallery) return;
-
-        fetch('landing-cards.json', { cache: 'no-cache' })
-            .then(function (res) {
-                if (!res.ok) throw new Error('missing');
-                return res.json();
-            })
-            .then(function (data) {
-                var cards = Array.isArray(data) ? data.filter(function (c) {
-                    return c && c.image && c.name;
-                }) : [];
-                if (!cards.length) {
-                    if (empty) empty.hidden = false;
-                    return;
-                }
-                initGallery(cards, gallery, empty);
-            })
-            .catch(function () {
-                if (empty) empty.hidden = false;
-            });
-    }
-
-    function waitlist() {
-        var form = document.getElementById('wowWaitlistForm');
-        var note = document.getElementById('wowWaitlistNote');
-        var emailInput = document.getElementById('wowEmail');
-        if (!form || !emailInput) return;
-
-        form.addEventListener('submit', function (ev) {
-            ev.preventDefault();
-            var email = String(emailInput.value || '').trim();
-            if (!email || email.indexOf('@') < 1) {
-                if (note) {
-                    note.dataset.state = 'err';
-                    note.textContent = 'Enter a valid email so we can reach you.';
-                }
-                emailInput.focus();
-                return;
-            }
-
-            var subject = encodeURIComponent('Wizards of Whimsy waitlist');
-            var body = encodeURIComponent(
-                'Please add me to the Wizards of Whimsy updates list.\n\nEmail: ' + email + '\n'
-            );
-            window.location.href = 'mailto:' + WAITLIST_TO + '?subject=' + subject + '&body=' + body;
-
-            if (note) {
-                note.dataset.state = 'ok';
-                note.textContent = 'Thanks — your email app should open with the signup note.';
-            }
-        });
-    }
-
-    function boot() {
-        reveal();
-        waitlist();
-        cardGallery();
-        var hero = document.querySelector('.wow-hero-copy');
-        if (hero) {
-            requestAnimationFrame(function () {
-                hero.classList.add('is-in');
-            });
+        if (opts.enableKeyboard !== false) {
+            keyHandler = function (ev) {
+                var tag = ev.target && ev.target.tagName ? ev.target.tagName.toLowerCase() : '';
+                if (tag === 'input' || tag === 'textarea') return;
+                if (ev.key === 'ArrowLeft') step(-1, 'key');
+                else if (ev.key === 'ArrowRight') step(1, 'key');
+            };
+            document.addEventListener('keydown', keyHandler);
         }
+
+        var start = parseInt(opts.startIndex, 10);
+        if (!isFinite(start) || start < 0) start = 0;
+        if (start >= cards.length) start = cards.length - 1;
+        show(start, { animate: false, force: true });
+
+        return {
+            show: show,
+            step: step,
+            getIndex: function () { return index; },
+            destroy: function () {
+                if (keyHandler) document.removeEventListener('keydown', keyHandler);
+                stackEl.innerHTML = '';
+            }
+        };
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', boot);
-    } else {
-        boot();
-    }
-})();
+    global.WowCardStack = {
+        init: init,
+        signedOffset: signedOffset,
+        stackRole: stackRole
+    };
+})(window);

@@ -4,10 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Deck builder – Card Maker</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="cardmaker-nav.css">
-    <link rel="stylesheet" href="cardmaker-buttons.css">
-    <script src="cardmaker-nav.js" defer></script>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/cardmaker-nav.css">
+    <link rel="stylesheet" href="wow/wow-auth.css">
+    <link rel="stylesheet" href="css/cardmaker-buttons.css">
+    <script src="wow/wow-auth-config.js"></script>
+    <script src="wow/wow-auth.js"></script>
+    <script>WowAuth.gatePage();</script>
+    <script src="js/cardmaker-nav.js" defer></script>
     <style>
         html, body { margin: 0; min-height: 100%; }
         body.db-page {
@@ -225,14 +229,14 @@
 
     <script src="https://apis.google.com/js/api.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="cardmaker-fonts.js"></script>
-    <script src="card-render.js"></script>
-    <script src="cardmaker-perf.js"></script>
-    <script src="cardmaker-drive-auth.js"></script>
-    <script src="cardmaker-cookie-consent.js"></script>
-    <script src="cardmaker-field-options.js"></script>
-    <script src="cardmaker-sets.js"></script>
-    <script src="card-player-decks-drive.js"></script>
+    <script src="js/cardmaker-fonts.js"></script>
+    <script src="js/card-render.js"></script>
+    <script src="js/cardmaker-perf.js"></script>
+    <script src="js/cardmaker-drive-auth.js"></script>
+    <script src="js/cardmaker-cookie-consent.js"></script>
+    <script src="js/cardmaker-field-options.js"></script>
+    <script src="js/cardmaker-sets.js"></script>
+    <script src="js/card-player-decks-drive.js"></script>
     <script>
 (function () {
     if (typeof CardMakerFonts !== 'undefined') {

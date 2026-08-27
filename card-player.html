@@ -4,10 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Card Player – Card Maker</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="cardmaker-nav.css">
-    <link rel="stylesheet" href="cardmaker-buttons.css">
-    <script src="cardmaker-nav.js" defer></script>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/cardmaker-nav.css">
+    <link rel="stylesheet" href="wow/wow-auth.css">
+    <link rel="stylesheet" href="css/cardmaker-buttons.css">
+    <script src="wow/wow-auth-config.js"></script>
+    <script src="wow/wow-auth.js"></script>
+    <script>WowAuth.gatePage();</script>
+    <script src="js/cardmaker-nav.js" defer></script>
     <style>
         html { height: 100%; }
         body {
@@ -361,7 +365,7 @@
             width: var(--cp-deck-w);
             height: var(--cp-deck-h);
             background-color: #1a1a1c;
-            background-image: url('Card Back.png');
+            background-image: url('assets/cards/Card Back.png');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -1698,14 +1702,14 @@
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js"></script>
-    <script src="cardmaker-fonts.js"></script>
-    <script src="card-render.js"></script>
-    <script src="cardmaker-perf.js"></script>
-    <script src="cardmaker-drive-auth.js"></script>
-    <script src="cardmaker-cookie-consent.js"></script>
-    <script src="cardmaker-sets.js"></script>
-    <script src="card-player-decks-drive.js"></script>
+    <script src="config/firebase-config.js"></script>
+    <script src="js/cardmaker-fonts.js"></script>
+    <script src="js/card-render.js"></script>
+    <script src="js/cardmaker-perf.js"></script>
+    <script src="js/cardmaker-drive-auth.js"></script>
+    <script src="js/cardmaker-cookie-consent.js"></script>
+    <script src="js/cardmaker-sets.js"></script>
+    <script src="js/card-player-decks-drive.js"></script>
     <script>
 (function () {
     if (typeof CardMakerFonts !== 'undefined') {
@@ -4643,9 +4647,9 @@
 
     function cardBackImageSrc() {
         try {
-            return new URL('Card Back.png', location.href).href;
+            return new URL('assets/cards/Card Back.png', location.href).href;
         } catch (e) {
-            return 'Card%20Back.png';
+            return 'assets/cards/Card%20Back.png';
         }
     }
 

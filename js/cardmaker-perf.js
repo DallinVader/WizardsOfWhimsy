@@ -35,6 +35,14 @@
     };
     var GRID_THUMB_VARIANT = 'g640';
 
+    /** Published site catalog — small JPEGs for account / deck builder. */
+    var CATALOG_THUMB_RENDER_OPTS = {
+        maxOutputSide: 400,
+        outputMime: 'image/jpeg',
+        outputQuality: 0.78
+    };
+    var CATALOG_THUMB_VARIANT = 'c400';
+
     /** Print grid / PDF faces — sharp enough at poker size, much faster than full 2500×3500 PNG. */
     var PRINT_RENDER_OPTS = {
         maxOutputSide: 1400,
@@ -432,6 +440,8 @@
         EDITOR_PREVIEW_VARIANT: EDITOR_PREVIEW_VARIANT,
         GRID_THUMB_RENDER_OPTS: GRID_THUMB_RENDER_OPTS,
         GRID_THUMB_VARIANT: GRID_THUMB_VARIANT,
+        CATALOG_THUMB_RENDER_OPTS: CATALOG_THUMB_RENDER_OPTS,
+        CATALOG_THUMB_VARIANT: CATALOG_THUMB_VARIANT,
         PRINT_RENDER_OPTS: PRINT_RENDER_OPTS,
         PROJECT_EXT: PROJECT_EXT,
         EDITOR_DRAFT_KEY: EDITOR_DRAFT_KEY,

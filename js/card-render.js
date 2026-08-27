@@ -63,10 +63,10 @@
     function defaultCardFrameSrc() {
         try {
             if (typeof location !== 'undefined' && location.href) {
-                return new URL('CardFrame.png', location.href).href;
+                return new URL('assets/cards/CardFrame.png', location.href).href;
             }
         } catch (e) { /* ignore */ }
-        return 'CardFrame.png';
+        return 'assets/cards/CardFrame.png';
     }
 
     function loadImage(src) {
@@ -409,7 +409,7 @@
         }
 
         if (showDamage && mainImg && mainW && mainH) {
-            var damageImg = await loadImage('Damage.png');
+            var damageImg = await loadImage('assets/cards/Damage.png');
             var dw = damageImg && (damageImg.width || damageImg.naturalWidth);
             if (dw) {
                 ctx.drawImage(damageImg, dImgX, dImgY, DimgWidth, DimgHeight);
@@ -422,7 +422,7 @@
             ctx.fillText(String(f.DefenseID != null ? f.DefenseID : ''), W - (W / 12.5), H / 12.5);
         }
         if (mainImg && mainW && mainH && rarityTierShowsGem(f.Rarity)) {
-            var rarityImg = await loadImage('Rareity.png');
+            var rarityImg = await loadImage('assets/cards/Rareity.png');
             var rw = rarityImg && (rarityImg.width || rarityImg.naturalWidth);
             if (rw) {
                 var gemTier = String(f.Rarity || '').trim();

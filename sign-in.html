@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Sign in – Wizards of Whimsy</title>
+    <link rel="stylesheet" href="css/cardmaker-nav.css">
+    <link rel="stylesheet" href="wow/wow-auth.css">
+    <script src="wow/wow-auth-config.js"></script>
+    <script src="wow/wow-auth.js"></script>
+    <script src="js/cardmaker-nav.js" defer></script>
+</head>
+<body class="wow-signin-page">
+    <div class="wow-signin-wrap">
+        <div class="wow-signin-card">
+            <h1>Sign in to play</h1>
+            <p class="wow-signin-lead">Use your Questline account to access the deck builder and play cards. More features coming soon.</p>
+
+            <div class="wow-signin-tabs" role="tablist">
+                <button type="button" class="wow-signin-tab is-active" id="wowTabSignIn" role="tab" aria-selected="true">Sign in</button>
+                <button type="button" class="wow-signin-tab" id="wowTabRegister" role="tab" aria-selected="false">Create account</button>
+            </div>
+
+            <div class="wow-signin-panel" id="wowPanelSignIn" role="tabpanel">
+                <form id="wowFormSignIn" novalidate>
+                    <div class="wow-signin-field">
+                        <label for="wowLoginEmail">Email</label>
+                        <input id="wowLoginEmail" name="email" type="email" autocomplete="email" required>
+                    </div>
+                    <div class="wow-signin-field">
+                        <label for="wowLoginPassword">Password</label>
+                        <input id="wowLoginPassword" name="password" type="password" autocomplete="current-password" required>
+                    </div>
+                    <button type="submit" class="wow-signin-submit" id="wowLoginSubmit">Sign in</button>
+                </form>
+            </div>
+
+            <div class="wow-signin-panel" id="wowPanelRegister" role="tabpanel" hidden>
+                <form id="wowFormRegister" novalidate>
+                    <div class="wow-signin-row">
+                        <div class="wow-signin-field">
+                            <label for="wowRegFirst">First name</label>
+                            <input id="wowRegFirst" name="firstName" type="text" autocomplete="given-name" required>
+                        </div>
+                        <div class="wow-signin-field">
+                            <label for="wowRegLast">Last name</label>
+                            <input id="wowRegLast" name="lastName" type="text" autocomplete="family-name" required>
+                        </div>
+                    </div>
+                    <div class="wow-signin-field">
+                        <label for="wowRegEmail">Email</label>
+                        <input id="wowRegEmail" name="email" type="email" autocomplete="email" required>
+                    </div>
+                    <div class="wow-signin-field">
+                        <label for="wowRegPassword">Password</label>
+                        <input id="wowRegPassword" name="password" type="password" autocomplete="new-password" minlength="6" required>
+                    </div>
+                    <button type="submit" class="wow-signin-submit" id="wowRegisterSubmit">Create account</button>
+                </form>
+            </div>
+
+            <p class="wow-signin-msg" id="wowSignInMsg" aria-live="polite"></p>
+            <p class="wow-signin-note">Players can use the deck builder and play cards. Card Maker, saved cards, and print are admin only.</p>
+        </div>
+    </div>
+    <script>
+(function () {
+    'use strict';
+
+    function redirectTarget() {
+        var params = new URLSearchParams(window.location.search);
+        var redir = params.get('redirect') || 'deck-builder.html';
+        if (redir.indexOf('://') !== -1 || redir.indexOf('..') !== -1) {
+            return 'deck-builder.html';
+        }
+        return redir;
+    }
+
+    if (WowAuth.isSignedIn()) {
+        window.location.replace(redirectTarget());
+        return;
+    }
+
+    var tabSignIn = document.getElementById('wowTabSignIn');
+    var tabRegister = document.getElementById('wowTabRegister');
+    var panelSignIn = document.getElementById('wowPanelSignIn');
+    var panelRegister = document.getElementById('wowPanelRegister');
+    var msgEl = document.getElementById('wowSignInMsg');
+    var formSignIn = document.getElementById('wowFormSignIn');
+    var formRegister = document.getElementById('wowFormRegister');
+    var loginSubmit = document.getElementById('wowLoginSubmit');
+    var registerSubmit = document.getElementById('wowRegisterSubmit');
+
+    function setMsg(text, isError) {
+        msgEl.textContent = text || '';
+        msgEl.classList.toggle('is-error', !!isError);
+    }
+
+    function setBusy(btn, busy) {
+        if (!btn) return;
+        btn.disabled = !!busy;
+    }
+
+    function showSignIn() {
+        tabSignIn.classList.add('is-active');
+        tabRegister.classList.remove('is-active');
+        tabSignIn.setAttribute('aria-selected', 'true');
+        tabRegister.setAttribute('aria-selected', 'false');
+        panelSignIn.hidden = false;
+        panelRegister.hidden = true;
+        setMsg('');
+    }
+
+    function showRegister() {
+        tabRegister.classList.add('is-active');
+        tabSignIn.classList.remove('is-active');
+        tabRegister.setAttribute('aria-selected', 'true');
+        tabSignIn.setAttribute('aria-selected', 'false');
+        panelRegister.hidden = false;
+        panelSignIn.hidden = true;
+        setMsg('');
+    }
+
+    tabSignIn.addEventListener('click', showSignIn);
+    tabRegister.addEventListener('click', showRegister);
+
+    formSignIn.addEventListener('submit', function (e) {
+        e.preventDefault();
+        setMsg('');
+        setBusy(loginSubmit, true);
+        var email = document.getElementById('wowLoginEmail').value;
+        var password = document.getElementById('wowLoginPassword').value;
+        WowAuth.login(email, password).then(function () {
+            window.location.replace(redirectTarget());
+        }).catch(function (err) {
+            setMsg(err && err.message ? err.message : 'Sign in failed.', true);
+        }).finally(function () {
+            setBusy(loginSubmit, false);
+        });
+    });
+
+    formRegister.addEventListener('submit', function (e) {
+        e.preventDefault();
+        setMsg('');
+        setBusy(registerSubmit, true);
+        var firstName = document.getElementById('wowRegFirst').value;
+        var lastName = document.getElementById('wowRegLast').value;
+        var email = document.getElementById('wowRegEmail').value;
+        var password = document.getElementById('wowRegPassword').value;
+        WowAuth.register(firstName, lastName, email, password).then(function () {
+            window.location.replace(redirectTarget());
+        }).catch(function (err) {
+            setMsg(err && err.message ? err.message : 'Registration failed.', true);
+        }).finally(function () {
+            setBusy(registerSubmit, false);
+        });
+    });
+})();
+    </script>
+</body>
+</html>

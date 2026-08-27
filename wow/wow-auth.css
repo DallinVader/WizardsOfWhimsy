@@ -1,0 +1,714 @@
+/* Questline sign-in + nav auth (Wizards of Whimsy) */
+html.wow-auth-pending body {
+    visibility: hidden;
+}
+
+.cm-app-nav-auth {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.cm-app-nav-user {
+    font-size: 12px;
+    font-weight: 600;
+    color: #cbd5e1;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0 4px;
+}
+
+.cm-app-nav-user-link {
+    text-decoration: none;
+    border-radius: 8px;
+    transition: color 0.15s ease, background 0.15s ease;
+}
+
+.cm-app-nav-user-link:hover {
+    color: #e0e7ff;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.cm-app-nav-auth-btn {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    background: rgba(30, 41, 59, 0.88);
+    color: #e2e8f0;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.cm-app-nav-auth-btn:hover {
+    background: rgba(51, 65, 85, 0.95);
+    border-color: rgba(165, 180, 252, 0.4);
+}
+
+.cm-app-nav-auth-btn--primary {
+    border-color: rgba(129, 140, 248, 0.45);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.85) 0%, rgba(79, 70, 229, 0.9) 100%);
+    color: #fff;
+}
+
+.cm-app-nav-auth-btn--ghost {
+    background: transparent;
+    border-color: rgba(148, 163, 184, 0.22);
+    color: #94a3b8;
+}
+
+.wow-signin-page {
+    min-height: 100dvh;
+    background: linear-gradient(155deg, #0f172a 0%, #1e293b 50%, #0f3460 100%);
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.wow-signin-wrap {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 24px 16px 48px;
+}
+
+.wow-signin-card {
+    margin-top: 24px;
+    padding: 28px 24px;
+    border-radius: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background: rgba(15, 23, 42, 0.92);
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
+}
+
+.wow-signin-card h1 {
+    margin: 0 0 6px;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+.wow-signin-lead {
+    margin: 0 0 20px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #94a3b8;
+}
+
+.wow-signin-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.wow-signin-tab {
+    flex: 1;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: rgba(30, 41, 59, 0.6);
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.wow-signin-tab.is-active {
+    border-color: rgba(129, 140, 248, 0.5);
+    background: rgba(49, 46, 129, 0.45);
+    color: #e0e7ff;
+}
+
+.wow-signin-panel[hidden] {
+    display: none !important;
+}
+
+.wow-signin-field {
+    margin-bottom: 14px;
+}
+
+.wow-signin-field label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #cbd5e1;
+}
+
+.wow-signin-field input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    background: rgba(15, 23, 42, 0.85);
+    color: #f1f5f9;
+    font-size: 16px;
+}
+
+.wow-signin-field input:focus {
+    outline: 2px solid rgba(129, 140, 248, 0.45);
+    outline-offset: 1px;
+}
+
+.wow-signin-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.wow-signin-submit {
+    width: 100%;
+    margin-top: 8px;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+}
+
+.wow-signin-submit:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.wow-signin-msg {
+    margin: 12px 0 0;
+    font-size: 13px;
+    min-height: 1.25em;
+    color: #93c5fd;
+}
+
+.wow-signin-msg.is-error {
+    color: #fca5a5;
+}
+
+.wow-signin-note {
+    margin-top: 16px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #64748b;
+    text-align: center;
+}
+
+.wow-account-page {
+    min-height: 100dvh;
+    background: linear-gradient(155deg, #0f172a 0%, #1e293b 50%, #0f3460 100%);
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.wow-account-wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 20px 16px 48px;
+}
+
+.wow-account-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.wow-account-header h1 {
+    margin: 0 0 4px;
+    font-size: 1.5rem;
+    color: #f8fafc;
+}
+
+.wow-account-email {
+    margin: 0;
+    font-size: 14px;
+    color: #94a3b8;
+}
+
+.wow-account-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.wow-account-btn {
+    font-size: 13px;
+    font-weight: 700;
+    padding: 9px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    background: rgba(30, 41, 59, 0.88);
+    color: #e2e8f0;
+    cursor: pointer;
+}
+
+.wow-account-btn:hover {
+    background: rgba(51, 65, 85, 0.95);
+}
+
+.wow-account-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+}
+
+.wow-account-stat {
+    padding: 18px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background: rgba(15, 23, 42, 0.88);
+}
+
+.wow-account-stat-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #94a3b8;
+    margin-bottom: 6px;
+}
+
+.wow-account-stat-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #fde68a;
+    line-height: 1.1;
+}
+
+.wow-account-stat-value--count {
+    color: #a5b4fc;
+}
+
+.wow-account-stat-value--items {
+    color: #7dd3fc;
+}
+
+.wow-account-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.wow-account-tab {
+    flex: 1;
+    max-width: 220px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: rgba(30, 41, 59, 0.6);
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.wow-account-tab.is-active {
+    border-color: rgba(129, 140, 248, 0.5);
+    background: rgba(49, 46, 129, 0.45);
+    color: #e0e7ff;
+}
+
+.wow-account-panel[hidden] {
+    display: none !important;
+}
+
+.wow-account-section h2 {
+    margin: 0 0 14px;
+    font-size: 1.1rem;
+    color: #f1f5f9;
+}
+
+.wow-account-status {
+    margin: 0 0 16px;
+    font-size: 14px;
+    color: #94a3b8;
+}
+
+.wow-account-status.is-error {
+    color: #fca5a5;
+}
+
+.wow-account-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 14px;
+}
+
+.wow-account-grid--items {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+}
+
+.wow-account-grid--items .wow-account-card-art {
+    aspect-ratio: 1 / 1;
+}
+
+.wow-account-card {
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background: rgba(15, 23, 42, 0.92);
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+
+.wow-account-card-art {
+    position: relative;
+    aspect-ratio: 5 / 7;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.wow-account-card-new {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 3;
+    padding: 3px 7px;
+    border-radius: 5px;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #0f172a;
+    background: linear-gradient(135deg, #fde68a, #fbbf24);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+}
+
+.wow-account-card-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.wow-account-card-placeholder {
+    font-size: 2rem;
+    opacity: 0.35;
+}
+
+.wow-account-card-body {
+    padding: 10px 12px 12px;
+}
+
+.wow-account-card-name {
+    margin: 0 0 4px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #f8fafc;
+    line-height: 1.3;
+}
+
+.wow-account-card-meta {
+    margin: 0;
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.wow-account-card-qty {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.wow-account-card--unowned {
+    opacity: 0.72;
+}
+
+.wow-account-card--unowned .wow-account-card-art {
+    filter: grayscale(0.35);
+}
+
+.wow-account-card-qty.is-owned {
+    background: rgba(34, 197, 94, 0.22);
+    color: #bbf7d0;
+}
+
+.wow-account-card-qty.is-unowned {
+    background: rgba(100, 116, 139, 0.25);
+    color: #94a3b8;
+}
+
+.wow-account-btn--danger {
+    border-color: rgba(248, 113, 113, 0.5);
+    background: rgba(127, 29, 29, 0.45);
+    color: #fecaca;
+}
+
+.wow-account-btn--danger:hover:not(:disabled) {
+    background: rgba(153, 27, 27, 0.65);
+    border-color: rgba(252, 165, 165, 0.55);
+}
+
+.wow-account-header .wow-account-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.wow-account-admin-hint {
+    margin: 0 0 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    background: rgba(180, 83, 9, 0.12);
+    font-size: 12px;
+    line-height: 1.45;
+    color: #fcd34d;
+}
+
+.wow-account-card-admin {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.wow-account-remove-btn {
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(248, 113, 113, 0.45);
+    background: rgba(127, 29, 29, 0.35);
+    color: #fecaca;
+    cursor: pointer;
+}
+
+.wow-account-remove-btn:hover:not(:disabled) {
+    background: rgba(153, 27, 27, 0.55);
+}
+
+.wow-account-remove-btn:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
+
+.wow-account-remove-btn--all {
+    border-color: rgba(251, 191, 36, 0.45);
+    background: rgba(120, 53, 15, 0.45);
+    color: #fde68a;
+}
+
+.wow-account-empty {
+    padding: 28px 20px;
+    border-radius: 14px;
+    border: 1px dashed rgba(148, 163, 184, 0.35);
+    background: rgba(15, 23, 42, 0.5);
+    text-align: center;
+    color: #94a3b8;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.wow-account-empty code {
+    font-size: 12px;
+    color: #cbd5e1;
+}
+
+.wow-account-rarity--Legendary { color: #d1bc43; }
+.wow-account-rarity--Mythic { color: #ef4444; }
+.wow-account-rarity--Epic { color: #a78bfa; }
+.wow-account-rarity--Rare { color: #60a5fa; }
+.wow-account-rarity--Uncommon { color: #86efac; }
+.wow-account-rarity--Fantastical { color: #34d399; }
+
+.wow-account-shop-note {
+    margin: 0 0 16px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #94a3b8;
+    max-width: 52rem;
+}
+
+.wow-account-shop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.wow-account-pack {
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background: rgba(15, 23, 42, 0.92);
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+
+.wow-account-pack.is-disabled {
+    opacity: 0.72;
+}
+
+.wow-account-pack-art {
+    aspect-ratio: 16 / 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.4rem;
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.95) 0%, rgba(51, 65, 85, 0.85) 100%);
+}
+
+.wow-account-pack-art--premium {
+    background: linear-gradient(145deg, rgba(79, 70, 229, 0.35) 0%, rgba(30, 41, 59, 0.95) 100%);
+}
+
+.wow-account-pack-body {
+    padding: 12px 14px 14px;
+}
+
+.wow-account-pack-name {
+    margin: 0 0 4px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #f8fafc;
+}
+
+.wow-account-pack-meta {
+    margin: 0 0 8px;
+    font-size: 12px;
+    color: #94a3b8;
+    line-height: 1.35;
+}
+
+.wow-account-pack-price {
+    margin: 0 0 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fbbf24;
+}
+
+.wow-account-pack-btn {
+    width: 100%;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(129, 140, 248, 0.45);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.85) 0%, rgba(79, 70, 229, 0.9) 100%);
+    color: #fff;
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.wow-account-pack-btn--test {
+    margin-top: 8px;
+    cursor: pointer;
+    opacity: 1;
+    border-color: rgba(251, 191, 36, 0.55);
+    background: linear-gradient(135deg, rgba(180, 83, 9, 0.85) 0%, rgba(146, 64, 14, 0.92) 100%);
+}
+
+.wow-account-pack-btn--test:hover:not(:disabled) {
+    filter: brightness(1.06);
+}
+
+.wow-account-pack-btn--test:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
+
+.wow-pack-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.wow-pack-modal.is-open {
+    display: flex;
+}
+
+html.wow-pack-modal-open,
+html.wow-pack-modal-open body {
+    overflow: hidden;
+}
+
+.wow-pack-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.72);
+}
+
+.wow-pack-modal-dialog {
+    position: relative;
+    width: min(920px, 100%);
+    max-height: min(88vh, 900px);
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
+.wow-pack-modal-panel {
+    position: relative;
+    background: #0f172a;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 16px;
+    padding: 22px 22px 18px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+    max-height: min(88vh, 900px);
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
+.wow-pack-modal-panel h2 {
+    margin: 0 0 8px;
+    font-size: 1.25rem;
+    color: #f8fafc;
+}
+
+.wow-pack-modal-note {
+    margin: 0 0 16px;
+    font-size: 13px;
+    color: #94a3b8;
+    line-height: 1.45;
+}
+
+.wow-pack-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    border: 0;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 1.6rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.wow-pack-reveal-grid {
+    margin-bottom: 16px;
+}
+
+.wow-pack-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.wow-account-pack-soon {
+    margin: 8px 0 0;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #64748b;
+    text-align: center;
+}
