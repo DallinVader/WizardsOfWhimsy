@@ -593,6 +593,59 @@ html.wow-auth-pending body {
     color: #fbbf24;
 }
 
+.wow-account-pack-qty {
+    margin: 0 0 12px;
+    padding: 10px 10px 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background: rgba(2, 6, 23, 0.35);
+}
+
+.wow-account-pack-qty-label {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+    margin: 0 0 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #cbd5e1;
+}
+
+.wow-account-pack-qty-label strong {
+    color: #f8fafc;
+    font-size: 14px;
+}
+
+.wow-account-pack-qty-cost {
+    font-weight: 500;
+    color: #94a3b8;
+    font-size: 11px;
+}
+
+.wow-account-pack-qty-range {
+    width: 100%;
+    margin: 0 0 10px;
+    accent-color: #f59e0b;
+    cursor: pointer;
+}
+
+.wow-account-pack-skip-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.35;
+    color: #94a3b8;
+    cursor: pointer;
+}
+
+.wow-account-pack-skip-label input {
+    margin-top: 1px;
+    accent-color: #a78bfa;
+}
+
 .wow-account-pack-btn {
     width: 100%;
     font-family: inherit;
@@ -613,6 +666,11 @@ html.wow-auth-pending body {
     opacity: 1;
     border-color: rgba(251, 191, 36, 0.55);
     background: linear-gradient(135deg, rgba(180, 83, 9, 0.85) 0%, rgba(146, 64, 14, 0.92) 100%);
+}
+
+.wow-account-pack-btn--preview {
+    border-color: rgba(148, 163, 184, 0.45);
+    background: linear-gradient(135deg, rgba(71, 85, 105, 0.9) 0%, rgba(51, 65, 85, 0.95) 100%);
 }
 
 .wow-account-pack-btn--test:hover:not(:disabled) {

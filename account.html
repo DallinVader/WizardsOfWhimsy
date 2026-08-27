@@ -86,9 +86,21 @@
                     <div class="wow-account-pack-body">
                         <p class="wow-account-pack-name">Whimsy booster</p>
                         <p class="wow-account-pack-meta">10 random cards · 50/30/15/5 rates · sorted to best pull last</p>
-                        <p class="wow-account-pack-price"><span id="wowPackPriceCoins">50</span> QuestCoins</p>
+                        <p class="wow-account-pack-price"><span id="wowPackPriceCoins">50</span> QuestCoins each</p>
+                        <div class="wow-account-pack-qty" id="wowPackQtyWrap" hidden>
+                            <label class="wow-account-pack-qty-label" for="wowPackQtyRange">
+                                Packs: <strong id="wowPackQtyValue">1</strong>
+                                <span class="wow-account-pack-qty-cost" id="wowPackQtyCost"></span>
+                            </label>
+                            <input type="range" class="wow-account-pack-qty-range" id="wowPackQtyRange" min="1" max="1" value="1" step="1">
+                            <label class="wow-account-pack-skip-label">
+                                <input type="checkbox" id="wowPackSkipCommons">
+                                Skip commons &amp; uncommons in reveal
+                            </label>
+                        </div>
                         <button type="button" class="wow-account-pack-btn" id="wowPackOpenBtn" disabled title="Pack API coming soon">Open pack</button>
                         <button type="button" class="wow-account-pack-btn wow-account-pack-btn--test" id="wowPackTestOpenBtn" hidden title="Admin only: grant cards without spending QuestCoins">Test open pack</button>
+                        <button type="button" class="wow-account-pack-btn wow-account-pack-btn--test wow-account-pack-btn--preview" id="wowPackTestMultiBtn" hidden title="Admin only: open multiple packs in the reveal UI without adding cards to inventory">Test open multiple</button>
                         <p class="wow-account-pack-soon" id="wowPackSoonNote">Coming soon</p>
                     </div>
                 </article>
@@ -131,6 +143,7 @@
                     <p class="wow-pack-reveal-hint" id="wowPackRevealHint">Swipe the card away to reveal the next pull →</p>
                     <div class="wow-pack-reveal-toolbar">
                         <button type="button" class="wow-pack-sound-btn" id="wowPackSoundBtn" aria-pressed="false">Sound on</button>
+                        <button type="button" class="wow-pack-reveal-all-btn" id="wowPackSkipRares" hidden>Skip to rares</button>
                         <button type="button" class="wow-pack-reveal-all-btn" id="wowPackRevealAll" hidden>Skip to last</button>
                     </div>
                 </div>
@@ -167,7 +180,13 @@
     var panelCards = document.getElementById('wowPanelCards');
     var panelItems = document.getElementById('wowPanelItems');
     var packTestOpenBtn = document.getElementById('wowPackTestOpenBtn');
+    var packTestMultiBtn = document.getElementById('wowPackTestMultiBtn');
     var packSoonNote = document.getElementById('wowPackSoonNote');
+    var packQtyWrap = document.getElementById('wowPackQtyWrap');
+    var packQtyRange = document.getElementById('wowPackQtyRange');
+    var packQtyValue = document.getElementById('wowPackQtyValue');
+    var packQtyCost = document.getElementById('wowPackQtyCost');
+    var packSkipCommons = document.getElementById('wowPackSkipCommons');
     var packRevealModal = document.getElementById('wowPackRevealModal');
     var packRevealNote = document.getElementById('wowPackRevealNote');
     var packRevealTitle = document.getElementById('wowPackRevealTitle');
@@ -178,6 +197,8 @@
     var packFocusRelease = null;
     var packRevealCards = [];
     var packOwnedBefore = Object.create(null);
+    var lastAccountQuestCoins = 0;
+    var SKIP_COMMONS_KEY = 'wow_pack_skip_commons_v1';
     var adminHintEl = document.getElementById('wowAccountAdminHint');
     var adminResetCardsBtn = document.getElementById('wowAdminResetCards');
     var activeTab = 'cards';
@@ -326,11 +347,70 @@
         return !!(session && session.user && WowAuth.isAdmin(session.user));
     }
 
+    function whimsyPackPrice() {
+        var cfg = window.WowAuthConfig || {};
+        var whimsyPack = cfg.packs && cfg.packs.whimsy ? cfg.packs.whimsy : null;
+        var price = whimsyPack && whimsyPack.priceQuestCoins != null ? parseInt(whimsyPack.priceQuestCoins, 10) : 50;
+        return isFinite(price) && price > 0 ? price : 50;
+    }
+
+    function loadSkipCommonsPref() {
+        try {
+            return localStorage.getItem(SKIP_COMMONS_KEY) === '1';
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function saveSkipCommonsPref(on) {
+        try {
+            localStorage.setItem(SKIP_COMMONS_KEY, on ? '1' : '0');
+        } catch (e) { /* ignore */ }
+    }
+
+    function getSelectedPackCount() {
+        if (!packQtyRange) return 1;
+        var n = parseInt(packQtyRange.value, 10);
+        if (!isFinite(n) || n < 1) return 1;
+        var max = parseInt(packQtyRange.max, 10) || 1;
+        return Math.min(n, max);
+    }
+
+    function updatePackQtyUi() {
+        if (!packQtyRange || !packQtyValue) return;
+        var price = whimsyPackPrice();
+        var max = 1;
+        if (typeof WowPackOpen !== 'undefined' && WowPackOpen.maxAffordablePacks) {
+            max = WowPackOpen.maxAffordablePacks('whimsy', lastAccountQuestCoins);
+        } else {
+            max = Math.max(1, Math.floor(lastAccountQuestCoins / price) || 1);
+        }
+        packQtyRange.min = '1';
+        packQtyRange.max = String(max);
+        var current = parseInt(packQtyRange.value, 10);
+        if (!isFinite(current) || current < 1) current = 1;
+        if (current > max) current = max;
+        packQtyRange.value = String(current);
+        packQtyValue.textContent = String(current);
+        if (packQtyCost) {
+            var total = current * price;
+            packQtyCost.textContent = current > 1
+                ? '· ' + total + ' QC if live'
+                : '';
+        }
+    }
+
     function updatePackAdminUi() {
         var admin = isAdminUser();
         adminRemoveEnabled = admin;
         if (packTestOpenBtn) {
             packTestOpenBtn.hidden = !admin;
+        }
+        if (packTestMultiBtn) {
+            packTestMultiBtn.hidden = !admin;
+        }
+        if (packQtyWrap) {
+            packQtyWrap.hidden = !admin;
         }
         if (packSoonNote) {
             packSoonNote.hidden = admin;
@@ -341,6 +421,10 @@
         if (adminResetCardsBtn) {
             adminResetCardsBtn.hidden = !admin;
         }
+        if (packSkipCommons) {
+            packSkipCommons.checked = loadSkipCommonsPref();
+        }
+        updatePackQtyUi();
     }
 
     function handleResetAllCards() {
@@ -424,14 +508,17 @@
         packRevealBest.classList.toggle('is-show', onLast && isRarePlus(card && card.rarity));
     }
 
-    function mountPackRevealStack(cards, startIndex) {
+    function mountPackRevealStack(cards, startIndex, options) {
+        options = options || {};
         if (packStackController && packStackController.destroy) {
             packStackController.destroy();
             packStackController = null;
         }
         if (typeof WowPackReveal === 'undefined' || !WowPackReveal.init) return;
         var stackCards = cards.map(cardToStackEntry);
-        markNewCardsFromPack(stackCards);
+        if (!options.dryRun) {
+            markNewCardsFromPack(stackCards);
+        }
         packStackController = WowPackReveal.init({
             stackEl: document.getElementById('wowPackRevealStack'),
             cards: stackCards,
@@ -447,7 +534,9 @@
             hintEl: document.getElementById('wowPackRevealHint'),
             progressEl: document.getElementById('wowPackRevealProgress'),
             revealAllBtn: document.getElementById('wowPackRevealAll'),
+            skipRaresBtn: document.getElementById('wowPackSkipRares'),
             soundBtn: document.getElementById('wowPackSoundBtn'),
+            skipLowRarityOnStart: !!(packSkipCommons && packSkipCommons.checked),
             escapeHtml: escapeHtml,
             onChange: function (index) {
                 updatePackRevealBestPull(index);
@@ -456,9 +545,15 @@
                 var newCount = cards.filter(function (c) { return c.isNew; }).length;
                 var sub = document.getElementById('wowPackSummarySub');
                 if (sub) {
-                    sub.textContent = newCount > 0
-                        ? newCount + ' new card' + (newCount === 1 ? '' : 's') + ' added to your collection!'
-                        : 'All pulls added to your collection.';
+                    if (options.dryRun) {
+                        sub.textContent = newCount > 0
+                            ? 'Preview only — ' + newCount + ' would be new. Nothing was added to your account.'
+                            : 'Preview only — nothing was added to your account.';
+                    } else {
+                        sub.textContent = newCount > 0
+                            ? newCount + ' new card' + (newCount === 1 ? '' : 's') + ' added to your collection!'
+                            : 'All pulls added to your collection.';
+                    }
                 }
             }
         });
@@ -473,15 +568,28 @@
         }
         packRevealCards = cards;
         var packName = result && result.packName ? result.packName : 'Pack';
-        if (packRevealTitle) packRevealTitle.textContent = packName + ' opened';
+        var packCount = result && result.packCount > 1 ? result.packCount : 1;
+        if (packRevealTitle) {
+            packRevealTitle.textContent = packCount > 1
+                ? packName + ' ×' + packCount + ' opened'
+                : packName + ' opened';
+        }
         if (packRevealKicker) {
             packRevealKicker.textContent = cards.length > 1
                 ? 'Peel cards away — commons first, rarest on top'
                 : 'Your pull from the pack';
         }
-        var note = result && result.testMode
-            ? 'Test open — no QuestCoins spent. Cards were added to your inventory.'
-            : '';
+        var dryRun = !!(result && result.skipGrant);
+        packRevealModal.dataset.dryRun = dryRun ? '1' : '0';
+        var note = '';
+        if (dryRun) {
+            note = 'Preview — no QuestCoins spent, nothing added to inventory.';
+        } else if (result && result.testMode) {
+            note = 'Test open — no QuestCoins spent. Cards were added to your inventory.';
+        }
+        if (packCount > 1) {
+            note = (note ? note + ' ' : '') + cards.length + ' cards from ' + packCount + ' packs.';
+        }
         if (packRevealNote) packRevealNote.textContent = note;
         if (packRevealBest) packRevealBest.classList.remove('is-show');
         if (packRevealRestart) packRevealRestart.hidden = cards.length <= 1;
@@ -489,7 +597,7 @@
         var summaryEl = document.getElementById('wowPackRevealSummary');
         if (peelEl) peelEl.hidden = false;
         if (summaryEl) summaryEl.hidden = true;
-        mountPackRevealStack(cards, 0);
+        mountPackRevealStack(cards, 0, { dryRun: dryRun });
         packRevealModal.classList.add('is-open');
         packRevealModal.setAttribute('aria-hidden', 'false');
         document.documentElement.classList.add('wow-pack-modal-open');
@@ -530,20 +638,37 @@
         return map;
     }
 
-    function testOpenWhimsyPack() {
+    function setPackTestButtonsDisabled(disabled) {
+        if (packTestOpenBtn) packTestOpenBtn.disabled = !!disabled;
+        if (packTestMultiBtn) packTestMultiBtn.disabled = !!disabled;
+        if (packQtyRange) packQtyRange.disabled = !!disabled;
+    }
+
+    function testOpenWhimsyPack(options) {
+        options = options || {};
+        var skipGrant = !!options.skipGrant;
         if (!isAdminUser()) return;
         if (typeof WowPackOpen === 'undefined' || !WowPackOpen.openPack) {
             setStatus('Pack module failed to load.', true);
             return;
         }
-        if (packTestOpenBtn) packTestOpenBtn.disabled = true;
-        setStatus('Opening test pack…');
+        var packCount = getSelectedPackCount();
+        setPackTestButtonsDisabled(true);
+        setStatus(skipGrant
+            ? 'Previewing ' + packCount + ' pack' + (packCount === 1 ? '' : 's') + '…'
+            : 'Opening ' + packCount + ' test pack' + (packCount === 1 ? '' : 's') + '…');
         packOwnedBefore = snapshotOwnedFromSession();
         WowPackOpen.openPack('whimsy', {
             testMode: true,
+            skipGrant: skipGrant,
+            packCount: packCount,
             ownedBefore: packOwnedBefore
         }).then(function (result) {
             openPackRevealModal(result);
+            if (skipGrant) {
+                setStatus('');
+                return;
+            }
             setStatus('Saving pulls to inventory…');
             var grant = result && result.grantPromise ? result.grantPromise : Promise.resolve();
             return grant.then(function () {
@@ -560,7 +685,7 @@
         }).catch(function (err) {
             setStatus(err && err.message ? err.message : 'Could not open pack.', true);
         }).finally(function () {
-            if (packTestOpenBtn) packTestOpenBtn.disabled = false;
+            setPackTestButtonsDisabled(false);
         });
     }
 
@@ -569,12 +694,11 @@
         var profile = user.profile || {};
         nameEl.textContent = WowAuth.userDisplayName(user);
         emailEl.textContent = profile.email || '';
-        coinsEl.textContent = String(data.questCoin != null ? data.questCoin : 0);
-        var cfg = window.WowAuthConfig || {};
-        var whimsyPack = cfg.packs && cfg.packs.whimsy ? cfg.packs.whimsy : null;
+        lastAccountQuestCoins = data.questCoin != null ? parseInt(data.questCoin, 10) || 0 : 0;
+        coinsEl.textContent = String(lastAccountQuestCoins);
         var packPriceEl = document.getElementById('wowPackPriceCoins');
         if (packPriceEl) {
-            packPriceEl.textContent = String(whimsyPack && whimsyPack.priceQuestCoins != null ? whimsyPack.priceQuestCoins : 50);
+            packPriceEl.textContent = String(whimsyPackPrice());
         }
         var ownedTypes = (data.cards || []).filter(function (c) { return (parseInt(c.quantity, 10) || 0) > 0; }).length;
         var ownedCopies = (data.cards || []).reduce(function (sum, c) {
@@ -628,7 +752,23 @@
         }
     });
     if (packTestOpenBtn) {
-        packTestOpenBtn.addEventListener('click', testOpenWhimsyPack);
+        packTestOpenBtn.addEventListener('click', function () {
+            testOpenWhimsyPack({ skipGrant: false });
+        });
+    }
+    if (packTestMultiBtn) {
+        packTestMultiBtn.addEventListener('click', function () {
+            testOpenWhimsyPack({ skipGrant: true });
+        });
+    }
+    if (packQtyRange) {
+        packQtyRange.addEventListener('input', updatePackQtyUi);
+        packQtyRange.addEventListener('change', updatePackQtyUi);
+    }
+    if (packSkipCommons) {
+        packSkipCommons.addEventListener('change', function () {
+            saveSkipCommonsPref(!!packSkipCommons.checked);
+        });
     }
     if (packRevealModal) {
         packRevealModal.addEventListener('click', function (e) {

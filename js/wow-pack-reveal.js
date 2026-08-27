@@ -453,7 +453,9 @@
         var summaryEl = opts.summaryEl;
         var summaryGridEl = opts.summaryGridEl;
         var revealAllBtn = opts.revealAllBtn;
+        var skipRaresBtn = opts.skipRaresBtn;
         var soundBtn = opts.soundBtn;
+        var skipLowRarityOnStart = !!opts.skipLowRarityOnStart;
         var onChange = typeof opts.onChange === 'function' ? opts.onChange : null;
         var onComplete = typeof opts.onComplete === 'function' ? opts.onComplete : null;
         var escapeHtml = opts.escapeHtml;
@@ -466,11 +468,13 @@
         var summaryShown = false;
         var finishTimer = null;
         var flippedTop = false;
+        var PROGRESS_DOT_LIMIT = 24;
 
         if (!stackEl || !cards.length) {
             return {
                 reset: function () {},
                 revealAll: function () {},
+                skipToRares: function () {},
                 showSummary: function () {},
                 getIndex: function () { return 0; },
                 destroy: function () {}
@@ -482,6 +486,14 @@
         if (totalEl) totalEl.textContent = String(cards.length);
         preloadAll(cards);
 
+        function firstRarePlusIndex() {
+            var i;
+            for (i = 0; i < cards.length; i++) {
+                if (rarityIndex(cards[i] && cards[i].rarity) >= 2) return i;
+            }
+            return -1;
+        }
+
         function updateSoundBtn() {
             if (!soundBtn) return;
             soundBtn.setAttribute('aria-pressed', sound.isMuted() ? 'true' : 'false');
@@ -489,15 +501,35 @@
             soundBtn.title = sound.isMuted() ? 'Enable pack sounds' : 'Mute pack sounds';
         }
 
+        function updateSkipRaresBtn() {
+            if (!skipRaresBtn) return;
+            var target = firstRarePlusIndex();
+            var canSkip = !summaryShown && !opening && target >= 0 && peelIndex < target;
+            skipRaresBtn.hidden = !canSkip;
+            skipRaresBtn.disabled = animating || !canSkip;
+        }
+
         function updateProgress() {
             if (!progressEl) return;
-            progressEl.innerHTML = cards.map(function (_, i) {
-                var cls = 'wow-pack-progress-dot';
-                if (i < peelIndex) cls += ' is-done';
-                else if (i === peelIndex) cls += ' is-current';
-                return '<span class="' + cls + '" aria-hidden="true"></span>';
-            }).join('');
-            progressEl.setAttribute('aria-label', 'Card ' + (peelIndex + 1) + ' of ' + cards.length);
+            var total = cards.length;
+            var current = Math.min(peelIndex + 1, total);
+            if (total > PROGRESS_DOT_LIMIT) {
+                var pct = total > 0 ? Math.round((peelIndex / total) * 100) : 0;
+                if (peelIndex >= total) pct = 100;
+                progressEl.innerHTML =
+                    '<div class="wow-pack-progress-bar" aria-hidden="true">' +
+                        '<div class="wow-pack-progress-bar-fill" style="width:' + pct + '%"></div>' +
+                    '</div>' +
+                    '<span class="wow-pack-progress-label">' + current + ' / ' + total + '</span>';
+            } else {
+                progressEl.innerHTML = cards.map(function (_, i) {
+                    var cls = 'wow-pack-progress-dot';
+                    if (i < peelIndex) cls += ' is-done';
+                    else if (i === peelIndex) cls += ' is-current';
+                    return '<span class="' + cls + '" aria-hidden="true"></span>';
+                }).join('');
+            }
+            progressEl.setAttribute('aria-label', 'Card ' + current + ' of ' + total);
         }
 
         function canPeel() {
@@ -572,6 +604,7 @@
                 }
             }
             if (revealAllBtn) revealAllBtn.hidden = summaryShown || opening;
+            updateSkipRaresBtn();
             stackEl.classList.remove('is-finished');
             updateProgress();
             if (onChange && card) onChange(peelIndex, card);
@@ -598,6 +631,7 @@
             var dialog = summaryEl && summaryEl.closest ? summaryEl.closest('.wow-pack-modal-dialog') : null;
             if (dialog) dialog.classList.add('wow-pack-modal-dialog--summary');
             if (revealAllBtn) revealAllBtn.hidden = true;
+            if (skipRaresBtn) skipRaresBtn.hidden = true;
             if (hintEl) hintEl.textContent = '';
             sound.playSummaryComplete();
             if (onComplete) onComplete(cards);
@@ -680,6 +714,34 @@
             /* Still require a swipe of the last card — do not jump to summary. */
         }
 
+        /** Jump past common/uncommon pulls to the first rare+ (or last card if none). */
+        function skipToRares() {
+            if (summaryShown || animating) return;
+            var target = firstRarePlusIndex();
+            if (target < 0) {
+                revealAll();
+                return;
+            }
+            if (peelIndex > target) return;
+            if (peelIndex === target && flippedTop) {
+                updateSkipRaresBtn();
+                return;
+            }
+            peelIndex = target;
+            animating = false;
+            opening = false;
+            flippedTop = true;
+            stackEl.classList.remove('is-opening', 'is-peeling');
+            renderStack();
+            var topInner = stackEl.querySelector('.wow-peel-card.is-top .wow-peel-flip-inner');
+            if (topInner) topInner.classList.add('is-flipped');
+            updateMeta();
+            flashRarity(cards[peelIndex], peelIndex === cards.length - 1);
+            var idx = rarityIndex(cards[peelIndex] && cards[peelIndex].rarity);
+            if (idx >= 3) sound.playFinale();
+            else if (idx >= 2) sound.playRare();
+        }
+
         function reset() {
             peelIndex = 0;
             animating = false;
@@ -702,9 +764,17 @@
                 window.setTimeout(function () {
                     opening = false;
                     stackEl.classList.remove('is-opening');
-                    revealTopCard();
-                    stackEl.focus();
+                    if (skipLowRarityOnStart) {
+                        skipToRares();
+                        stackEl.focus();
+                    } else {
+                        revealTopCard();
+                        stackEl.focus();
+                    }
                 }, OPEN_BEAT_MS);
+            } else if (skipLowRarityOnStart) {
+                skipToRares();
+                stackEl.focus();
             } else {
                 revealTopCard();
                 stackEl.focus();
@@ -715,6 +785,10 @@
 
         if (revealAllBtn) {
             revealAllBtn.addEventListener('click', revealAll);
+        }
+
+        if (skipRaresBtn) {
+            skipRaresBtn.addEventListener('click', skipToRares);
         }
 
         if (soundBtn) {
@@ -745,21 +819,27 @@
         updateMeta();
         updateSoundBtn();
 
-        if (opening) {
-            window.setTimeout(function () {
-                opening = false;
-                stackEl.classList.remove('is-opening');
+        function beginReveal() {
+            opening = false;
+            stackEl.classList.remove('is-opening');
+            if (skipLowRarityOnStart) {
+                skipToRares();
+            } else {
                 revealTopCard();
-                stackEl.focus();
-            }, OPEN_BEAT_MS);
+            }
+            stackEl.focus();
+        }
+
+        if (opening) {
+            window.setTimeout(beginReveal, OPEN_BEAT_MS);
         } else {
-            revealTopCard();
-            window.setTimeout(function () { stackEl.focus(); }, 50);
+            beginReveal();
         }
 
         return {
             reset: reset,
             revealAll: revealAll,
+            skipToRares: skipToRares,
             showSummary: showSummary,
             getIndex: function () { return peelIndex; },
             destroy: function () {

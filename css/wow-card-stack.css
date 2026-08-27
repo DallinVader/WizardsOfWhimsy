@@ -708,6 +708,7 @@
 .wow-pack-progress {
     display: flex;
     justify-content: center;
+    align-items: center;
     flex-wrap: wrap;
     gap: 6px;
     margin-top: 0.85rem;
@@ -730,6 +731,30 @@
     background: var(--wcs-amber-hot);
     transform: scale(1.25);
     box-shadow: 0 0 8px rgba(240, 192, 106, 0.55);
+}
+
+.wow-pack-progress-bar {
+    flex: 1 1 140px;
+    max-width: 220px;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.25);
+    overflow: hidden;
+}
+
+.wow-pack-progress-bar-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, rgba(230, 162, 60, 0.75), rgba(240, 192, 106, 0.95));
+    transition: width 0.2s ease;
+}
+
+.wow-pack-progress-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    min-width: 4.5em;
+    text-align: center;
 }
 
 .wow-pack-reveal-toolbar {
@@ -762,6 +787,11 @@
 .wow-pack-reveal-all-btn {
     border-color: rgba(196, 168, 255, 0.35);
     color: #ddd6fe;
+}
+
+.wow-pack-reveal-all-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
 }
 
 .wow-pack-summary {

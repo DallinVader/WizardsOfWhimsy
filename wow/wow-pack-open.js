@@ -191,12 +191,29 @@
         });
     }
 
+    function maxAffordablePacks(packId, questCoins) {
+        var packDef = getPackDef(packId);
+        var price = parseInt(packDef.priceQuestCoins, 10);
+        if (!isFinite(price) || price < 1) price = 1;
+        var coins = parseInt(questCoins, 10);
+        if (!isFinite(coins) || coins < 0) coins = 0;
+        var max = Math.floor(coins / price);
+        if (!isFinite(max) || max < 1) max = 1;
+        if (max > 100) max = 100;
+        return max;
+    }
+
     function openPack(packId, options) {
         options = options || {};
         var testMode = !!options.testMode;
+        var skipGrant = !!options.skipGrant;
         var packDef = getPackDef(packId);
         var count = parseInt(packDef.cardCount, 10);
         if (!isFinite(count) || count < 1) count = 1;
+        var packCount = parseInt(options.packCount, 10);
+        if (!isFinite(packCount) || packCount < 1) packCount = 1;
+        if (packCount > 100) packCount = 100;
+        var totalCards = count * packCount;
 
         if (!testMode) {
             return Promise.reject(new Error('Pack opening is not live yet. Use Test open pack (admin) or wait for the Questline pack API.'));
@@ -213,17 +230,21 @@
                     'No cards in the catalog match this pack pool. Publish the catalog and sync Questline items first.'
                 );
             }
-            var pulled = pickWeightedRandom(pool, packDef.rarityWeights, count);
+            var pulled = pickWeightedRandom(pool, packDef.rarityWeights, totalCards);
             var result = {
                 packId: packId,
                 packName: packDef.name || packId,
                 testMode: true,
+                skipGrant: skipGrant,
+                packCount: packCount,
                 cards: sortCardsForReveal(pulled)
             };
 
-            var grantPromise = grantCardsToUser(pulled, {
-                ownedBefore: options.ownedBefore || null
-            });
+            var grantPromise = skipGrant
+                ? Promise.resolve(null)
+                : grantCardsToUser(pulled, {
+                    ownedBefore: options.ownedBefore || null
+                });
 
             if (options.waitForGrant) {
                 return grantPromise.then(function () { return result; });
@@ -240,6 +261,7 @@
         buildPool: buildPool,
         pickWeightedRandom: pickWeightedRandom,
         openPack: openPack,
+        maxAffordablePacks: maxAffordablePacks,
         grantCardsToUser: grantCardsToUser,
         sortCardsForReveal: sortCardsForReveal,
         normalizeRarity: normalizeRarity,
