@@ -103,18 +103,79 @@
         return map;
     }
 
-    function grantCardsToUser(cards) {
-        var counts = aggregateByItemId(cards);
-        var ids = Object.keys(counts);
+    function aggregateOwnedItems(ownedItems) {
+        var map = Object.create(null);
+        (ownedItems || []).forEach(function (entry) {
+            var id = entry && entry.itemId != null ? String(entry.itemId).trim() : '';
+            if (!id) return;
+            var q = parseInt(entry.quantity, 10);
+            if (!isFinite(q) || q < 1) q = 1;
+            map[id] = (map[id] || 0) + q;
+        });
+        return map;
+    }
+
+    function addItemOnce(itemId) {
+        return authedFetch('/user/add-item/' + encodeURIComponent(itemId), {
+            method: 'POST',
+            body: { quantity: 1 }
+        });
+    }
+
+    /** Sequential adds — Questline inventory updates race when parallelized. */
+    function addItemsSequential(itemIds) {
+        var chain = Promise.resolve();
+        (itemIds || []).forEach(function (itemId) {
+            chain = chain.then(function () {
+                return addItemOnce(itemId);
+            });
+        });
+        return chain;
+    }
+
+    function flattenCardItemIds(cards) {
+        var ids = [];
+        (cards || []).forEach(function (card) {
+            var id = String(card.questlineItemId || '').trim();
+            if (id) ids.push(id);
+        });
+        return ids;
+    }
+
+    function grantCardsToUser(cards, options) {
+        options = options || {};
+        var ids = flattenCardItemIds(cards);
         if (!ids.length) {
             return Promise.reject(new Error('No grantable cards (missing questlineItemId in catalog).'));
         }
-        return Promise.all(ids.map(function (itemId) {
-            return authedFetch('/user/add-item/' + encodeURIComponent(itemId), {
-                method: 'POST',
-                body: { quantity: counts[itemId] }
+
+        var ownedBefore = options.ownedBefore || null;
+        var expected = aggregateByItemId(cards);
+
+        return addItemsSequential(ids).then(function () {
+            if (!global.WowAuth || typeof global.WowAuth.refreshSessionUser !== 'function') {
+                return null;
+            }
+            return global.WowAuth.refreshSessionUser().then(function (session) {
+                if (!ownedBefore) return session;
+
+                var after = aggregateOwnedItems(session && session.user && session.user.ownedItems);
+                var missing = [];
+                Object.keys(expected).forEach(function (id) {
+                    var want = (ownedBefore[id] || 0) + expected[id];
+                    var have = after[id] || 0;
+                    var shortfall = want - have;
+                    var i;
+                    for (i = 0; i < shortfall; i++) missing.push(id);
+                });
+
+                if (!missing.length) return session;
+
+                return addItemsSequential(missing).then(function () {
+                    return global.WowAuth.refreshSessionUser();
+                });
             });
-        }));
+        });
     }
 
     function sortCardsForReveal(cards) {
@@ -160,14 +221,8 @@
                 cards: sortCardsForReveal(pulled)
             };
 
-            // Grant in parallel; don't block the reveal on session refresh.
-            var grantPromise = grantCardsToUser(pulled).then(function () {
-                if (global.WowAuth && typeof global.WowAuth.refreshSessionUser === 'function') {
-                    return global.WowAuth.refreshSessionUser().catch(function () {
-                        return null;
-                    });
-                }
-                return null;
+            var grantPromise = grantCardsToUser(pulled, {
+                ownedBefore: options.ownedBefore || null
             });
 
             if (options.waitForGrant) {

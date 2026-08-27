@@ -539,13 +539,22 @@
         if (packTestOpenBtn) packTestOpenBtn.disabled = true;
         setStatus('Opening test pack…');
         packOwnedBefore = snapshotOwnedFromSession();
-        WowPackOpen.openPack('whimsy', { testMode: true }).then(function (result) {
+        WowPackOpen.openPack('whimsy', {
+            testMode: true,
+            ownedBefore: packOwnedBefore
+        }).then(function (result) {
             openPackRevealModal(result);
-            setStatus('');
+            setStatus('Saving pulls to inventory…');
             var grant = result && result.grantPromise ? result.grantPromise : Promise.resolve();
             return grant.then(function () {
+                setStatus('');
                 return loadAccount();
-            }, function () {
+            }, function (err) {
+                setStatus(
+                    (err && err.message ? err.message : 'Could not save some pack cards.') +
+                    ' Refresh and check your inventory.',
+                    true
+                );
                 return loadAccount();
             });
         }).catch(function (err) {
