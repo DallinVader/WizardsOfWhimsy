@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="wow/wow-auth.css">
     <link rel="stylesheet" href="css/cardmaker-buttons.css">
     <script src="wow/wow-auth-config.js"></script>
+    <script src="wow/wow-card-catalog.js"></script>
     <script src="wow/wow-auth.js"></script>
     <script>WowAuth.gatePage();</script>
     <script src="js/cardmaker-nav.js" defer></script>
@@ -104,6 +105,26 @@
             border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;
         }
         .db-card[data-in-deck="1"] { border-color: rgba(129, 140, 248, 0.65); box-shadow: 0 0 0 1px rgba(129,140,248,0.25); }
+        .db-card--unowned {
+            opacity: 0.58;
+            filter: grayscale(0.82);
+        }
+        .db-card--unowned[data-in-deck="1"] {
+            opacity: 0.72;
+            filter: grayscale(0.55);
+            border-color: rgba(148, 163, 184, 0.45);
+            box-shadow: none;
+        }
+        .db-card-own {
+            display: inline-block;
+            margin-top: 4px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #86efac;
+        }
+        .db-card-own.is-unowned { color: #94a3b8; }
         .db-card-art {
             position: relative; aspect-ratio: 2.5 / 3.5; background: #1e293b;
             cursor: zoom-in;
@@ -251,6 +272,7 @@
     var cards = [];
     var qtyById = Object.create(null);
     var thumbIo = null;
+    var isAdmin = false;
 
     var statusEl = document.getElementById('dbStatus');
     var gridEl = document.getElementById('dbGrid');
@@ -300,13 +322,45 @@
         return '';
     }
 
+    function cardById(id) {
+        var sid = String(id || '').trim();
+        if (!sid) return null;
+        var i;
+        for (i = 0; i < cards.length; i++) {
+            if (cards[i].id === sid) return cards[i];
+        }
+        return null;
+    }
+
+    function ownedQtyOf(id) {
+        var card = cardById(id);
+        if (!card) return 0;
+        var q = parseInt(card.ownedQty, 10);
+        return isFinite(q) && q > 0 ? q : 0;
+    }
+
+    function maxDeckQtyForCard(id) {
+        if (isAdmin) return 99;
+        return ownedQtyOf(id);
+    }
+
+    function canAddToDeck(id) {
+        if (isAdmin) return true;
+        return ownedQtyOf(id) > 0;
+    }
+
     function qtyOf(id) {
         var n = parseInt(qtyById[id], 10);
         return isFinite(n) && n > 0 ? n : 0;
     }
 
     function setQty(id, n) {
-        n = Math.max(0, Math.min(99, parseInt(n, 10) || 0));
+        if (!canAddToDeck(id)) {
+            delete qtyById[id];
+            updateSummary();
+            return;
+        }
+        n = Math.max(0, Math.min(maxDeckQtyForCard(id), parseInt(n, 10) || 0));
         if (n <= 0) delete qtyById[id];
         else qtyById[id] = n;
         updateSummary();
@@ -320,7 +374,13 @@
         });
         if (card) {
             var inp = card.querySelector('input[data-qty]');
-            if (inp && inp.value !== String(n)) inp.value = String(n);
+            var maxQ = maxDeckQtyForCard(id);
+            if (inp) {
+                if (inp.max !== String(maxQ)) inp.max = String(maxQ);
+                if (inp.value !== String(n)) inp.value = String(n);
+            }
+            var plusBtn = card.querySelector('.db-qty-btn[data-d="1"]');
+            if (plusBtn) plusBtn.disabled = n >= maxQ;
             card.setAttribute('data-in-deck', n > 0 ? '1' : '0');
         }
     }
@@ -457,10 +517,31 @@
             : 'e1750';
     }
 
+    function syntheticStateFromCatalog(entry) {
+        return {
+            fields: {
+                Title: entry.name || '',
+                Type: entry.type || '',
+                Subtype: entry.subtype || '',
+                Rarity: entry.rarity || '',
+                CardMakerSetName: entry.setName || '',
+                CardMakerSetId: entry.setId || '',
+                CardSetNumber: entry.setNumber || '',
+                CardSetTotal: entry.setTotal || '',
+                MainDisciption: entry.description || ''
+            }
+        };
+    }
+
     function loadThumb(img) {
         var id = img.getAttribute('data-id');
         var card = cards.filter(function (c) { return c.id === id; })[0];
         if (!card || !card.state) return;
+        if (card.imageUrl) {
+            img.src = card.imageUrl;
+            img.classList.add('is-loaded');
+            return;
+        }
         var opts = previewRenderOpts();
         var variant = previewThumbVariant();
         var fromCache = (typeof CardMakerPerf !== 'undefined' && CardMakerPerf.readThumbCache)
@@ -521,7 +602,14 @@
             var sub = fieldOf(c.state, 'Subtype');
             var rar = fieldOf(c.state, 'Rarity');
             var setName = setLabelOf(c.state);
+            if (isAdmin && !c.owned) tile.classList.add('db-card--unowned');
             var subLine = [setName, type, sub, rar].filter(Boolean).join(' · ');
+            var ownBadge = isAdmin
+                ? (c.owned
+                    ? '<span class="db-card-own">Own ×' + (c.ownedQty || 0) + '</span>'
+                    : '<span class="db-card-own is-unowned">Not owned</span>')
+                : (c.ownedQty > 1 ? '<span class="db-card-own">Own ×' + c.ownedQty + '</span>' : '');
+            var maxQty = maxDeckQtyForCard(c.id);
             tile.innerHTML =
                 '<div class="db-card-art" data-zoom-id="' + escapeAttr(c.id) + '" title="Click to enlarge">' +
                     '<img class="db-thumb" alt="" data-id="' + escapeAttr(c.id) + '" decoding="async">' +
@@ -530,11 +618,13 @@
                 '<div class="db-card-meta">' +
                     '<div class="db-card-title"></div>' +
                     '<span class="db-card-sub"></span>' +
+                    ownBadge +
                 '</div>' +
                 '<div class="db-qty">' +
                     '<button type="button" class="db-qty-btn" data-d="-1" aria-label="Decrease">−</button>' +
-                    '<input type="number" min="0" max="99" value="' + n + '" data-qty inputmode="numeric" aria-label="Copies">' +
-                    '<button type="button" class="db-qty-btn" data-d="1" aria-label="Increase">+</button>' +
+                    '<input type="number" min="0" max="' + maxQty + '" value="' + n + '" data-qty inputmode="numeric" aria-label="Copies">' +
+                    '<button type="button" class="db-qty-btn" data-d="1" aria-label="Increase"' +
+                        (n >= maxQty && maxQty > 0 ? ' disabled' : '') + '>+</button>' +
                 '</div>';
             tile.querySelector('.db-card-title').textContent = titleOf(c.state);
             tile.querySelector('.db-card-sub').textContent = subLine || '—';
@@ -543,7 +633,9 @@
         emptyEl.hidden = shown > 0 || cards.length === 0;
         if (cards.length === 0) {
             emptyEl.hidden = false;
-            emptyEl.textContent = 'No cards in the local library yet. Sign in and click Refresh library (or open Saved projects once) to cache cards.';
+            emptyEl.textContent = isAdmin
+                ? 'No cards in the site catalog yet. Publish from Saved projects.'
+                : 'You do not own any cards yet. Open packs on your account page to build a deck.';
         } else if (!shown) {
             emptyEl.textContent = 'No cards match these filters.';
         }
@@ -555,22 +647,79 @@
         renderGrid();
     }
 
-    function loadLibrary() {
-        if (typeof CardMakerPerf === 'undefined' || !CardMakerPerf.readAllSaveCache) {
-            setStatus('Card cache unavailable.', true);
-            return Promise.resolve();
-        }
-        return CardMakerPerf.readAllSaveCache().then(function (rows) {
-            cards = (rows || []).filter(function (r) {
-                return r && r.id && r.state && r.state.fields;
+    function enrichCardsWithCache(catalogCards) {
+        var list = catalogCards || [];
+        if (!list.length) return Promise.resolve([]);
+        return Promise.all(list.map(function (entry) {
+            var driveId = String(entry.itemId || entry.id || '').trim();
+            if (!driveId) return Promise.resolve(null);
+            var ownedQty = parseInt(entry.quantity, 10) || 0;
+            var owned = !!entry.owned && ownedQty > 0;
+            var cachePromise = (typeof CardMakerPerf !== 'undefined' && CardMakerPerf.readSaveCache)
+                ? CardMakerPerf.readSaveCache(driveId)
+                : Promise.resolve(null);
+            return cachePromise.then(function (cached) {
+                var state = cached && cached.state && cached.state.fields
+                    ? cached.state
+                    : syntheticStateFromCatalog(entry);
+                return {
+                    id: driveId,
+                    state: state,
+                    modifiedTime: cached && cached.modifiedTime ? cached.modifiedTime : null,
+                    imageUrl: entry.imageUrl || '',
+                    ownedQty: ownedQty,
+                    owned: owned,
+                    questlineItemId: entry.questlineItemId || ''
+                };
             });
-            rebuildFilterOptions();
-            renderGrid();
-            setStatus('Library: ' + cards.length + ' cached card(s). Sign in to save/load decks and refresh from Drive.');
-        }).catch(function () {
+        })).then(function (rows) {
+            return rows.filter(function (c) { return c != null; });
+        });
+    }
+
+    function loadOwnershipAndLibrary() {
+        if (!window.WowCardCatalog || typeof window.WowCardCatalog.loadSharedCatalog !== 'function') {
+            setStatus('Card catalog unavailable.', true);
             cards = [];
             renderGrid();
-            setStatus('Could not read card cache.', true);
+            return Promise.resolve();
+        }
+        setStatus('Loading your collection…');
+        var sessionPromise = (window.WowAuth && typeof window.WowAuth.refreshSessionUser === 'function')
+            ? window.WowAuth.refreshSessionUser().catch(function () { return window.WowAuth.getSession(); })
+            : Promise.resolve(null);
+        return Promise.all([
+            window.WowCardCatalog.loadSharedCatalog(),
+            sessionPromise
+        ]).then(function (parts) {
+            var catalog = parts[0];
+            var session = parts[1];
+            isAdmin = !!(session && session.user && window.WowAuth.isAdmin(session.user));
+            var ownedItems = session && session.user && Array.isArray(session.user.ownedItems)
+                ? session.user.ownedItems
+                : [];
+            var merged = window.WowCardCatalog.mergeWithOwnership(catalog.cards || [], ownedItems);
+            var visible = isAdmin
+                ? merged
+                : merged.filter(function (c) { return c.owned && (parseInt(c.quantity, 10) || 0) > 0; });
+            return enrichCardsWithCache(visible);
+        }).then(function (built) {
+            cards = built;
+            rebuildFilterOptions();
+            renderGrid();
+            if (isAdmin) {
+                var unownedCount = cards.filter(function (c) { return !c.owned; }).length;
+                setStatus(
+                    'Library: ' + cards.length + ' catalog card(s).' +
+                    (unownedCount ? ' ' + unownedCount + ' unowned (greyed out).' : '')
+                );
+            } else {
+                setStatus('Library: ' + cards.length + ' owned card(s). Decks can only include cards you own.');
+            }
+        }).catch(function (err) {
+            cards = [];
+            renderGrid();
+            setStatus((err && err.message) ? err.message : 'Could not load card catalog.', true);
         });
     }
 
@@ -599,7 +748,7 @@
             }).map(function (f) { return f.id; });
             if (!ids.length) {
                 setStatus('No Card Maker saves on Drive.');
-                return loadLibrary();
+                return loadOwnershipAndLibrary();
             }
             var done = 0;
             function mapLimit(items, limit, fn) {
@@ -641,8 +790,7 @@
                     });
                 });
             }).then(function () {
-                return loadLibrary().then(function () {
-                    setStatus('Library refreshed: ' + cards.length + ' card(s).');
+                return loadOwnershipAndLibrary().then(function () {
                     refreshDeckList();
                 });
             });
@@ -679,7 +827,9 @@
         doc.entries.forEach(function (ent) {
             var id = String(ent && ent.id || '').trim();
             var n = parseInt(ent && ent.qty, 10) || 0;
-            if (id && n > 0) qtyById[id] = Math.min(99, n);
+            if (!id || n <= 0) return;
+            if (!canAddToDeck(id)) return;
+            qtyById[id] = Math.min(maxDeckQtyForCard(id), n);
         });
         if (doc.name) nameEl.value = sanitizeDeckName(doc.name);
         try { localStorage.setItem(DECK_NAME_STORAGE_KEY, nameEl.value); } catch (e) { /* ignore */ }
@@ -699,6 +849,15 @@
         if (!collectEntries().length) {
             setStatus('Add at least one card (quantity > 0).', true);
             return;
+        }
+        if (!isAdmin) {
+            var invalid = collectEntries().filter(function (ent) {
+                return ownedQtyOf(ent.id) < ent.qty;
+            });
+            if (invalid.length) {
+                setStatus('Deck includes cards you do not own (or too many copies).', true);
+                return;
+            }
         }
         var fileName = base + '.cardmaker-deck.json';
         setStatus('Saving “' + base + '”…');
@@ -807,6 +966,7 @@
         zoomEl.setAttribute('aria-hidden', 'false');
         var thumb = gridEl.querySelector('img.db-thumb[data-id="' + cardId.replace(/"/g, '') + '"]');
         if (thumb && thumb.src) zoomImg.src = thumb.src;
+        else if (card.imageUrl) zoomImg.src = card.imageUrl;
         if (typeof window.renderCardMakerProjectToDataUrl !== 'function') return;
         window.renderCardMakerProjectToDataUrl(card.state, ZOOM_RENDER_OPTS).then(function (url) {
             if (!url || !zoomEl.classList.contains('is-open')) return;
@@ -853,12 +1013,17 @@
     document.getElementById('dbSaveBtn').addEventListener('click', saveDeck);
     document.getElementById('dbPrintBtn').addEventListener('click', printDeck);
     document.getElementById('dbRefreshLibBtn').addEventListener('click', function () {
-        if (window.CPDrive && CPDrive.isSignedIn()) hydrateFromDrive();
-        else loadLibrary();
+        if (window.CPDrive && CPDrive.isSignedIn()) {
+            hydrateFromDrive();
+        } else {
+            loadOwnershipAndLibrary();
+        }
     });
     document.getElementById('dbAllOneBtn').addEventListener('click', function () {
         sortedCards().forEach(function (c) {
-            if (matchesFilters(c)) qtyById[c.id] = 1;
+            if (!matchesFilters(c)) return;
+            if (!canAddToDeck(c.id)) return;
+            qtyById[c.id] = isAdmin ? 1 : Math.min(1, ownedQtyOf(c.id));
         });
         renderGrid();
     });
@@ -894,15 +1059,20 @@
         if (savedName) nameEl.value = savedName;
     } catch (e) { /* ignore */ }
 
-    loadLibrary().then(function () {
+    WowAuth.gatePage().then(function (session) {
+        isAdmin = !!(session && session.user && WowAuth.isAdmin(session.user));
+        return loadOwnershipAndLibrary();
+    }).then(function () {
         if (window.CPDrive) {
-            CPDrive.tryRestoreSession().then(function (ok) {
+            return CPDrive.tryRestoreSession().then(function (ok) {
                 if (ok) {
                     document.getElementById('dbSignInBtn').textContent = 'Signed in';
                     refreshDeckList();
                 }
             });
         }
+    }).catch(function () {
+        loadOwnershipAndLibrary();
     });
 })();
     </script>
