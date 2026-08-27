@@ -45,14 +45,35 @@ window.WowAuthConfig = window.WowAuthConfig || {
             cardCount: 10,
             priceQuestCoins: 50,
             rarityPool: ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary', 'Fantastical'],
-            rarityWeights: {
-                common: 50,
-                uncommon: 30,
-                rare: 10,
-                epic: 5,
-                legendary: 4,
-                fantastical: 1
-            }
+            /**
+             * Fixed slot structure (fill order; reveal still sorts common → rarest):
+             * 5× Common, 3× Uncommon,
+             * 1× wild (50% Uncommon, else Rare+ with falling odds),
+             * 1× Rare+ finale (Rare base, chance to upgrade).
+             */
+            pullSlots: [
+                { rarity: 'common', count: 5 },
+                { rarity: 'uncommon', count: 3 },
+                {
+                    count: 1,
+                    weights: {
+                        uncommon: 50,
+                        rare: 30,
+                        epic: 12,
+                        legendary: 6,
+                        fantastical: 2
+                    }
+                },
+                {
+                    count: 1,
+                    weights: {
+                        rare: 70,
+                        epic: 18,
+                        legendary: 9,
+                        fantastical: 3
+                    }
+                }
+            ]
         },
         legendary: {
             name: 'Legendary pack',

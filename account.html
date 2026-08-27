@@ -85,7 +85,7 @@
                     <div class="wow-account-pack-art" aria-hidden="true">📦</div>
                     <div class="wow-account-pack-body">
                         <p class="wow-account-pack-name">Whimsy booster</p>
-                        <p class="wow-account-pack-meta">10 random cards · 50/30/15/5 rates · sorted to best pull last</p>
+                        <p class="wow-account-pack-meta">10 cards · 5 common · 3 uncommon · 1 wild · 1 rare+ finale</p>
                         <p class="wow-account-pack-price"><span id="wowPackPriceCoins">50</span> QuestCoins each</p>
                         <div class="wow-account-pack-qty" id="wowPackQtyWrap" hidden>
                             <label class="wow-account-pack-qty-label" for="wowPackQtyRange">
@@ -563,7 +563,11 @@
     function openPackRevealModal(result) {
         if (!packRevealModal) return;
         var cards = result && result.cards ? result.cards : [];
-        if (typeof WowPackOpen !== 'undefined' && WowPackOpen.sortCardsForReveal) {
+        if (
+            !(result && result.preservePullOrder) &&
+            typeof WowPackOpen !== 'undefined' &&
+            WowPackOpen.sortCardsForReveal
+        ) {
             cards = WowPackOpen.sortCardsForReveal(cards);
         }
         packRevealCards = cards;
@@ -575,9 +579,13 @@
                 : packName + ' opened';
         }
         if (packRevealKicker) {
-            packRevealKicker.textContent = cards.length > 1
-                ? 'Peel cards away — commons first, rarest on top'
-                : 'Your pull from the pack';
+            if (result && result.preservePullOrder) {
+                packRevealKicker.textContent = 'Peel in pull order — pack by pack';
+            } else if (cards.length > 1) {
+                packRevealKicker.textContent = 'Peel cards away — commons first, rarest on top';
+            } else {
+                packRevealKicker.textContent = 'Your pull from the pack';
+            }
         }
         var dryRun = !!(result && result.skipGrant);
         packRevealModal.dataset.dryRun = dryRun ? '1' : '0';

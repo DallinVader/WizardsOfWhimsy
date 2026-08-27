@@ -66,31 +66,116 @@
         });
     }
 
+    function poolByRarity(pool) {
+        var map = Object.create(null);
+        (pool || []).forEach(function (card) {
+            var r = normalizeRarity(card.rarity);
+            if (!r) return;
+            if (!map[r]) map[r] = [];
+            map[r].push(card);
+        });
+        return map;
+    }
+
+    function pickOneFromList(list) {
+        if (!list || !list.length) return null;
+        return list[Math.floor(Math.random() * list.length)];
+    }
+
+    /** Pick one card matching exact rarity; falls back to nearest available if empty. */
+    function pickExactRarity(byRarity, rarity) {
+        var want = normalizeRarity(rarity);
+        var hit = pickOneFromList(byRarity[want]);
+        if (hit) return hit;
+        var i;
+        var idx = RARITY_ORDER.indexOf(want);
+        for (i = 0; i < RARITY_ORDER.length; i++) {
+            var down = idx - i;
+            var up = idx + i;
+            if (down >= 0 && byRarity[RARITY_ORDER[down]] && byRarity[RARITY_ORDER[down]].length) {
+                return pickOneFromList(byRarity[RARITY_ORDER[down]]);
+            }
+            if (up < RARITY_ORDER.length && byRarity[RARITY_ORDER[up]] && byRarity[RARITY_ORDER[up]].length) {
+                return pickOneFromList(byRarity[RARITY_ORDER[up]]);
+            }
+        }
+        return null;
+    }
+
+    /** Roll a rarity from weights, then pick a random card of that rarity. */
+    function pickByRarityWeights(byRarity, weights) {
+        weights = weights || {};
+        var entries = [];
+        var total = 0;
+        Object.keys(weights).forEach(function (key) {
+            var r = normalizeRarity(key);
+            var w = parseFloat(weights[key]);
+            if (!r || !isFinite(w) || w <= 0) return;
+            if (!byRarity[r] || !byRarity[r].length) return;
+            entries.push({ rarity: r, weight: w });
+            total += w;
+        });
+        if (!entries.length || total <= 0) {
+            var any = [];
+            Object.keys(byRarity).forEach(function (r) {
+                any = any.concat(byRarity[r] || []);
+            });
+            return pickOneFromList(any);
+        }
+        var roll = Math.random() * total;
+        var acc = 0;
+        var i;
+        for (i = 0; i < entries.length; i++) {
+            acc += entries[i].weight;
+            if (roll <= acc) {
+                return pickOneFromList(byRarity[entries[i].rarity]);
+            }
+        }
+        return pickOneFromList(byRarity[entries[entries.length - 1].rarity]);
+    }
+
     function pickWeightedRandom(pool, weights, count) {
         if (!pool.length) return [];
-        weights = weights || {};
+        var byRarity = poolByRarity(pool);
         var results = [];
         var i;
         for (i = 0; i < count; i++) {
-            var total = 0;
-            var entries = pool.map(function (card) {
-                var w = weights[normalizeRarity(card.rarity)];
-                if (!w || w < 0) w = 1;
-                total += w;
-                return { card: card, weight: w };
-            });
-            var roll = Math.random() * total;
-            var acc = 0;
-            var j;
-            for (j = 0; j < entries.length; j++) {
-                acc += entries[j].weight;
-                if (roll <= acc) {
-                    results.push(entries[j].card);
-                    break;
-                }
-            }
+            var card = pickByRarityWeights(byRarity, weights);
+            if (card) results.push(card);
         }
         return results;
+    }
+
+    /**
+     * Pull one pack using pullSlots when present, else flat rarityWeights × cardCount.
+     * Each slot: { rarity, count } or { weights, count }.
+     */
+    function pullPackCards(pool, packDef) {
+        var byRarity = poolByRarity(pool);
+        var slots = Array.isArray(packDef.pullSlots) ? packDef.pullSlots : null;
+        var results = [];
+
+        if (slots && slots.length) {
+            slots.forEach(function (slot) {
+                var n = parseInt(slot && slot.count, 10);
+                if (!isFinite(n) || n < 1) n = 1;
+                var i;
+                for (i = 0; i < n; i++) {
+                    var card = null;
+                    if (slot.weights) {
+                        card = pickByRarityWeights(byRarity, slot.weights);
+                    } else if (slot.rarity) {
+                        card = pickExactRarity(byRarity, slot.rarity);
+                    }
+                    if (card) results.push(card);
+                }
+            });
+            return results;
+        }
+
+        var count = parseInt(packDef.cardCount, 10);
+        if (!isFinite(count) || count < 1) count = 1;
+        return pickWeightedRandom(pool, packDef.rarityWeights, count);
     }
 
     function aggregateByItemId(cards) {
@@ -208,12 +293,9 @@
         var testMode = !!options.testMode;
         var skipGrant = !!options.skipGrant;
         var packDef = getPackDef(packId);
-        var count = parseInt(packDef.cardCount, 10);
-        if (!isFinite(count) || count < 1) count = 1;
         var packCount = parseInt(options.packCount, 10);
         if (!isFinite(packCount) || packCount < 1) packCount = 1;
         if (packCount > 100) packCount = 100;
-        var totalCards = count * packCount;
 
         if (!testMode) {
             return Promise.reject(new Error('Pack opening is not live yet. Use Test open pack (admin) or wait for the Questline pack API.'));
@@ -230,14 +312,21 @@
                     'No cards in the catalog match this pack pool. Publish the catalog and sync Questline items first.'
                 );
             }
-            var pulled = pickWeightedRandom(pool, packDef.rarityWeights, totalCards);
+            var pulled = [];
+            var p;
+            for (p = 0; p < packCount; p++) {
+                pulled = pulled.concat(pullPackCards(pool, packDef));
+            }
+            /* Multi-pack: keep pull order (pack1 slots → pack2 slots…). Single pack: rarity sort for reveal. */
+            var preservePullOrder = packCount > 1;
             var result = {
                 packId: packId,
                 packName: packDef.name || packId,
                 testMode: true,
                 skipGrant: skipGrant,
                 packCount: packCount,
-                cards: sortCardsForReveal(pulled)
+                preservePullOrder: preservePullOrder,
+                cards: preservePullOrder ? pulled : sortCardsForReveal(pulled)
             };
 
             var grantPromise = skipGrant
@@ -260,6 +349,7 @@
         getPackDef: getPackDef,
         buildPool: buildPool,
         pickWeightedRandom: pickWeightedRandom,
+        pullPackCards: pullPackCards,
         openPack: openPack,
         maxAffordablePacks: maxAffordablePacks,
         grantCardsToUser: grantCardsToUser,
