@@ -188,6 +188,7 @@
                 </div>
                 <div class="db-side-actions">
                     <button type="button" class="db-btn db-btn-primary" id="dbSaveBtn">Save to Drive</button>
+                    <button type="button" class="db-btn db-btn-primary" id="dbPlayBtn" title="Open Card Player with this deck">Play this deck</button>
                     <button type="button" class="db-btn db-btn-print" id="dbPrintBtn">Print deck…</button>
                 </div>
                 <div class="db-side-actions">
@@ -265,6 +266,7 @@
     }
     var PRINT_IMPORT_STORAGE_KEY = 'cardmaker_print_import_v1';
     var DECK_NAME_STORAGE_KEY = 'cardmaker_cp_deck_name_v1';
+    var PLAY_DECK_STORAGE_KEY = 'cardmaker_play_deck_v1';
     var DEFAULT_SET_NAME = 'Wizards of Whimsy';
     var RARITY_OPTIONS = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary', 'Mythic', 'Fantastical'];
     var setFilterDefaultPending = true;
@@ -903,6 +905,69 @@
         setStatus('Opened print with ' + ids.length + ' card(s).' + (skipped ? ' Skipped ' + skipped + ' local-only.' : ''));
     }
 
+    function queuePlayDeckAndGo(deckDoc) {
+        if (!deckDoc || !Array.isArray(deckDoc.entries) || !deckDoc.entries.length) {
+            setStatus('Add at least one card (quantity > 0) before playing.', true);
+            return;
+        }
+        if (!isAdmin) {
+            var invalid = deckDoc.entries.filter(function (ent) {
+                return ownedQtyOf(ent.id) < (parseInt(ent.qty, 10) || 0);
+            });
+            if (invalid.length) {
+                setStatus('Deck includes cards you do not own (or too many copies).', true);
+                return;
+            }
+        }
+        try {
+            localStorage.setItem(PLAY_DECK_STORAGE_KEY, JSON.stringify({
+                v: 1,
+                source: 'deck-builder',
+                deck: deckDoc
+            }));
+        } catch (e) {
+            setStatus('Could not hand off deck to Card Player (storage blocked?).', true);
+            return;
+        }
+        window.location.href = 'card-player.html';
+    }
+
+    function playCurrentDeck() {
+        var name = sanitizeDeckName(nameEl.value) || 'Deck';
+        var entries = collectEntries();
+        if (!entries.length) {
+            setStatus('Add at least one card (quantity > 0) before playing.', true);
+            return;
+        }
+        queuePlayDeckAndGo({
+            version: 1,
+            kind: 'cardmaker-deck',
+            name: name,
+            updatedAt: new Date().toISOString(),
+            entries: entries
+        });
+    }
+
+    function playDeckById(fileId) {
+        if (!window.CPDrive || !CPDrive.isSignedIn()) {
+            setStatus('Connect Google to load that deck.', true);
+            return;
+        }
+        setStatus('Loading deck for play…');
+        CPDrive.ensureDriveTokenBeforeDriveOp().then(function (ok) {
+            if (!ok) throw new Error('Not signed in.');
+            return CPDrive.fetchDriveFileMedia(fileId);
+        }).then(function (text) {
+            var doc = JSON.parse(text);
+            if (!doc || doc.kind !== 'cardmaker-deck' || !Array.isArray(doc.entries)) {
+                throw new Error('Not a valid deck file.');
+            }
+            queuePlayDeckAndGo(doc);
+        }).catch(function (err) {
+            setStatus((err && err.message) ? err.message : 'Could not load deck.', true);
+        });
+    }
+
     function refreshDeckList() {
         if (!window.CPDrive || !CPDrive.isSignedIn()) {
             deckListEl.innerHTML = '<div class="db-empty" style="padding:12px;">Sign in to list decks.</div>';
@@ -920,7 +985,10 @@
             deckListEl.innerHTML = files.map(function (f) {
                 var label = String(f.name || '').replace(/\.cardmaker-deck\.json$/i, '');
                 return '<div class="db-deck-item"><span>' + escapeHtml(label) + '</span>' +
-                    '<button type="button" class="db-btn" data-load="' + escapeAttr(f.id) + '">Load</button></div>';
+                    '<span style="display:flex;gap:6px;flex-shrink:0;">' +
+                    '<button type="button" class="db-btn" data-load="' + escapeAttr(f.id) + '">Load</button>' +
+                    '<button type="button" class="db-btn db-btn-primary" data-play="' + escapeAttr(f.id) + '">Play</button>' +
+                    '</span></div>';
             }).join('');
         }).catch(function (err) {
             deckListEl.innerHTML = '<div class="db-empty" style="padding:12px;">Could not list decks.</div>';
@@ -1011,6 +1079,7 @@
     });
 
     document.getElementById('dbSaveBtn').addEventListener('click', saveDeck);
+    document.getElementById('dbPlayBtn').addEventListener('click', playCurrentDeck);
     document.getElementById('dbPrintBtn').addEventListener('click', printDeck);
     document.getElementById('dbRefreshLibBtn').addEventListener('click', function () {
         if (window.CPDrive && CPDrive.isSignedIn()) {
@@ -1049,6 +1118,11 @@
         });
     });
     deckListEl.addEventListener('click', function (e) {
+        var playBtn = e.target.closest && e.target.closest('[data-play]');
+        if (playBtn) {
+            playDeckById(playBtn.getAttribute('data-play'));
+            return;
+        }
         var btn = e.target.closest && e.target.closest('[data-load]');
         if (!btn) return;
         loadDeckById(btn.getAttribute('data-load'));

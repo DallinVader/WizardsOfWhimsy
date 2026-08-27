@@ -85,7 +85,7 @@
                     <div class="wow-account-pack-art" aria-hidden="true">📦</div>
                     <div class="wow-account-pack-body">
                         <p class="wow-account-pack-name">Whimsy booster</p>
-                        <p class="wow-account-pack-meta">10 random cards · common–rare pool</p>
+                        <p class="wow-account-pack-meta">10 random cards · 50/30/15/5 rates · sorted to best pull last</p>
                         <p class="wow-account-pack-price"><span id="wowPackPriceCoins">50</span> QuestCoins</p>
                         <button type="button" class="wow-account-pack-btn" id="wowPackOpenBtn" disabled title="Pack API coming soon">Open pack</button>
                         <button type="button" class="wow-account-pack-btn wow-account-pack-btn--test" id="wowPackTestOpenBtn" hidden title="Admin only: grant cards without spending QuestCoins">Test open pack</button>
@@ -113,7 +113,7 @@
                 <button type="button" class="wow-pack-modal-close" data-wow-pack-close aria-label="Close">&times;</button>
                 <h2 id="wowPackRevealTitle">Pack opened</h2>
                 <div class="wow-pack-reveal-peel" id="wowPackRevealPeel">
-                    <p class="wow-pack-reveal-kicker" id="wowPackRevealKicker">Building to your best pull…</p>
+                    <p class="wow-pack-reveal-kicker" id="wowPackRevealKicker">Peel cards away — commons first, best pull last</p>
                     <p class="wow-pack-modal-note" id="wowPackRevealNote"></p>
                     <div class="wow-pack-reveal-stage">
                         <div class="wow-peel-stack" id="wowPackRevealStack" tabindex="0" aria-label="Pack cards — swipe to reveal"></div>
@@ -131,7 +131,7 @@
                     <p class="wow-pack-reveal-hint" id="wowPackRevealHint">Swipe the card away to reveal the next pull →</p>
                     <div class="wow-pack-reveal-toolbar">
                         <button type="button" class="wow-pack-sound-btn" id="wowPackSoundBtn" aria-pressed="false">Sound on</button>
-                        <button type="button" class="wow-pack-reveal-all-btn" id="wowPackRevealAll" hidden>Reveal all</button>
+                        <button type="button" class="wow-pack-reveal-all-btn" id="wowPackRevealAll" hidden>Skip to last</button>
                     </div>
                 </div>
                 <div class="wow-pack-summary" id="wowPackRevealSummary" hidden>
@@ -635,10 +635,17 @@
             if (e.target.closest('[data-wow-pack-close]')) closePackRevealModal();
         });
         packRevealModal.addEventListener('wheel', function (e) {
+            if (e.target.closest('.wow-pack-summary-grid') || e.target.closest('.wow-pack-modal-panel--summary')) {
+                return;
+            }
             e.preventDefault();
         }, { passive: false });
         packRevealModal.addEventListener('touchmove', function (e) {
-            if (!e.target.closest('.wow-peel-stack')) e.preventDefault();
+            if (e.target.closest('.wow-peel-stack')) return;
+            if (e.target.closest('.wow-pack-summary-grid') || e.target.closest('.wow-pack-modal-panel--summary')) {
+                return;
+            }
+            e.preventDefault();
         }, { passive: false });
     }
     if (packRevealRestart) {

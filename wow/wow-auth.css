@@ -657,6 +657,11 @@ html.wow-pack-modal-open body {
     overscroll-behavior: none;
 }
 
+.wow-pack-modal-dialog.wow-pack-modal-dialog--summary {
+    width: min(980px, 100%);
+    max-height: min(92vh, 960px);
+}
+
 .wow-pack-modal-panel {
     position: relative;
     background: #0f172a;
@@ -667,6 +672,12 @@ html.wow-pack-modal-open body {
     max-height: min(88vh, 900px);
     overflow: hidden;
     overscroll-behavior: none;
+}
+
+.wow-pack-modal-panel.wow-pack-modal-panel--summary {
+    max-height: min(92vh, 960px);
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .wow-pack-modal-panel h2 {

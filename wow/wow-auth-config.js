@@ -44,8 +44,15 @@ window.WowAuthConfig = window.WowAuthConfig || {
             name: 'Whimsy booster',
             cardCount: 10,
             priceQuestCoins: 50,
-            rarityPool: ['Common', 'Uncommon', 'Rare'],
-            rarityWeights: { common: 60, uncommon: 30, rare: 10 }
+            rarityPool: ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary', 'Fantastical'],
+            rarityWeights: {
+                common: 50,
+                uncommon: 30,
+                rare: 10,
+                epic: 5,
+                legendary: 4,
+                fantastical: 1
+            }
         },
         legendary: {
             name: 'Legendary pack',

@@ -5,10 +5,12 @@
     'use strict';
 
     var MAX_STACK = 3;
-    var FLY_MS = 260;
-    var SWIPE_THRESHOLD = 72;
-    var OPEN_BEAT_MS = 280;
-    var FLIP_MS = 520;
+    var FLY_MS = 200;
+    var SWIPE_THRESHOLD = 48;
+    var OPEN_BEAT_MS = 200;
+    var FLIP_MS = 360;
+    /** Enable peel swipe this many ms after flip starts (before flip animation finishes). */
+    var FLIP_PEEL_UNLOCK_MS = 120;
     var RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'fantastical'];
     var SOUND_MUTE_KEY = 'wow_pack_sound_mute';
 
@@ -307,11 +309,11 @@
         var topCard = stackEl.querySelector('.wow-peel-card.is-top');
         var inner = topCard && topCard.querySelector('.wow-peel-flip-inner');
         if (!inner) {
-            if (onDone) onDone();
+            if (onDone) onDone(false);
             return;
         }
         if (inner.classList.contains('is-flipped')) {
-            if (onDone) onDone();
+            if (onDone) onDone(true);
             return;
         }
 
@@ -321,7 +323,7 @@
         if (reduced) {
             inner.classList.add('is-flipped');
             topCard.classList.remove('is-revealing');
-            if (onDone) onDone();
+            if (onDone) onDone(true);
             return;
         }
 
@@ -332,8 +334,11 @@
         });
 
         window.setTimeout(function () {
+            if (onDone) onDone(false);
+        }, FLIP_PEEL_UNLOCK_MS);
+
+        window.setTimeout(function () {
             topCard.classList.remove('is-revealing');
-            if (onDone) onDone();
         }, FLIP_MS);
     }
 
@@ -496,7 +501,8 @@
         }
 
         function canPeel() {
-            return peelIndex < cards.length - 1 && !animating && !opening && !summaryShown && flippedTop;
+            /* Allow swiping the final revealed card away to open the overview. */
+            return peelIndex < cards.length && !animating && !opening && !summaryShown && flippedTop;
         }
 
         function flashRarity(card, isFinale) {
@@ -520,7 +526,7 @@
                 if (!flippedTop && !summaryShown && !opening) {
                     nameEl.textContent = '· · ·';
                     nameEl.classList.remove('is-pop');
-                } else if (!opening) {
+                } else if (!opening && card) {
                     nameEl.textContent = card.name || '';
                     nameEl.classList.remove('is-pop');
                     void nameEl.offsetWidth;
@@ -534,7 +540,7 @@
                 if (!flippedTop && !summaryShown && !opening) {
                     subEl.textContent = '';
                     subEl.className = 'wow-gallery-sub';
-                } else if (!opening) {
+                } else if (!opening && card) {
                     subEl.textContent = card.subtitle || '';
                     subEl.className = 'wow-gallery-sub' + (card.rarity ? ' ' + rarityClass(card.rarity) : '');
                 } else {
@@ -546,7 +552,7 @@
                 var showNew = !!(flippedTop && !opening && !summaryShown && card && card.isNew);
                 newEl.hidden = !showNew;
             }
-            if (indexEl) indexEl.textContent = String(peelIndex + 1);
+            if (indexEl) indexEl.textContent = String(Math.min(peelIndex + 1, cards.length));
             if (hintEl) {
                 if (summaryShown) {
                     hintEl.textContent = '';
@@ -554,18 +560,21 @@
                     hintEl.textContent = 'Opening pack…';
                 } else if (!flippedTop) {
                     hintEl.textContent = 'Revealing card…';
+                } else if (peelIndex === cards.length - 1) {
+                    var lastRarityIdx = rarityIndex(card && card.rarity);
+                    hintEl.textContent = lastRarityIdx >= 2
+                        ? 'Best pull! Swipe away to see your overview →'
+                        : 'Swipe the last card away to see your pack overview →';
                 } else if (canPeel()) {
                     hintEl.textContent = 'Swipe the card away to reveal the next pull →';
-                } else if (peelIndex === cards.length - 1) {
-                    hintEl.textContent = 'Your best pull!';
                 } else {
                     hintEl.textContent = '';
                 }
             }
-            if (revealAllBtn) revealAllBtn.hidden = summaryShown || opening || peelIndex >= cards.length - 1;
-            stackEl.classList.toggle('is-finished', peelIndex >= cards.length - 1 && !opening);
+            if (revealAllBtn) revealAllBtn.hidden = summaryShown || opening;
+            stackEl.classList.remove('is-finished');
             updateProgress();
-            if (onChange) onChange(peelIndex, card);
+            if (onChange && card) onChange(peelIndex, card);
         }
 
         function renderStack() {
@@ -576,46 +585,44 @@
             }
         }
 
-        function scheduleSummaryAuto() {
-            if (finishTimer) window.clearTimeout(finishTimer);
-            if (peelIndex !== cards.length - 1 || summaryShown) return;
-            finishTimer = window.setTimeout(function () {
-                if (peelIndex === cards.length - 1 && !summaryShown) showSummary();
-            }, reduced ? 400 : 1800);
-        }
-
         function showSummary() {
             if (summaryShown) return;
             summaryShown = true;
             if (finishTimer) window.clearTimeout(finishTimer);
+            finishTimer = null;
             renderSummaryGrid(summaryGridEl, cards, escapeHtml);
             if (peelPhaseEl) peelPhaseEl.hidden = true;
             if (summaryEl) summaryEl.hidden = false;
+            var panel = summaryEl && summaryEl.closest ? summaryEl.closest('.wow-pack-modal-panel') : null;
+            if (panel) panel.classList.add('wow-pack-modal-panel--summary');
+            var dialog = summaryEl && summaryEl.closest ? summaryEl.closest('.wow-pack-modal-dialog') : null;
+            if (dialog) dialog.classList.add('wow-pack-modal-dialog--summary');
             if (revealAllBtn) revealAllBtn.hidden = true;
             if (hintEl) hintEl.textContent = '';
             sound.playSummaryComplete();
             if (onComplete) onComplete(cards);
         }
 
-        function afterReveal(card, isFinale) {
+        function afterReveal(card, isFinale, alreadyFlipped) {
             flippedTop = true;
             animating = false;
             var idx = rarityIndex(card && card.rarity);
-            if (isFinale && idx >= 3) {
-                sound.playFinale();
-            } else if (idx >= 2) {
-                sound.playRare();
+            if (!alreadyFlipped) {
+                if (isFinale && idx >= 3) {
+                    sound.playFinale();
+                } else if (idx >= 2) {
+                    sound.playRare();
+                }
             }
             updateMeta();
             flashRarity(card, isFinale);
-            scheduleSummaryAuto();
         }
 
         function revealTopCard() {
             animating = true;
             flippedTop = false;
-            triggerFlipOnTop(stackEl, reduced, function () {
-                afterReveal(cards[peelIndex], peelIndex === cards.length - 1);
+            triggerFlipOnTop(stackEl, reduced, function (alreadyFlipped) {
+                afterReveal(cards[peelIndex], peelIndex === cards.length - 1, !!alreadyFlipped);
             });
         }
 
@@ -632,11 +639,21 @@
             top.classList.remove('is-grabbing');
             top.classList.add('is-flying');
 
-            if (reduced || flyMs === 0) {
+            function afterFly() {
                 peelIndex += 1;
                 stackEl.classList.remove('is-peeling');
+                if (peelIndex >= cards.length) {
+                    animating = false;
+                    flippedTop = false;
+                    showSummary();
+                    return;
+                }
                 renderStack();
                 revealTopCard();
+            }
+
+            if (reduced || flyMs === 0) {
+                afterFly();
                 return;
             }
 
@@ -644,12 +661,7 @@
             top.style.transform = 'translate3d(' + flyX + 'px, -28px, 0) rotate(' + (dir * 16) + 'deg)';
             top.style.opacity = '0';
 
-            window.setTimeout(function () {
-                peelIndex += 1;
-                stackEl.classList.remove('is-peeling');
-                renderStack();
-                revealTopCard();
-            }, flyMs);
+            window.setTimeout(afterFly, flyMs);
         }
 
         function revealAll() {
@@ -665,7 +677,7 @@
             if (topInner) topInner.classList.add('is-flipped');
             updateMeta();
             flashRarity(cards[peelIndex], true);
-            showSummary();
+            /* Still require a swipe of the last card — do not jump to summary. */
         }
 
         function reset() {
@@ -678,6 +690,10 @@
             stackEl.classList.remove('is-peeling', 'is-finished', 'is-opening');
             if (peelPhaseEl) peelPhaseEl.hidden = false;
             if (summaryEl) summaryEl.hidden = true;
+            var panel = summaryEl && summaryEl.closest ? summaryEl.closest('.wow-pack-modal-panel') : null;
+            if (panel) panel.classList.remove('wow-pack-modal-panel--summary');
+            var dialog = summaryEl && summaryEl.closest ? summaryEl.closest('.wow-pack-modal-dialog') : null;
+            if (dialog) dialog.classList.remove('wow-pack-modal-dialog--summary');
             if (reduced) opening = false;
             else stackEl.classList.add('is-opening');
             renderStack();
@@ -751,6 +767,10 @@
                 if (finishTimer) window.clearTimeout(finishTimer);
                 stackEl.innerHTML = '';
                 stackEl.classList.remove('wow-peel-stack', 'is-dragging', 'is-peeling', 'is-finished', 'is-opening');
+                var panel = summaryEl && summaryEl.closest ? summaryEl.closest('.wow-pack-modal-panel') : null;
+                if (panel) panel.classList.remove('wow-pack-modal-panel--summary');
+                var dialog = summaryEl && summaryEl.closest ? summaryEl.closest('.wow-pack-modal-dialog') : null;
+                if (dialog) dialog.classList.remove('wow-pack-modal-dialog--summary');
             }
         };
     }

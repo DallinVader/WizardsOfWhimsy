@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="wow/wow-auth.css">
     <link rel="stylesheet" href="css/cardmaker-buttons.css">
     <script src="wow/wow-auth-config.js"></script>
+    <script src="wow/wow-card-catalog.js"></script>
     <script src="wow/wow-auth.js"></script>
     <script>WowAuth.gatePage();</script>
     <script src="js/cardmaker-nav.js" defer></script>
@@ -1113,6 +1114,24 @@
             border-color: rgba(34, 197, 94, 0.28);
             background: rgba(22, 101, 52, 0.12);
         }
+        #cpDeckModal .cp-deck-lib-row.cp-deck-lib-row--unowned {
+            opacity: 0.58;
+            filter: grayscale(0.82);
+        }
+        #cpDeckModal .cp-deck-lib-row.cp-deck-lib-row--unowned[data-cp-in-deck="1"] {
+            opacity: 0.72;
+            filter: grayscale(0.55);
+        }
+        #cpDeckModal .cp-deck-own-badge {
+            display: inline-block;
+            margin-top: 3px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #86efac;
+        }
+        #cpDeckModal .cp-deck-own-badge.is-unowned { color: #94a3b8; }
         /* Author display:grid beats the [hidden] UA rule — rows must actually hide when filtered */
         #cpDeckModal .cp-deck-lib-row[hidden] {
             display: none !important;
@@ -1422,7 +1441,7 @@
                     <button type="button" class="cp-btn" id="cpOpenDeckModal">Quick list…</button>
                 </div>
                 <div class="cp-actions">
-                    <button type="button" class="cp-btn" id="cpUseAll">Use entire library as deck</button>
+                    <button type="button" class="cp-btn" id="cpUseAll">Use owned cards as deck</button>
                 </div>
                 <div class="cp-actions">
                     <button type="button" class="cp-btn" id="cpShuffle">Shuffle deck</button>
@@ -1559,7 +1578,7 @@
         <div class="drive-modal-panel" role="dialog" aria-modal="true" aria-labelledby="cpDeckModalTitle">
             <button type="button" class="drive-modal-close" id="cpDeckModalClose" aria-label="Close">&times;</button>
             <h2 id="cpDeckModalTitle" class="drive-modal-title">Deck builder</h2>
-            <p class="drive-modal-hint">Set copies per card, then <strong>Apply to play deck</strong> (updates the play deck and saves to Drive when you are signed in—same as <strong>Save</strong>). The left column shows a <strong>full rendered card</strong> (same as in play), loaded quickly as you scroll. Commander is chosen in the sidebar and stored in deck files. Drive decks: <code class="drive-code">name.cardmaker-deck.json</code> (app data).</p>
+            <p class="drive-modal-hint">Set copies per card, then <strong>Apply to play deck</strong> (updates the play deck and saves to Drive when you are signed in—same as <strong>Save</strong>). Players can only use cards they own (qty capped by collection). Admins can use unowned cards (shown greyed out). Commander is chosen in the sidebar and stored in deck files. Drive decks: <code class="drive-code">name.cardmaker-deck.json</code> (app data). Prefer building decks on the <a href="deck-builder.html">Deck builder</a> page, then <strong>Play this deck</strong>.</p>
 
             <div class="cp-deck-modal-scroll">
                 <div class="cp-deck-modal-layout">
@@ -1723,6 +1742,10 @@
     var imported = [];
     var deck = [];
     var deckP2 = [];
+    /** Questline ownership: drive file id → owned qty. Admins may use unowned (greyed). */
+    var ownershipIndex = { byDriveId: Object.create(null), byQuestlineId: Object.create(null), cards: [] };
+    var isWowAdmin = false;
+    var PLAY_DECK_STORAGE_KEY = 'cardmaker_play_deck_v1';
     /** Play-mat card footprint (zoomed-out duels-style scale). */
     var CP_FIELD_CARD_W = 68;
     var CP_FIELD_CARD_H = 95;
@@ -3391,6 +3414,68 @@
         return library.concat(imported);
     }
 
+    function ownedQtyForCardId(id) {
+        if (!window.WowCardCatalog || typeof WowCardCatalog.ownedQtyFromIndex !== 'function') {
+            return 0;
+        }
+        return WowCardCatalog.ownedQtyFromIndex(ownershipIndex, id);
+    }
+
+    function maxDeckQtyForCardId(id) {
+        if (isWowAdmin) return 99;
+        return ownedQtyForCardId(id);
+    }
+
+    function canAddCardToDeck(id) {
+        if (isWowAdmin) return true;
+        return ownedQtyForCardId(id) > 0;
+    }
+
+    /** Cards shown in the deck builder list (players: owned only; admins: full library). */
+    function deckBuilderVisibleCards() {
+        var cards = allCards();
+        if (isWowAdmin) return cards;
+        return cards.filter(function (c) {
+            return ownedQtyForCardId(c.id) > 0;
+        });
+    }
+
+    function clampQtyForCard(id, n) {
+        n = parseInt(n, 10);
+        if (!isFinite(n) || n < 0) n = 0;
+        var max = maxDeckQtyForCardId(id);
+        if (n > max) n = max;
+        if (!canAddCardToDeck(id)) n = 0;
+        return n;
+    }
+
+    function refreshOwnershipIndex() {
+        if (!window.WowAuth || !window.WowCardCatalog) {
+            ownershipIndex = { byDriveId: Object.create(null), byQuestlineId: Object.create(null), cards: [] };
+            isWowAdmin = false;
+            return Promise.resolve(ownershipIndex);
+        }
+        var sessionPromise = typeof WowAuth.refreshSessionUser === 'function'
+            ? WowAuth.refreshSessionUser().catch(function () { return WowAuth.getSession(); })
+            : Promise.resolve(WowAuth.getSession());
+        return Promise.all([
+            WowCardCatalog.loadSharedCatalog(),
+            sessionPromise
+        ]).then(function (parts) {
+            var catalog = parts[0] || { cards: [] };
+            var session = parts[1];
+            isWowAdmin = !!(session && session.user && WowAuth.isAdmin(session.user));
+            var ownedItems = session && session.user && Array.isArray(session.user.ownedItems)
+                ? session.user.ownedItems
+                : [];
+            ownershipIndex = WowCardCatalog.buildOwnershipIndex(catalog.cards || [], ownedItems);
+            return ownershipIndex;
+        }).catch(function () {
+            ownershipIndex = { byDriveId: Object.create(null), byQuestlineId: Object.create(null), cards: [] };
+            return ownershipIndex;
+        });
+    }
+
     function updateStats() {
         boardP1.deck = deck;
         boardP2.deck = deckP2;
@@ -3889,14 +3974,16 @@
 
     function renderLibraryList() {
         teardownDeckThumbLazyLoad();
-        var cards = allCards().slice().sort(function (a, b) {
+        var cards = deckBuilderVisibleCards().slice().sort(function (a, b) {
             return cardTitleFromState(a.state).localeCompare(cardTitleFromState(b.state), undefined, { sensitivity: 'base' });
         });
         libraryListEl.innerHTML = '';
         var emptyFilter = document.getElementById('cpDeckLibEmptyFilter');
         if (emptyFilter) emptyFilter.hidden = true;
         if (cards.length === 0) {
-            libraryListEl.innerHTML = '<div class="cp-muted" style="padding:14px 16px;line-height:1.5">No cards in library yet. Open <strong>Saved projects</strong> while signed in to cache cards, or import JSON here.</div>';
+            libraryListEl.innerHTML = isWowAdmin
+                ? '<div class="cp-muted" style="padding:14px 16px;line-height:1.5">No cards in library yet. Open <strong>Saved projects</strong> while signed in to cache cards, or import JSON here.</div>'
+                : '<div class="cp-muted" style="padding:14px 16px;line-height:1.5">You do not own any cards yet. Open packs on your <a href="account.html">account</a> page, then refresh.</div>';
             updateStats();
             updateDeckBuilderSummary();
             return;
@@ -3904,10 +3991,19 @@
         cards.forEach(function (c, idx) {
             var title = cardTitleFromState(c.state);
             var sub = cardSubtitle(c.state, c.id);
+            var ownedQty = ownedQtyForCardId(c.id);
+            var owned = ownedQty > 0;
+            var maxQty = maxDeckQtyForCardId(c.id);
             var row = document.createElement('div');
             row.className = 'cp-lib-row cp-deck-lib-row';
+            if (isWowAdmin && !owned) row.classList.add('cp-deck-lib-row--unowned');
             row.setAttribute('data-cp-row-idx', String(idx));
             row.setAttribute('data-cp-filter-text', (title + ' ' + sub).toLowerCase());
+            var ownBadge = isWowAdmin
+                ? (owned
+                    ? '<span class="cp-deck-own-badge">Own ×' + ownedQty + '</span>'
+                    : '<span class="cp-deck-own-badge is-unowned">Not owned</span>')
+                : (ownedQty > 1 ? '<span class="cp-deck-own-badge">Own ×' + ownedQty + '</span>' : '');
             var inpId = 'cp-lib-qty-' + idx;
             row.innerHTML =
                 '<div class="cp-deck-lib-preview-hit" aria-hidden="true">' +
@@ -3917,10 +4013,11 @@
                 '<div class="cp-lib-meta cp-deck-lib-body">' +
                     '<span class="cp-card-title"></span>' +
                     '<span class="cp-card-sub"></span>' +
+                    ownBadge +
                 '</div>' +
                 '<div class="cp-deck-lib-qty">' +
                     '<button type="button" class="cp-deck-qty-btn" data-cp-qty-delta="-1" aria-label="Decrease copies of ' + escapeAttr(title) + '">−</button>' +
-                    '<input type="number" id="' + inpId + '" min="0" max="99" value="1" inputmode="numeric" aria-label="Copies of ' + escapeAttr(title) + '" />' +
+                    '<input type="number" id="' + inpId + '" min="0" max="' + maxQty + '" value="0" inputmode="numeric" aria-label="Copies of ' + escapeAttr(title) + '" />' +
                     '<button type="button" class="cp-deck-qty-btn" data-cp-qty-delta="1" aria-label="Increase copies of ' + escapeAttr(title) + '">+</button>' +
                 '</div>';
             row.querySelector('.cp-card-title').textContent = title;
@@ -4035,9 +4132,10 @@
         o0.textContent = '— No commander —';
         sel.appendChild(o0);
         cards.forEach(function (c) {
+            if (!isWowAdmin && ownedQtyForCardId(c.id) < 1) return;
             var o = document.createElement('option');
             o.value = c.id;
-            o.textContent = cardTitleFromState(c.state);
+            o.textContent = cardTitleFromState(c.state) + (isWowAdmin && ownedQtyForCardId(c.id) < 1 ? ' (not owned)' : '');
             sel.appendChild(o);
         });
         sel.value = commanderCard && commanderCard.id ? commanderCard.id : '';
@@ -4065,25 +4163,35 @@
         var map = {};
         allCards().forEach(function (c) { map[c.id] = c; });
         var next = [];
+        var clampedCount = 0;
         libraryListEl.querySelectorAll('input[data-cp-card-id]').forEach(function (inp) {
             var id = inp.getAttribute('data-cp-card-id');
             var c = map[id];
             if (!c) return;
-            var n = parseQtyInput(inp);
+            var raw = parseQtyInput(inp);
+            var n = clampQtyForCard(id, raw);
+            if (n !== raw) {
+                clampedCount += 1;
+                inp.value = String(n);
+            }
             var k;
             for (k = 0; k < n; k++) next.push(c);
         });
+        updateDeckBuilderSummary();
         var n = next.length;
+        var ownershipNote = (!isWowAdmin && clampedCount > 0)
+            ? ' (clamped to cards you own)'
+            : '';
         if (localMultiplayerSeat === 2) {
             deckP2 = next;
-            setStatus('Deck (P2): ' + deckP2.length + ' cards from builder quantities.');
+            setStatus('Deck (P2): ' + deckP2.length + ' cards from builder quantities.' + ownershipNote);
         } else if (localMultiplayerSeat === 1) {
             deck = next;
-            setStatus('Deck (P1): ' + deck.length + ' cards from builder quantities.');
+            setStatus('Deck (P1): ' + deck.length + ' cards from builder quantities.' + ownershipNote);
         } else {
             deck = next;
             deckP2 = deck.slice();
-            setStatus('Deck: ' + deck.length + ' cards (from builder quantities). P2 deck copied.');
+            setStatus('Deck: ' + deck.length + ' cards (from builder quantities). P2 deck copied.' + ownershipNote);
         }
         updateStats();
         scheduleMultiplayerPush();
@@ -4091,16 +4199,32 @@
     }
 
     function useAllAsDeck() {
+        var pool = deckBuilderVisibleCards().filter(function (c) {
+            return canAddCardToDeck(c.id);
+        });
+        if (!pool.length) {
+            setStatus(isWowAdmin
+                ? 'Library is empty.'
+                : 'No owned cards to use as a deck. Open packs on your account page first.');
+            return;
+        }
+        var next = [];
+        pool.forEach(function (c) {
+            var copies = isWowAdmin ? 1 : Math.min(99, Math.max(0, ownedQtyForCardId(c.id)));
+            if (copies < 1) return;
+            var k;
+            for (k = 0; k < copies; k++) next.push(c);
+        });
         if (localMultiplayerSeat === 2) {
-            deckP2 = allCards().slice();
-            setStatus('Deck (P2): all ' + deckP2.length + ' cards from library.');
+            deckP2 = next;
+            setStatus('Deck (P2): ' + deckP2.length + ' cards from owned library.');
         } else if (localMultiplayerSeat === 1) {
-            deck = allCards().slice();
-            setStatus('Deck (P1): all ' + deck.length + ' cards from library.');
+            deck = next;
+            setStatus('Deck (P1): ' + deck.length + ' cards from owned library.');
         } else {
-            deck = allCards().slice();
+            deck = next;
             deckP2 = deck.slice();
-            setStatus('Deck: all ' + deck.length + ' cards (both players).');
+            setStatus('Deck: ' + deck.length + ' cards from owned library (both players).');
         }
         updateStats();
         scheduleMultiplayerPush();
@@ -6342,16 +6466,29 @@
         });
     }
 
+    function fillDeckArrayFromIds(deckArr, ids, clampOwned) {
+        deckArr.length = 0;
+        var counts = Object.create(null);
+        (ids || []).forEach(function (id) {
+            var sid = String(id);
+            var c = cardById(sid);
+            if (!c) return;
+            if (clampOwned && !isWowAdmin) {
+                var used = counts[sid] || 0;
+                if (used >= ownedQtyForCardId(sid)) return;
+                counts[sid] = used + 1;
+            }
+            deckArr.push(c);
+        });
+    }
+
     function applyOnePlayerSliceFromFirestore(slice, board, deckArr, opts) {
         opts = opts || {};
         var animateRemoteMoves = !!opts.animateRemoteMoves;
         var playOpponentSfx = !!opts.playOpponentSfx;
         if (!slice || typeof slice !== 'object') return Promise.resolve();
-        deckArr.length = 0;
-        (slice.deckIds || []).forEach(function (id) {
-            var c = cardById(id);
-            if (c) deckArr.push(c);
-        });
+        var clampOwned = !!opts.clampOwned;
+        fillDeckArrayFromIds(deckArr, slice.deckIds || [], clampOwned);
         if (!board || !board.field) return Promise.resolve();
         var entries = slice.cards || [];
         if (entries.length === 0) {
@@ -6459,7 +6596,8 @@
                         dirtyBoards.push(boardP1);
                         seatTasks.push(applyOnePlayerSliceFromFirestore(p1, boardP1, deck, {
                             animateRemoteMoves: localMultiplayerSeat !== 1,
-                            playOpponentSfx: localMultiplayerSeat !== null && localMultiplayerSeat !== 1
+                            playOpponentSfx: localMultiplayerSeat !== null && localMultiplayerSeat !== 1,
+                            clampOwned: localMultiplayerSeat === 1
                         }).then(function () {
                             lastSyncedFirestoreSlices.p1 = firestoreSliceFingerprint(p1);
                         }));
@@ -6468,7 +6606,8 @@
                         dirtyBoards.push(boardP2);
                         seatTasks.push(applyOnePlayerSliceFromFirestore(p2, boardP2, deckP2, {
                             animateRemoteMoves: localMultiplayerSeat !== 2,
-                            playOpponentSfx: localMultiplayerSeat !== null && localMultiplayerSeat !== 2
+                            playOpponentSfx: localMultiplayerSeat !== null && localMultiplayerSeat !== 2,
+                            clampOwned: localMultiplayerSeat === 2
                         }).then(function () {
                             lastSyncedFirestoreSlices.p2 = firestoreSliceFingerprint(p2);
                         }));
@@ -6507,15 +6646,9 @@
             persistCommanderId();
             updateCommanderUi();
             deck.length = 0;
-            (d.deckIds || []).forEach(function (id) {
-                var c = cardById(id);
-                if (c) deck.push(c);
-            });
+            fillDeckArrayFromIds(deck, d.deckIds || [], localMultiplayerSeat === 1);
             deckP2.length = 0;
-            (d.deckP2Ids || []).forEach(function (id) {
-                var c = cardById(id);
-                if (c) deckP2.push(c);
-            });
+            fillDeckArrayFromIds(deckP2, d.deckP2Ids || [], localMultiplayerSeat === 2);
             updateStats();
             boards.forEach(function (b) {
                 b.field.querySelectorAll('.cp-card-on-field').forEach(function (el) {
@@ -6782,9 +6915,18 @@
                 clearCardFaceUrlCache();
                 library = rows;
                 rebuildCardByIdIndex();
+                return refreshOwnershipIndex();
+            })
+            .then(function () {
                 renderLibraryList();
                 restoreCommanderFromLibrary();
-                setStatus('Library: ' + library.length + ' from cache + ' + imported.length + ' imported.');
+                var ownedCount = deckBuilderVisibleCards().length;
+                setStatus(
+                    'Library: ' + library.length + ' cached + ' + imported.length + ' imported' +
+                    (isWowAdmin
+                        ? ' · admin (unowned greyed in deck builder)'
+                        : ' · ' + ownedCount + ' owned usable in decks') + '.'
+                );
                 warmCardFaceUrlCacheIdle();
                 updateAllTreasureZoneBadges();
                 updateAllDiscardZoneBadges();
@@ -7038,12 +7180,20 @@
         });
         libraryListEl.querySelectorAll('input[data-cp-card-id]').forEach(function (inp) {
             var id = inp.getAttribute('data-cp-card-id');
-            inp.value = byId[id] != null ? String(byId[id]) : '0';
+            var raw = byId[id] != null ? byId[id] : 0;
+            var n = clampQtyForCard(id, raw);
+            inp.value = String(n);
+            inp.max = String(maxDeckQtyForCardId(id));
         });
         if (doc.name && cpDeckNameInput) cpDeckNameInput.value = String(doc.name).trim();
         if (doc.commanderId != null && String(doc.commanderId).trim()) {
-            var cmd = cardById(String(doc.commanderId).trim());
-            commanderCard = cmd || null;
+            var cmdId = String(doc.commanderId).trim();
+            var cmd = cardById(cmdId);
+            if (cmd && (isWowAdmin || ownedQtyForCardId(cmdId) > 0)) {
+                commanderCard = cmd;
+            } else {
+                commanderCard = null;
+            }
         } else {
             commanderCard = null;
         }
@@ -7082,7 +7232,7 @@
                     '<div class="drive-modal-item-meta"><span class="drive-modal-item-date">' + when + '</span></div>' +
                 '</div>' +
                 '<div class="drive-modal-item-actions">' +
-                    '<button type="button" class="drive-modal-btn drive-modal-btn-small drive-modal-btn-load" data-cp-deck-load="' + escapeHtml(f.id) + '">Load</button>' +
+                    '<button type="button" class="drive-modal-btn drive-modal-btn-small drive-modal-btn-load" data-cp-deck-load="' + escapeHtml(f.id) + '">Load &amp; play</button>' +
                     '<button type="button" class="drive-modal-btn drive-modal-btn-small drive-modal-btn-danger" data-cp-deck-delete="' + escapeHtml(f.id) + '">Delete</button>' +
                 '</div></div>';
         }).join('');
@@ -7182,10 +7332,136 @@
      * Updates the play deck from builder quantities, then saves the deck JSON to Drive when configured and signed in.
      * @param {{ strictSave?: boolean }} opts strictSave: true for the Save button (errors if Drive unavailable); false for Apply (play deck always updates; Drive is best-effort with hints).
      */
+    function consumePendingPlayDeckDoc() {
+        try {
+            var raw = localStorage.getItem(PLAY_DECK_STORAGE_KEY);
+            if (!raw) return null;
+            localStorage.removeItem(PLAY_DECK_STORAGE_KEY);
+            var data = JSON.parse(raw);
+            if (!data || data.v !== 1 || !data.deck) return null;
+            if (data.deck.kind !== 'cardmaker-deck' || !Array.isArray(data.deck.entries)) return null;
+            return data.deck;
+        } catch (e) {
+            try { localStorage.removeItem(PLAY_DECK_STORAGE_KEY); } catch (e2) { /* ignore */ }
+            return null;
+        }
+    }
+
+    function applyDeckEntriesToPlayPile(entries) {
+        var next = [];
+        var clampedTypes = 0;
+        (entries || []).forEach(function (ent) {
+            if (!ent || ent.id == null) return;
+            var id = String(ent.id);
+            var c = cardById(id);
+            if (!c) return;
+            var raw = parseInt(ent.qty, 10) || 0;
+            var n = clampQtyForCard(id, raw);
+            if (n < raw) clampedTypes += 1;
+            var k;
+            for (k = 0; k < n; k++) next.push(c);
+        });
+        if (localMultiplayerSeat === 2) {
+            deckP2 = next;
+        } else if (localMultiplayerSeat === 1) {
+            deck = next;
+        } else {
+            deck = next;
+            deckP2 = deck.slice();
+        }
+        updateStats();
+        scheduleMultiplayerPush();
+        return { count: next.length, clampedTypes: clampedTypes };
+    }
+
+    function applyLoadedDeckDocToPlay(doc) {
+        function collectMissingUniqueIds() {
+            var seen = {};
+            var missing = [];
+            (doc.entries || []).forEach(function (e) {
+                if (!e || e.id == null) return;
+                var sid = String(e.id);
+                if (seen[sid]) return;
+                seen[sid] = true;
+                if (!cardById(sid)) missing.push(sid);
+            });
+            return missing;
+        }
+
+        function finish() {
+            renderLibraryList();
+            applyDeckDocumentToInputs(doc);
+            var result = applyDeckEntriesToPlayPile(doc.entries || []);
+            var stillMissing = [];
+            (doc.entries || []).forEach(function (e) {
+                if (e && e.id && !cardById(e.id)) stillMissing.push(String(e.id));
+            });
+            var msg = 'Ready to play “' + (doc.name || 'Deck') + '” — ' + result.count + ' cards in play deck.';
+            if (stillMissing.length) {
+                msg += ' ' + stillMissing.length + ' card type(s) missing from library (skipped).';
+            }
+            if (!isWowAdmin && result.clampedTypes > 0) {
+                msg += ' Quantities capped to cards you own.';
+            }
+            setStatus(msg);
+            openDeckModal();
+            setDeckModalMessage(msg, stillMissing.length > 0);
+            return result.count;
+        }
+
+        return applyInlineDeckCardsFromDoc(doc).then(function () {
+            return refreshLibrary();
+        }).then(function () {
+            var missingUnique = collectMissingUniqueIds();
+            if (!missingUnique.length) {
+                finish();
+                return null;
+            }
+            var driveIds = missingUnique.filter(isCardIdFetchableFromDrive);
+            if (!driveIds.length || !window.CPDrive || !CPDrive.isSignedIn || !CPDrive.isSignedIn()) {
+                finish();
+                return null;
+            }
+            setStatus('Fetching deck cards from Drive…');
+            return hydrateDeckCardIdsFromDrive(driveIds, function (done, total) {
+                setStatus('Fetching cards ' + done + '/' + total + ' from Drive…');
+            }).then(function () {
+                return refreshLibrary();
+            }).then(function () {
+                finish();
+            });
+        });
+    }
+
+    function maybeApplyPendingPlayDeck() {
+        var doc = consumePendingPlayDeckDoc();
+        if (!doc) return Promise.resolve(null);
+        setStatus('Loading deck from Deck builder…');
+        return applyLoadedDeckDocToPlay(doc).catch(function (err) {
+            setStatus((err && err.message) ? err.message : 'Could not load deck from Deck builder.');
+            return null;
+        });
+    }
+
     function persistDeckBuilderPlayDeckAndDrive(opts) {
         opts = opts || {};
         var strictSave = !!opts.strictSave;
         setDeckModalMessage('');
+        if (!isWowAdmin) {
+            var bad = [];
+            libraryListEl.querySelectorAll('input[data-cp-card-id]').forEach(function (inp) {
+                var id = inp.getAttribute('data-cp-card-id');
+                var raw = parseQtyInput(inp);
+                if (raw > ownedQtyForCardId(id)) bad.push(id);
+            });
+            if (bad.length) {
+                libraryListEl.querySelectorAll('input[data-cp-card-id]').forEach(function (inp) {
+                    var id = inp.getAttribute('data-cp-card-id');
+                    inp.value = String(clampQtyForCard(id, inp.value));
+                });
+                updateDeckBuilderSummary();
+            }
+        }
         var n = buildDeckFromSelection();
         var playMsg;
         if (localMultiplayerSeat === 2) {
@@ -7246,7 +7522,14 @@
     document.getElementById('cpDeckModalBackdrop').addEventListener('click', closeDeckModal);
 
     document.getElementById('cpDeckModalAllOne').addEventListener('click', function () {
-        libraryListEl.querySelectorAll('input[data-cp-card-id]').forEach(function (inp) { inp.value = '1'; });
+        libraryListEl.querySelectorAll('input[data-cp-card-id]').forEach(function (inp) {
+            var id = inp.getAttribute('data-cp-card-id');
+            if (!canAddCardToDeck(id)) {
+                inp.value = '0';
+                return;
+            }
+            inp.value = String(clampQtyForCard(id, 1));
+        });
         updateDeckBuilderSummary();
         applyDeckLibFilter();
     });
@@ -7313,6 +7596,9 @@
     if (libraryListEl) {
         libraryListEl.addEventListener('input', function (e) {
             if (e.target && e.target.matches && e.target.matches('input[data-cp-card-id]')) {
+                var id = e.target.getAttribute('data-cp-card-id');
+                var n = clampQtyForCard(id, e.target.value);
+                if (String(n) !== String(e.target.value)) e.target.value = String(n);
                 updateDeckBuilderSummary();
                 applyDeckLibFilter();
             }
@@ -7324,10 +7610,10 @@
             var row = btn.closest('.cp-deck-lib-row');
             var inp = row && row.querySelector('input[data-cp-card-id]');
             if (!inp) return;
+            var id = inp.getAttribute('data-cp-card-id');
             var d = parseInt(btn.getAttribute('data-cp-qty-delta'), 10);
             if (!isFinite(d)) return;
-            var next = parseQtyInput(inp) + d;
-            next = Math.max(0, Math.min(99, next));
+            var next = clampQtyForCard(id, parseQtyInput(inp) + d);
             inp.value = String(next);
             updateDeckBuilderSummary();
             applyDeckLibFilter();
@@ -7429,12 +7715,12 @@
 
                     function finishDeckLoad() {
                         applyDeckDocumentToInputs(doc);
-                        buildDeckFromSelection();
+                        var result = applyDeckEntriesToPlayPile(doc.entries || []);
                         var stillMissing = [];
                         (doc.entries || []).forEach(function (e) {
                             if (e && e.id && !cardById(e.id)) stillMissing.push(String(e.id));
                         });
-                        var msg = 'Loaded deck (“' + (doc.name || 'untitled') + '”) — applied ' + deck.length + ' cards to play deck.';
+                        var msg = 'Loaded deck (“' + (doc.name || 'untitled') + '”) — applied ' + result.count + ' cards to play deck.';
                         if (stillMissing.length) {
                             msg += ' ' + stillMissing.length + ' entr' + (stillMissing.length === 1 ? 'y' : 'ies') + ' not in library (skipped).';
                             var localSkips = stillMissing.filter(function (id) { return !isCardIdFetchableFromDrive(id); });
@@ -7442,6 +7728,10 @@
                                 msg += ' Tip: older decks may omit embedded import cards. Re-save this deck from Card Player (Deck builder → Save) to include them next time.';
                             }
                         }
+                        if (!isWowAdmin && result.clampedTypes > 0) {
+                            msg += ' Quantities capped to cards you own.';
+                        }
+                        setStatus(msg);
                         setDeckModalMessage(msg, stillMissing.length > 0);
                     }
 
@@ -7735,9 +8025,11 @@
     refreshLibrary().then(function () {
         startCardLibraryDriveAutoSync();
         requestSyncLibraryCardsFromDrive();
+        return maybeApplyPendingPlayDeck();
     }).catch(function () {
         startCardLibraryDriveAutoSync();
         requestSyncLibraryCardsFromDrive();
+        return maybeApplyPendingPlayDeck();
     });
     initCardPlayerFirebaseMultiplayer();
 

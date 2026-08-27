@@ -132,10 +132,40 @@
         });
     }
 
+    /**
+     * Build drive-file-id → owned quantity from catalog + Questline ownedItems.
+     * @returns {{ byDriveId: Object.<string, number>, byQuestlineId: Object.<string, number>, cards: object[] }}
+     */
+    function buildOwnershipIndex(catalogCards, ownedItems) {
+        var merged = mergeWithOwnership(catalogCards || [], ownedItems || []);
+        var byDriveId = Object.create(null);
+        var byQuestlineId = Object.create(null);
+        merged.forEach(function (card) {
+            var q = parseInt(card.quantity, 10);
+            if (!isFinite(q) || q < 0) q = 0;
+            var driveId = String(card.itemId || '').trim();
+            var qlId = card.questlineItemId != null ? String(card.questlineItemId).trim() : '';
+            if (driveId) byDriveId[driveId] = q;
+            if (qlId) byQuestlineId[qlId] = Math.max(byQuestlineId[qlId] || 0, q);
+        });
+        return { byDriveId: byDriveId, byQuestlineId: byQuestlineId, cards: merged };
+    }
+
+    function ownedQtyFromIndex(index, driveOrQlId) {
+        if (!index || driveOrQlId == null) return 0;
+        var id = String(driveOrQlId).trim();
+        if (!id) return 0;
+        if (index.byDriveId && index.byDriveId[id]) return index.byDriveId[id];
+        if (index.byQuestlineId && index.byQuestlineId[id]) return index.byQuestlineId[id];
+        return 0;
+    }
+
     global.WowCardCatalog = {
         accountCardsSource: accountCardsSource,
         catalogUrl: catalogUrl,
         loadSharedCatalog: loadSharedCatalog,
-        mergeWithOwnership: mergeWithOwnership
+        mergeWithOwnership: mergeWithOwnership,
+        buildOwnershipIndex: buildOwnershipIndex,
+        ownedQtyFromIndex: ownedQtyFromIndex
     };
 })(window);
