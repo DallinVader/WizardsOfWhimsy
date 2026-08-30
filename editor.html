@@ -1190,6 +1190,10 @@
         MainImage.src = "assets/cards/CardFrame.png"
         MainImage.hy = 0;
         MainImage.wx = 0;
+        let projectApplyGeneration = 0;
+        let cardBaseApplyGeneration = 0;
+        const DEFAULT_CARD_FRAME_SRC = 'assets/cards/CardFrame.png';
+        const FULL_ART_CARD_FRAME_SRC = 'assets/cards/Full Art Card Frame.png';
         DamageImg = new Image();
         DamageImg.src = "assets/cards/Damage.png"
         DamageImg.hy = 0;
@@ -1784,7 +1788,7 @@
 
         function setImageSource(target, src, onDone) {
             if (!src) {
-                onDone();
+                if (typeof onDone === 'function') onDone(null);
                 return;
             }
             const img = new Image();
@@ -1796,13 +1800,13 @@
                 img.crossOrigin = 'anonymous';
             }
             img.onload = function () {
-                img.hy = target.hy || 0;
-                img.wx = target.wx || 0;
-                img.h = target.h || 116;
-                onDone(img);
+                img.hy = target && target.hy != null ? target.hy : 0;
+                img.wx = target && target.wx != null ? target.wx : 0;
+                img.h = target && target.h != null ? target.h : 116;
+                if (typeof onDone === 'function') onDone(img);
             };
             img.onerror = function () {
-                onDone();
+                if (typeof onDone === 'function') onDone(null);
             };
             img.src = loadSrc;
         }
@@ -1814,6 +1818,7 @@
                 if (typeof onComplete === 'function') onComplete();
                 return;
             }
+            var applyGen = ++projectApplyGeneration;
             const f = state.fields;
 
             function setIfExists(id, value) {
@@ -1920,35 +1925,70 @@
 
             const images = state.images || {};
             var frameSrc = cardBaseSrcForLoad(images.cardBaseSrc);
-            function applyLoadedFrame(img) {
-                if (img) MainImage = img;
-                syncCardBaseSelectFromMainImage();
-                setImageSource(ArtImage, images.artSrc, function (artImg) {
-                    if (artImg) {
-                        ArtImage = artImg;
-                        document.body.style.backgroundImage = "url('" + ArtImage.src + "')";
-                    }
-                    ImageSizeNoRedraw();
-                    updateFontSizeDisplay();
-                    updateQualityDisplay();
-                    toggleQualitySlider();
-                    updateExportSizeDisplayFromSlider();
-                    updateExportBleedHint();
-                    redrawCanvas();
-                    if (typeof onComplete === 'function') onComplete();
-                });
+
+            function finishApplyLoadedImages() {
+                if (applyGen !== projectApplyGeneration) return;
+                ImageSizeNoRedraw();
+                updateFontSizeDisplay();
+                updateQualityDisplay();
+                toggleQualitySlider();
+                updateExportSizeDisplayFromSlider();
+                updateExportBleedHint();
+                redrawCanvas();
+                if (typeof onComplete === 'function') onComplete();
             }
+
+            function applyLoadedArt(artImg) {
+                if (applyGen !== projectApplyGeneration) return;
+                if (artImg) {
+                    ArtImage = artImg;
+                    document.body.style.backgroundImage = "url('" + ArtImage.src + "')";
+                } else {
+                    resetArtImageToEmpty();
+                }
+                finishApplyLoadedImages();
+            }
+
+            function applyLoadedFrame(img) {
+                if (applyGen !== projectApplyGeneration) return;
+                if (img) {
+                    MainImage = img;
+                } else {
+                    loadDefaultMainImage(function (defaultImg) {
+                        if (applyGen !== projectApplyGeneration) return;
+                        if (defaultImg) MainImage = defaultImg;
+                        syncCardBaseSelectFromMainImage();
+                        if (images.artSrc) {
+                            setImageSource(ArtImage, images.artSrc, applyLoadedArt);
+                        } else {
+                            applyLoadedArt(null);
+                        }
+                    });
+                    return;
+                }
+                syncCardBaseSelectFromMainImage();
+                if (images.artSrc) {
+                    setImageSource(ArtImage, images.artSrc, applyLoadedArt);
+                } else {
+                    applyLoadedArt(null);
+                }
+            }
+
             if (!frameSrc) {
                 applyLoadedFrame(null);
             } else {
                 setImageSource(MainImage, frameSrc, function (img) {
+                    if (applyGen !== projectApplyGeneration) return;
                     if (img) {
                         applyLoadedFrame(img);
                         return;
                     }
-                    var fallback = builtinCardBaseFilename(images.cardBaseSrc);
+                    var fallback = resolveBuiltinCardBasePath(images.cardBaseSrc) || DEFAULT_CARD_FRAME_SRC;
                     if (fallback && fallback !== frameSrc) {
-                        setImageSource(MainImage, fallback, applyLoadedFrame);
+                        setImageSource(MainImage, fallback, function (fallbackImg) {
+                            if (applyGen !== projectApplyGeneration) return;
+                            applyLoadedFrame(fallbackImg);
+                        });
                         return;
                     }
                     applyLoadedFrame(null);
@@ -3098,24 +3138,71 @@
             'assets/cards/CardFrame Old.png': true,
             'assets/cards/Full Art Card Frame.png': true
         };
+        var BUILTIN_CARD_BASE_PREFIX = 'assets/cards/';
 
-        function builtinCardBaseFilename(src) {
-            var fn = getCardBaseFilenameFromSrc(src);
-            return fn && BUILTIN_CARD_BASES[fn] ? fn : null;
+        function encodeCardAssetSrc(src) {
+            if (!src || /^data:|^blob:|^https?:\/\//i.test(String(src))) return String(src);
+            return String(src).split('/').map(function (part) {
+                return part ? encodeURIComponent(part) : part;
+            }).join('/');
+        }
+
+        function resolveBuiltinCardBasePath(src) {
+            if (!src) return null;
+            var s = String(src).split('#')[0].split('?')[0].replace(/\\/g, '/');
+            try {
+                s = decodeURIComponent(s);
+            } catch (e) { /* ignore */ }
+            if (BUILTIN_CARD_BASES[s]) return s;
+            var fn = getCardBaseFilenameFromSrc(s);
+            if (!fn) return null;
+            var path = BUILTIN_CARD_BASE_PREFIX + fn;
+            return BUILTIN_CARD_BASES[path] ? path : null;
+        }
+
+        function isFullArtFrameSrc(src) {
+            return resolveBuiltinCardBasePath(src) === FULL_ART_CARD_FRAME_SRC;
+        }
+
+        function isFullArtFrameActive() {
+            return isFullArtFrameSrc(MainImage && MainImage.src);
+        }
+
+        function imageReady(img) {
+            if (!img || !img.src) return false;
+            var w = img.naturalWidth || img.width || 0;
+            var h = img.naturalHeight || img.height || 0;
+            return w > 0 && h > 0;
+        }
+
+        function loadDefaultMainImage(onDone) {
+            var img = new Image();
+            img.hy = 0;
+            img.wx = 0;
+            img.onload = function () { onDone(img); };
+            img.onerror = function () { onDone(null); };
+            img.src = encodeCardAssetSrc(DEFAULT_CARD_FRAME_SRC);
+        }
+
+        function resetArtImageToEmpty() {
+            ArtImage = new Image();
+            ArtImage.hy = 0;
+            ArtImage.wx = 0;
+            ArtImage.h = parseInt(document.getElementById('ArtHight') && document.getElementById('ArtHight').value, 10) || 116;
+            document.body.style.backgroundImage = '';
         }
 
         /** Persist built-in frames as repo filenames so they reload on any origin. */
         function cardBaseSrcForSave() {
             if (!MainImage || !MainImage.src) return '';
-            var builtin = builtinCardBaseFilename(MainImage.src);
+            var builtin = resolveBuiltinCardBasePath(MainImage.src);
             return builtin || String(MainImage.src);
         }
 
         /** Prefer the local built-in file when a save stored an absolute URL. */
         function cardBaseSrcForLoad(src) {
             if (!src) return '';
-            var builtin = builtinCardBaseFilename(src);
-            return builtin || String(src);
+            return resolveBuiltinCardBasePath(src) || String(src);
         }
 
         function removeCardBaseDynamicOption() {
@@ -3134,9 +3221,9 @@
             var sel = document.getElementById('CardBase');
             if (!sel || sel.tagName !== 'SELECT') return;
             removeCardBaseDynamicOption();
-            var fn = getCardBaseFilenameFromSrc(MainImage && MainImage.src);
-            if (fn && BUILTIN_CARD_BASES[fn]) {
-                sel.value = fn;
+            var path = resolveBuiltinCardBasePath(MainImage && MainImage.src);
+            if (path) {
+                sel.value = path;
                 setCardBaseCustomVisible(false);
                 return;
             }
@@ -3162,18 +3249,22 @@
             }
             setCardBaseCustomVisible(false);
             if (!v) return;
+            var applyGen = ++cardBaseApplyGeneration;
             var img = new Image();
             img.hy = MainImage && MainImage.hy != null ? MainImage.hy : 0;
             img.wx = MainImage && MainImage.wx != null ? MainImage.wx : 0;
-                img.onload = function () {
-                    MainImage = img;
-                    markProjectDirty();
-                    redrawCanvas();
-                };
+            img.onload = function () {
+                if (applyGen !== cardBaseApplyGeneration) return;
+                MainImage = img;
+                syncCardBaseSelectFromMainImage();
+                markProjectDirty();
+                redrawCanvas();
+            };
             img.onerror = function () {
+                if (applyGen !== cardBaseApplyGeneration) return;
                 syncCardBaseSelectFromMainImage();
             };
-            img.src = v;
+            img.src = encodeCardAssetSrc(v);
         }
 
         document.getElementById('CardBaseCustom').addEventListener('change', function (event) {
@@ -3350,22 +3441,34 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = 'black'; // Reset fillStyle to black at the start
         
-            // Get the value of ExtraHight (add a check if it is set, to avoid NaN issues)
+            //Draw art image
             const ExtraHightP = (parseInt(document.getElementById("ArtHightPos").value) || 0) * fs;
             const ExtraWidthP = (parseInt(document.getElementById("ArtWidthPos").value) || 0) * fs;
-            
-            //Draw art image
-            const spectRatio = MainImage.width / MainImage.height;
-            if (ArtImage.src) {
+            if (imageReady(ArtImage)) {
                 ImageSizeNoRedraw();
+                const artSize = ArtImage.h || 116;
+                var artNatW = ArtImage.naturalWidth || ArtImage.width;
+                var artNatH = ArtImage.naturalHeight || ArtImage.height;
+                if (isFullArtFrameActive()) {
+                    var coverScale = Math.max(canvas.width / artNatW, canvas.height / artNatH);
+                    var drawW = artNatW * coverScale;
+                    var drawH = artNatH * coverScale;
+                    ctx.drawImage(
+                        ArtImage,
+                        (canvas.width - drawW) / 2 - ExtraWidthP,
+                        (canvas.height - drawH) / 2 - ExtraHightP,
+                        drawW,
+                        drawH
+                    );
+                } else {
+                    let mgWidth = artNatW * (artSize / 100) * fs;
+                    let mgHeight = artNatH * (artSize / 100) * fs;
+                    ctx.drawImage(ArtImage, (canvas.width - mgWidth - ExtraWidthP) / 2, (canvas.height - mgHeight - ExtraHightP) / 8, mgWidth, mgHeight);
+                }
             }
-            const artSize = ArtImage.h || 116;
-            let mgWidth = ArtImage.width * (artSize / 100) * fs;
-            let mgHeight = ArtImage.height * (artSize / 100) * fs;
-
-            ctx.drawImage(ArtImage, (canvas.width - mgWidth - ExtraWidthP) / 2, (canvas.height - mgHeight - ExtraHightP) / 8, mgWidth, mgHeight);
 
             //Draw frame
+            if (imageReady(MainImage)) {
             const aspectRatio = MainImage.width / MainImage.height;
             let imgWidth = canvas.width;
             let imgHeight = imgWidth / aspectRatio;
@@ -3375,6 +3478,7 @@
                 imgWidth = imgHeight * aspectRatio;
             }
             ctx.drawImage(MainImage, (canvas.width - imgWidth) / 2, (canvas.height - imgHeight) / 8, imgWidth, imgHeight);
+            }
             
             ctx.font = cmPxFont(200 * fs);
             ctx.textAlign = 'center';
@@ -3382,7 +3486,7 @@
             ctx.fillStyle = 'black';
             
             // Damage / rarity overlays (same scale & position as Damage.png)
-            const aspectRatios = MainImage.width / MainImage.height;
+            var aspectRatios = imageReady(MainImage) ? (MainImage.width / MainImage.height) : (canvas.width / canvas.height);
             let DimgWidth = canvas.width;
             let DimgHeight = DimgWidth / aspectRatios;
             if (DimgHeight > canvas.height) {
@@ -3392,7 +3496,7 @@
             const dImgX = (canvas.width - DimgWidth) / 2;
             const dImgY = (canvas.height - DimgHeight) / 8;
 
-            if (IsSwitchedOn) {
+            if (IsSwitchedOn && imageReady(MainImage)) {
                 ctx.drawImage(DamageImg, dImgX, dImgY, DimgWidth, DimgHeight);
                 ctx.save();
                 ctx.font = cmPxFont(175 * fs);
@@ -3403,7 +3507,7 @@
                 ctx.fillText(Def.value, canvas.width - (canvas.width / 12.5), canvas.height / 12.5);
                 ctx.restore();
             }
-            if (rarityShowsGem() && RareityImg.complete && RareityImg.naturalWidth > 0) {
+            if (rarityShowsGem() && imageReady(MainImage) && RareityImg.complete && RareityImg.naturalWidth > 0) {
                 var crGem = document.getElementById('CardRarity');
                 var gemTier = crGem && crGem.value ? String(crGem.value).trim() : 'Uncommon';
                 if (gemTier === 'Uncommon') {

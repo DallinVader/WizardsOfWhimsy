@@ -687,55 +687,60 @@ html.wow-auth-pending body {
     inset: 0;
     z-index: 1200;
     display: none;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: 20px;
+    padding:
+        max(12px, env(safe-area-inset-top, 0px))
+        16px
+        max(20px, env(safe-area-inset-bottom, 0px));
 }
 
 .wow-pack-modal.is-open {
     display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scroll-padding-bottom: 24px;
 }
 
 html.wow-pack-modal-open,
 html.wow-pack-modal-open body {
     overflow: hidden;
+    height: 100%;
 }
 
 .wow-pack-modal-backdrop {
-    position: absolute;
+    position: fixed;
     inset: 0;
+    z-index: 0;
     background: rgba(2, 6, 23, 0.72);
 }
 
 .wow-pack-modal-dialog {
     position: relative;
-    width: min(920px, 100%);
-    max-height: min(88vh, 900px);
-    overflow: hidden;
-    overscroll-behavior: none;
+    z-index: 1;
+    width: min(920px, calc(100% - 8px));
+    flex-shrink: 0;
+    margin: 0 auto 4px;
 }
 
 .wow-pack-modal-dialog.wow-pack-modal-dialog--summary {
-    width: min(980px, 100%);
-    max-height: min(92vh, 960px);
+    width: min(980px, calc(100% - 8px));
 }
 
 .wow-pack-modal-panel {
     position: relative;
+    display: flex;
+    flex-direction: column;
     background: #0f172a;
     border: 1px solid rgba(148, 163, 184, 0.28);
     border-radius: 16px;
-    padding: 22px 22px 18px;
+    padding: 22px 22px 28px;
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
-    max-height: min(88vh, 900px);
-    overflow: hidden;
-    overscroll-behavior: none;
-}
-
-.wow-pack-modal-panel.wow-pack-modal-panel--summary {
-    max-height: min(92vh, 960px);
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: visible;
 }
 
 .wow-pack-modal-panel h2 {
@@ -770,6 +775,13 @@ html.wow-pack-modal-open body {
 .wow-pack-modal-actions {
     display: flex;
     justify-content: flex-end;
+    flex-shrink: 0;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+    padding-top: 12px;
+    padding-bottom: 2px;
+    border-top: 1px solid rgba(148, 163, 184, 0.14);
 }
 
 .wow-account-pack-soon {

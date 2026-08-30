@@ -69,6 +69,16 @@
         return 'assets/cards/CardFrame.png';
     }
 
+    function normalizeCardBaseSrc(src) {
+        if (!src) return src;
+        var s = String(src);
+        if (/^data:|^blob:|^https?:\/\//i.test(s)) return s;
+        s = s.split('#')[0].split('?')[0].replace(/\\/g, '/');
+        try { s = decodeURIComponent(s); } catch (e) { /* ignore */ }
+        if (s.indexOf('/') >= 0) return s;
+        return 'assets/cards/' + s;
+    }
+
     function loadImage(src) {
         return new Promise(function (resolve) {
             if (!src || String(src).length < 8) {
@@ -248,11 +258,21 @@
         var opts = options && typeof options === 'object' ? options : null;
         var images = parsed.images || {};
         var f = parsed.fields || {};
-        var mainSrc = images.cardBaseSrc;
+        var mainSrc = normalizeCardBaseSrc(images.cardBaseSrc);
         var artSrc = images.artSrc;
+        var fullArtFramePath = 'assets/cards/Full Art Card Frame.png';
+        function isFullArtFramePath(src) {
+            if (!src) return false;
+            var s = String(src).split('#')[0].split('?')[0].replace(/\\/g, '/');
+            try { s = decodeURIComponent(s); } catch (e) { /* ignore */ }
+            return s === fullArtFramePath || s.indexOf('Full Art Card Frame.png') !== -1;
+        }
 
         var artPromise = loadImage(artSrc);
         var mainImg = await loadImage(mainSrc);
+        if (!mainImg && mainSrc) {
+            mainImg = await loadImage(fullArtFramePath);
+        }
         if (!mainImg) {
             mainImg = await loadImage(defaultCardFrameSrc());
         }
@@ -287,10 +307,18 @@
 
         if (artImg) {
             var aw = artImg.width || (artImg.naturalWidth && artImg.naturalWidth);
-            if (aw) {
-                var mgWidth = aw * (artSize / 100) * fs;
-                var mgHeight = (artImg.height || artImg.naturalHeight) * (artSize / 100) * fs;
-                ctx.drawImage(artImg, (W - mgWidth - ExtraWidthP) / 2, (H - mgHeight - ExtraHightP) / 8, mgWidth, mgHeight);
+            var ah = artImg.height || (artImg.naturalHeight && artImg.naturalHeight);
+            if (aw && ah) {
+                if (isFullArtFramePath(mainSrc)) {
+                    var coverScale = Math.max(W / aw, H / ah);
+                    var drawW = aw * coverScale;
+                    var drawH = ah * coverScale;
+                    ctx.drawImage(artImg, (W - drawW - ExtraWidthP) / 2, (H - drawH - ExtraHightP) / 2, drawW, drawH);
+                } else {
+                    var mgWidth = aw * (artSize / 100) * fs;
+                    var mgHeight = ah * (artSize / 100) * fs;
+                    ctx.drawImage(artImg, (W - mgWidth - ExtraWidthP) / 2, (H - mgHeight - ExtraHightP) / 8, mgWidth, mgHeight);
+                }
             }
         }
 

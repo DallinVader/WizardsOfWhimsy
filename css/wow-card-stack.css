@@ -400,7 +400,11 @@
     flex-wrap: wrap;
     gap: 10px;
     justify-content: flex-end;
+    flex-shrink: 0;
     margin-top: 1rem;
+    padding-top: 12px;
+    padding-bottom: 2px;
+    border-top: 1px solid rgba(148, 163, 184, 0.14);
 }
 
 .wow-pack-modal-actions .wow-account-btn--ghost {
@@ -817,11 +821,9 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: 14px;
-    max-height: min(62vh, 560px);
-    overflow-x: hidden;
-    overflow-y: auto;
+    max-height: none;
+    overflow: visible;
     padding: 6px 4px 10px;
-    overscroll-behavior: contain;
 }
 
 .wow-pack-summary-card {
@@ -913,6 +915,161 @@
 .wow-pack-summary-card.wow-stack-rarity--Mythic .wow-pack-summary-art,
 .wow-pack-summary-card.wow-stack-rarity--Fantastical .wow-pack-summary-art {
     border-color: rgba(251, 191, 36, 0.55);
+}
+
+.wow-pack-multi-stats {
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.wow-pack-multi-stats-kicker {
+    margin: 0 0 14px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.wow-pack-multi-section + .wow-pack-multi-section {
+    margin-top: 18px;
+}
+
+.wow-pack-multi-section-title {
+    margin: 0 0 4px;
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 1.05rem;
+    color: #e2e8f0;
+    text-align: center;
+}
+
+.wow-pack-multi-section-sub {
+    margin: 0 0 12px;
+    text-align: center;
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+.wow-pack-multi-best-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+    gap: 12px;
+    padding: 4px 2px 8px;
+}
+
+.wow-pack-multi-best-card .wow-pack-summary-art {
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.wow-pack-multi-qty {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #0f172a;
+    background: rgba(251, 191, 36, 0.95);
+}
+
+.wow-pack-multi-empty {
+    margin: 0;
+    text-align: center;
+    font-size: 14px;
+    color: #64748b;
+}
+
+.wow-pack-multi-rates {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.wow-pack-multi-rate-row {
+    display: grid;
+    grid-template-columns: 92px 1fr 44px minmax(148px, auto);
+    gap: 10px;
+    align-items: center;
+    font-size: 13px;
+}
+
+.wow-pack-multi-rate-label {
+    font-weight: 600;
+    color: #cbd5e1;
+}
+
+.wow-pack-multi-rate-bar {
+    display: block;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.65);
+    overflow: hidden;
+}
+
+.wow-pack-multi-rate-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: rgba(148, 163, 184, 0.55);
+    transition: width 0.25s ease;
+}
+
+.wow-pack-multi-rate-row.wow-stack-rarity--Common .wow-pack-multi-rate-fill {
+    background: #78716c;
+}
+
+.wow-pack-multi-rate-row.wow-stack-rarity--Uncommon .wow-pack-multi-rate-fill {
+    background: #e2e8f0;
+}
+
+.wow-pack-multi-rate-row.wow-stack-rarity--Rare .wow-pack-multi-rate-fill {
+    background: #3b82f6;
+}
+
+.wow-pack-multi-rate-row.wow-stack-rarity--Epic .wow-pack-multi-rate-fill {
+    background: #8b5cf6;
+}
+
+.wow-pack-multi-rate-row.wow-stack-rarity--Legendary .wow-pack-multi-rate-fill,
+.wow-pack-multi-rate-row.wow-stack-rarity--Mythic .wow-pack-multi-rate-fill,
+.wow-pack-multi-rate-row.wow-stack-rarity--Fantastical .wow-pack-multi-rate-fill {
+    background: #d1bc43;
+}
+
+.wow-pack-multi-rate-count,
+.wow-pack-multi-rate-pct {
+    text-align: right;
+    color: #94a3b8;
+    font-variant-numeric: tabular-nums;
+}
+
+.wow-pack-multi-rate-pct {
+    color: #cbd5e1;
+    font-weight: 600;
+    text-align: right;
+    line-height: 1.25;
+}
+
+.wow-pack-multi-rate-avg {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    color: #64748b;
+}
+
+@media (max-width: 480px) {
+    .wow-pack-multi-rate-row {
+        grid-template-columns: 78px 1fr 36px minmax(120px, auto);
+        gap: 8px;
+        font-size: 12px;
+    }
+
+    .wow-pack-multi-rate-avg {
+        font-size: 10px;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {

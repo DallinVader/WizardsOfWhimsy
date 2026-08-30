@@ -151,6 +151,18 @@
                     <h3 class="wow-pack-summary-title">Pack complete</h3>
                     <p class="wow-pack-summary-sub" id="wowPackSummarySub"></p>
                     <div class="wow-pack-summary-grid" id="wowPackSummaryGrid"></div>
+                    <div class="wow-pack-multi-stats" id="wowPackMultiStats" hidden>
+                        <p class="wow-pack-multi-stats-kicker" id="wowPackMultiStatsTitle">Simulation results</p>
+                        <section class="wow-pack-multi-section" aria-labelledby="wowPackMultiBestTitle">
+                            <h4 class="wow-pack-multi-section-title" id="wowPackMultiBestTitle">Best pulls</h4>
+                            <p class="wow-pack-multi-section-sub" id="wowPackMultiBestSub"></p>
+                            <div class="wow-pack-multi-best-grid" id="wowPackMultiBestGrid"></div>
+                        </section>
+                        <section class="wow-pack-multi-section" aria-labelledby="wowPackMultiRatesTitle">
+                            <h4 class="wow-pack-multi-section-title" id="wowPackMultiRatesTitle">Pull rates by rarity</h4>
+                            <div class="wow-pack-multi-rates" id="wowPackMultiRatesList"></div>
+                        </section>
+                    </div>
                 </div>
                 <div class="wow-pack-modal-actions">
                     <button type="button" class="wow-account-btn wow-account-btn--ghost" id="wowPackRevealRestart">Start over</button>
@@ -204,6 +216,12 @@
     var activeTab = 'cards';
     var adminRemoveEnabled = false;
     var NEW_CARDS_KEY = 'wow_new_card_ids_v1';
+    var RARITY_DISPLAY_ORDER = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary', 'Mythic', 'Fantastical'];
+    var packMultiStatsEl = document.getElementById('wowPackMultiStats');
+    var packMultiBestGridEl = document.getElementById('wowPackMultiBestGrid');
+    var packMultiBestSubEl = document.getElementById('wowPackMultiBestSub');
+    var packMultiRatesListEl = document.getElementById('wowPackMultiRatesList');
+    var packMultiStatsTitleEl = document.getElementById('wowPackMultiStatsTitle');
 
     function cardInventoryId(card) {
         if (!card) return '';
@@ -501,6 +519,130 @@
         return idx >= 2;
     }
 
+    function raritySortIndex(rarity) {
+        if (typeof WowPackOpen === 'undefined' || !WowPackOpen.normalizeRarity) return 0;
+        var idx = WowPackOpen.RARITY_ORDER.indexOf(WowPackOpen.normalizeRarity(rarity));
+        return idx < 0 ? 0 : idx;
+    }
+
+    function formatAvgPacksBeforeRarity(count, packCount) {
+        if (!count || !packCount) return '';
+        var avg = packCount / count;
+        if (avg < 1) return ' · &lt;1 pack avg';
+        if (avg >= 100) return ' · ~' + Math.round(avg) + ' packs avg';
+        return ' · ~' + avg.toFixed(1) + ' packs avg';
+    }
+
+    function clearMultiPreviewStats() {
+        if (packMultiStatsEl) packMultiStatsEl.hidden = true;
+        if (packMultiBestGridEl) packMultiBestGridEl.innerHTML = '';
+        if (packMultiBestSubEl) packMultiBestSubEl.textContent = '';
+        if (packMultiRatesListEl) packMultiRatesListEl.innerHTML = '';
+        if (packMultiStatsTitleEl) packMultiStatsTitleEl.textContent = 'Simulation results';
+    }
+
+    function renderMultiPreviewStats(cards, packCount) {
+        if (!packMultiStatsEl || !packMultiBestGridEl || !packMultiRatesListEl) return;
+        var total = (cards || []).length;
+        if (!total) {
+            clearMultiPreviewStats();
+            return;
+        }
+
+        var countByRarity = Object.create(null);
+        var rarePlusTotal = 0;
+        cards.forEach(function (card) {
+            var key = rarityLabel(card && card.rarity) || 'Unknown';
+            countByRarity[key] = (countByRarity[key] || 0) + 1;
+            if (isRarePlus(card && card.rarity)) rarePlusTotal += 1;
+        });
+
+        var bestMap = Object.create(null);
+        var bestOrder = [];
+        cards.forEach(function (card) {
+            if (!isRarePlus(card && card.rarity)) return;
+            var id = cardInventoryId(card) || String(card.name || 'Card') + '|' + String(card.rarity || '');
+            if (!bestMap[id]) {
+                bestMap[id] = { card: card, count: 0 };
+                bestOrder.push(id);
+            }
+            bestMap[id].count += 1;
+        });
+        bestOrder.sort(function (a, b) {
+            var ca = bestMap[a].card;
+            var cb = bestMap[b].card;
+            var diff = raritySortIndex(cb.rarity) - raritySortIndex(ca.rarity);
+            if (diff !== 0) return diff;
+            return String(ca.name || '').localeCompare(String(cb.name || ''));
+        });
+
+        if (packMultiStatsTitleEl) {
+            packMultiStatsTitleEl.textContent = packCount > 1
+                ? 'Simulation · ' + packCount + ' packs · ' + total + ' cards'
+                : 'Simulation · ' + total + ' card' + (total === 1 ? '' : 's');
+        }
+        if (packMultiBestSubEl) {
+            packMultiBestSubEl.textContent = rarePlusTotal
+                ? rarePlusTotal + ' rare+ pull' + (rarePlusTotal === 1 ? '' : 's') + ' · ' + bestOrder.length + ' unique'
+                : 'No rare+ pulls in this preview.';
+        }
+
+        if (!bestOrder.length) {
+            packMultiBestGridEl.innerHTML = '<p class="wow-pack-multi-empty">No rare+ cards pulled.</p>';
+        } else {
+            packMultiBestGridEl.innerHTML = bestOrder.map(function (id) {
+                var entry = bestMap[id];
+                var card = entry.card;
+                var rLabel = rarityLabel(card.rarity);
+                var stackRarity = rLabel ? ' wow-stack-rarity--' + rLabel : '';
+                var art = card.imageUrl
+                    ? '<img src="' + escapeHtml(card.imageUrl) + '" alt="" loading="lazy">'
+                    : '<span class="wow-pack-summary-placeholder">🃏</span>';
+                var qty = entry.count > 1
+                    ? '<span class="wow-pack-multi-qty">×' + entry.count + '</span>'
+                    : '';
+                return (
+                    '<article class="wow-pack-summary-card wow-pack-multi-best-card' + stackRarity + '">' +
+                        '<div class="wow-pack-summary-art">' + art + qty + '</div>' +
+                        '<p class="wow-pack-summary-name">' + escapeHtml(card.name || 'Card') + '</p>' +
+                        '<p class="wow-pack-summary-rarity">' + escapeHtml(rarityLabel(card.rarity)) + '</p>' +
+                    '</article>'
+                );
+            }).join('');
+        }
+
+        var maxPct = 0;
+        var rateRows = RARITY_DISPLAY_ORDER.map(function (label) {
+            var count = countByRarity[label] || 0;
+            var pct = total > 0 ? (count / total) * 100 : 0;
+            if (pct > maxPct) maxPct = pct;
+            return { label: label, count: count, pct: pct };
+        });
+        packMultiRatesListEl.innerHTML = rateRows.map(function (row) {
+            var barW = maxPct > 0 ? Math.round((row.pct / maxPct) * 100) : 0;
+            var avgPacks = row.count > 0 ? (packCount / row.count) : null;
+            var avgTitle = avgPacks != null
+                ? 'Average packs between pulls of this rarity (~' + (avgPacks < 1 ? '<1' : avgPacks.toFixed(1)) + ')'
+                : 'No pulls of this rarity in the simulation';
+            var avgText = row.count > 0 ? formatAvgPacksBeforeRarity(row.count, packCount) : ' · —';
+            return (
+                '<div class="wow-pack-multi-rate-row wow-stack-rarity--' + row.label + '">' +
+                    '<span class="wow-pack-multi-rate-label">' + escapeHtml(row.label) + '</span>' +
+                    '<span class="wow-pack-multi-rate-bar" aria-hidden="true">' +
+                        '<span class="wow-pack-multi-rate-fill" style="width:' + barW + '%"></span>' +
+                    '</span>' +
+                    '<span class="wow-pack-multi-rate-count">' + row.count + '</span>' +
+                    '<span class="wow-pack-multi-rate-pct" title="' + escapeHtml(avgTitle) + '">' +
+                        row.pct.toFixed(1) + '%' +
+                        '<span class="wow-pack-multi-rate-avg">' + avgText + '</span>' +
+                    '</span>' +
+                '</div>'
+            );
+        }).join('');
+
+        packMultiStatsEl.hidden = false;
+    }
+
     function updatePackRevealBestPull(index) {
         if (!packRevealBest || !packRevealCards.length) return;
         var onLast = index === packRevealCards.length - 1;
@@ -536,13 +678,17 @@
             revealAllBtn: document.getElementById('wowPackRevealAll'),
             skipRaresBtn: document.getElementById('wowPackSkipRares'),
             soundBtn: document.getElementById('wowPackSoundBtn'),
-            skipLowRarityOnStart: !!(packSkipCommons && packSkipCommons.checked),
+            skipLowRarityOnStart: loadSkipCommonsPref(),
+            getSkipLowRarity: function () {
+                if (packSkipCommons) return !!packSkipCommons.checked;
+                return loadSkipCommonsPref();
+            },
             escapeHtml: escapeHtml,
             onChange: function (index) {
                 updatePackRevealBestPull(index);
             },
-            onComplete: function (cards) {
-                var newCount = cards.filter(function (c) { return c.isNew; }).length;
+            onComplete: function () {
+                var newCount = stackCards.filter(function (c) { return c.isNew; }).length;
                 var sub = document.getElementById('wowPackSummarySub');
                 if (sub) {
                     if (options.dryRun) {
@@ -554,6 +700,11 @@
                             ? newCount + ' new card' + (newCount === 1 ? '' : 's') + ' added to your collection!'
                             : 'All pulls added to your collection.';
                     }
+                }
+                if (options.multiPreview) {
+                    renderMultiPreviewStats(packRevealCards, options.packCount || 1);
+                } else {
+                    clearMultiPreviewStats();
                 }
             }
         });
@@ -588,7 +739,9 @@
             }
         }
         var dryRun = !!(result && result.skipGrant);
+        var multiPreview = !!(result && result.multiPreview);
         packRevealModal.dataset.dryRun = dryRun ? '1' : '0';
+        packRevealModal.dataset.multiPreview = multiPreview ? '1' : '0';
         var note = '';
         if (dryRun) {
             note = 'Preview — no QuestCoins spent, nothing added to inventory.';
@@ -605,7 +758,12 @@
         var summaryEl = document.getElementById('wowPackRevealSummary');
         if (peelEl) peelEl.hidden = false;
         if (summaryEl) summaryEl.hidden = true;
-        mountPackRevealStack(cards, 0, { dryRun: dryRun });
+        clearMultiPreviewStats();
+        mountPackRevealStack(cards, 0, {
+            dryRun: dryRun,
+            multiPreview: multiPreview,
+            packCount: packCount
+        });
         packRevealModal.classList.add('is-open');
         packRevealModal.setAttribute('aria-hidden', 'false');
         document.documentElement.classList.add('wow-pack-modal-open');
@@ -626,6 +784,7 @@
             packStackController = null;
         }
         packRevealCards = [];
+        clearMultiPreviewStats();
         packRevealModal.classList.remove('is-open');
         packRevealModal.setAttribute('aria-hidden', 'true');
         document.documentElement.classList.remove('wow-pack-modal-open');
@@ -672,6 +831,7 @@
             packCount: packCount,
             ownedBefore: packOwnedBefore
         }).then(function (result) {
+            if (options.multiPreview) result.multiPreview = true;
             openPackRevealModal(result);
             if (skipGrant) {
                 setStatus('');
@@ -766,7 +926,7 @@
     }
     if (packTestMultiBtn) {
         packTestMultiBtn.addEventListener('click', function () {
-            testOpenWhimsyPack({ skipGrant: true });
+            testOpenWhimsyPack({ skipGrant: true, multiPreview: true });
         });
     }
     if (packQtyRange) {
@@ -781,20 +941,8 @@
     if (packRevealModal) {
         packRevealModal.addEventListener('click', function (e) {
             if (e.target.closest('[data-wow-pack-close]')) closePackRevealModal();
+            if (e.target === packRevealModal) closePackRevealModal();
         });
-        packRevealModal.addEventListener('wheel', function (e) {
-            if (e.target.closest('.wow-pack-summary-grid') || e.target.closest('.wow-pack-modal-panel--summary')) {
-                return;
-            }
-            e.preventDefault();
-        }, { passive: false });
-        packRevealModal.addEventListener('touchmove', function (e) {
-            if (e.target.closest('.wow-peel-stack')) return;
-            if (e.target.closest('.wow-pack-summary-grid') || e.target.closest('.wow-pack-modal-panel--summary')) {
-                return;
-            }
-            e.preventDefault();
-        }, { passive: false });
     }
     if (packRevealRestart) {
         packRevealRestart.addEventListener('click', function () {
@@ -803,6 +951,7 @@
             var summaryEl = document.getElementById('wowPackRevealSummary');
             if (peelEl) peelEl.hidden = false;
             if (summaryEl) summaryEl.hidden = true;
+            clearMultiPreviewStats();
             packStackController.reset();
             updatePackRevealBestPull(0);
         });

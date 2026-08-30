@@ -456,6 +456,9 @@
         var skipRaresBtn = opts.skipRaresBtn;
         var soundBtn = opts.soundBtn;
         var skipLowRarityOnStart = !!opts.skipLowRarityOnStart;
+        var getSkipLowRarity = typeof opts.getSkipLowRarity === 'function'
+            ? opts.getSkipLowRarity
+            : function () { return skipLowRarityOnStart; };
         var onChange = typeof opts.onChange === 'function' ? opts.onChange : null;
         var onComplete = typeof opts.onComplete === 'function' ? opts.onComplete : null;
         var escapeHtml = opts.escapeHtml;
@@ -486,12 +489,55 @@
         if (totalEl) totalEl.textContent = String(cards.length);
         preloadAll(cards);
 
-        function firstRarePlusIndex() {
+        function shouldSkipLowRarity() {
+            return !!getSkipLowRarity();
+        }
+
+        function nextRarePlusIndex(from) {
+            var start = from != null ? from : 0;
             var i;
-            for (i = 0; i < cards.length; i++) {
+            for (i = start; i < cards.length; i++) {
                 if (rarityIndex(cards[i] && cards[i].rarity) >= 2) return i;
             }
             return -1;
+        }
+
+        function firstRarePlusIndex() {
+            return nextRarePlusIndex(0);
+        }
+
+        /** Show stack at peelIndex already flipped (after jumping past skipped pulls). */
+        function landOnPeelIndex(isFinale) {
+            animating = false;
+            opening = false;
+            flippedTop = true;
+            stackEl.classList.remove('is-opening', 'is-peeling');
+            renderStack();
+            var topInner = stackEl.querySelector('.wow-peel-card.is-top .wow-peel-flip-inner');
+            if (topInner) topInner.classList.add('is-flipped');
+            updateMeta();
+            flashRarity(cards[peelIndex], !!isFinale);
+            var idx = rarityIndex(cards[peelIndex] && cards[peelIndex].rarity);
+            if (idx >= 3) sound.playFinale();
+            else if (idx >= 2) sound.playRare();
+        }
+
+        /** When skip-low-rarity is on, advance peelIndex past common/uncommon pulls. */
+        function maybeSkipLowRarityFromCurrent() {
+            if (!shouldSkipLowRarity()) return false;
+            var next = nextRarePlusIndex(peelIndex);
+            if (next < 0) {
+                if (peelIndex !== cards.length - 1) {
+                    peelIndex = cards.length - 1;
+                    landOnPeelIndex(true);
+                    return true;
+                }
+                return false;
+            }
+            if (next === peelIndex) return false;
+            peelIndex = next;
+            landOnPeelIndex(peelIndex === cards.length - 1);
+            return true;
         }
 
         function updateSoundBtn() {
@@ -503,7 +549,7 @@
 
         function updateSkipRaresBtn() {
             if (!skipRaresBtn) return;
-            var target = firstRarePlusIndex();
+            var target = nextRarePlusIndex(peelIndex);
             var canSkip = !summaryShown && !opening && target >= 0 && peelIndex < target;
             skipRaresBtn.hidden = !canSkip;
             skipRaresBtn.disabled = animating || !canSkip;
@@ -682,6 +728,10 @@
                     showSummary();
                     return;
                 }
+                if (maybeSkipLowRarityFromCurrent()) {
+                    stackEl.classList.remove('is-peeling');
+                    return;
+                }
                 renderStack();
                 revealTopCard();
             }
@@ -714,32 +764,20 @@
             /* Still require a swipe of the last card — do not jump to summary. */
         }
 
-        /** Jump past common/uncommon pulls to the first rare+ (or last card if none). */
+        /** Jump past common/uncommon pulls to the next rare+ (or last card if none). */
         function skipToRares() {
             if (summaryShown || animating) return;
-            var target = firstRarePlusIndex();
+            var target = nextRarePlusIndex(peelIndex);
             if (target < 0) {
                 revealAll();
                 return;
             }
-            if (peelIndex > target) return;
             if (peelIndex === target && flippedTop) {
                 updateSkipRaresBtn();
                 return;
             }
             peelIndex = target;
-            animating = false;
-            opening = false;
-            flippedTop = true;
-            stackEl.classList.remove('is-opening', 'is-peeling');
-            renderStack();
-            var topInner = stackEl.querySelector('.wow-peel-card.is-top .wow-peel-flip-inner');
-            if (topInner) topInner.classList.add('is-flipped');
-            updateMeta();
-            flashRarity(cards[peelIndex], peelIndex === cards.length - 1);
-            var idx = rarityIndex(cards[peelIndex] && cards[peelIndex].rarity);
-            if (idx >= 3) sound.playFinale();
-            else if (idx >= 2) sound.playRare();
+            landOnPeelIndex(peelIndex === cards.length - 1);
         }
 
         function reset() {
@@ -764,7 +802,7 @@
                 window.setTimeout(function () {
                     opening = false;
                     stackEl.classList.remove('is-opening');
-                    if (skipLowRarityOnStart) {
+                    if (shouldSkipLowRarity()) {
                         skipToRares();
                         stackEl.focus();
                     } else {
@@ -772,7 +810,7 @@
                         stackEl.focus();
                     }
                 }, OPEN_BEAT_MS);
-            } else if (skipLowRarityOnStart) {
+            } else if (shouldSkipLowRarity()) {
                 skipToRares();
                 stackEl.focus();
             } else {
@@ -822,7 +860,7 @@
         function beginReveal() {
             opening = false;
             stackEl.classList.remove('is-opening');
-            if (skipLowRarityOnStart) {
+            if (shouldSkipLowRarity()) {
                 skipToRares();
             } else {
                 revealTopCard();

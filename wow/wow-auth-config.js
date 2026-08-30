@@ -48,8 +48,8 @@ window.WowAuthConfig = window.WowAuthConfig || {
             /**
              * Fixed slot structure (fill order; reveal still sorts common → rarest):
              * 5× Common, 3× Uncommon,
-             * 1× wild (50% Uncommon, else Rare+ with falling odds),
-             * 1× Rare+ finale (Rare base, chance to upgrade).
+             * 1× wild (46% Uncommon, else Rare+ with falling odds),
+             * 1× Rare+ finale (Rare base, chance to upgrade; ~2.3 packs/epic, ~5 packs/legendary).
              */
             pullSlots: [
                 { rarity: 'common', count: 5 },
@@ -57,20 +57,20 @@ window.WowAuthConfig = window.WowAuthConfig || {
                 {
                     count: 1,
                     weights: {
-                        uncommon: 50,
-                        rare: 30,
-                        epic: 12,
-                        legendary: 6,
-                        fantastical: 2
+                        uncommon: 46,
+                        rare: 25,
+                        epic: 18,
+                        legendary: 7,
+                        fantastical: 3
                     }
                 },
                 {
                     count: 1,
                     weights: {
-                        rare: 70,
-                        epic: 18,
-                        legendary: 9,
-                        fantastical: 3
+                        rare: 56,
+                        epic: 27,
+                        legendary: 12,
+                        fantastical: 5
                     }
                 }
             ]
