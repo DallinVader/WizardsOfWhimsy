@@ -373,6 +373,16 @@
             }
         }
 
+        function clearActiveTilt() {
+            cardEls.forEach(function (card) {
+                var inner = card.querySelector('.wow-card-tilt-inner');
+                var shine = card.querySelector('.wow-card-shine');
+                card.classList.remove('is-tilting', 'is-arriving');
+                if (inner) inner.style.transform = '';
+                if (shine) shine.style.background = '';
+            });
+        }
+
         function celebrateArrival(dir, source) {
             var active = cardEls[index];
             if (active) {
@@ -381,17 +391,21 @@
                 active.classList.add('is-arriving');
             }
             popMeta();
-            if (whimsy && stackEl && source !== 'swipe' && source !== 'thumb') {
+            /* Dust only for swipe — arrow/thumb clicks stay quieter. */
+            if (whimsy && stackEl && source === 'swipe') {
                 var rect = stackEl.getBoundingClientRect();
                 whimsy.puff(rect.width * 0.5, rect.height * 0.42);
             }
         }
 
-        function wiggleNav(btn) {
+        function pulseNav(btn) {
             if (!btn) return;
             btn.classList.remove('is-sparkle');
             void btn.offsetWidth;
             btn.classList.add('is-sparkle');
+            window.setTimeout(function () {
+                btn.classList.remove('is-sparkle');
+            }, 320);
         }
 
         function show(i, optsShow) {
@@ -400,6 +414,7 @@
             if (next === index && !optsShow.force) return;
             var dir = signedOffset(next, index, cards.length);
             if (dir === 0 && optsShow.dir) dir = optsShow.dir;
+            clearActiveTilt();
             index = next;
             updateStackClasses();
             if (optsShow.animate !== false) {
@@ -410,7 +425,7 @@
         function step(dir, source) {
             show(index + dir, { dir: dir, animate: source !== 'init', source: source });
             if (source === 'nav') {
-                wiggleNav(dir < 0 ? prevBtn : nextBtn);
+                pulseNav(dir < 0 ? prevBtn : nextBtn);
             }
         }
 
@@ -469,10 +484,6 @@
                     if (ci === index) return;
                     var dir = signedOffset(ci, index, cards.length);
                     show(ci, { dir: dir, source: 'thumb' });
-                    if (whimsy && stackEl) {
-                        var rect = stackEl.getBoundingClientRect();
-                        whimsy.puff(rect.width * 0.5, rect.height * 0.75);
-                    }
                 });
                 thumbsEl.appendChild(btn);
             });

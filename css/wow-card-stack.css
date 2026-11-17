@@ -43,17 +43,15 @@
 }
 
 .wow-gallery-nav.is-sparkle {
-    animation: wcs-nav-wiggle 0.42s var(--wcs-ease-out);
-    border-color: rgba(196, 168, 255, 0.55);
-    box-shadow: 0 0 22px rgba(155, 122, 212, 0.25);
+    animation: wcs-nav-pulse 0.28s var(--wcs-ease-out);
+    border-color: rgba(230, 162, 60, 0.5);
+    box-shadow: 0 0 14px rgba(230, 162, 60, 0.2);
 }
 
-@keyframes wcs-nav-wiggle {
-    0% { transform: rotate(0deg) scale(1); }
-    25% { transform: rotate(-8deg) scale(1.06); }
-    50% { transform: rotate(7deg) scale(1.04); }
-    75% { transform: rotate(-3deg) scale(1.02); }
-    100% { transform: rotate(0deg) scale(1); }
+@keyframes wcs-nav-pulse {
+    0% { transform: scale(1); }
+    45% { transform: scale(0.94); }
+    100% { transform: scale(1); }
 }
 
 .wow-card-stack {
@@ -188,13 +186,12 @@
 }
 
 .wow-stack-card.is-arriving .wow-card-tilt-inner {
-    animation: wcs-card-arrive 0.58s var(--wcs-ease-out);
+    animation: wcs-card-arrive 0.42s var(--wcs-ease-out);
 }
 
 @keyframes wcs-card-arrive {
-    0% { transform: scale(0.9) rotate(-2.5deg); }
-    55% { transform: scale(1.05) rotate(1.2deg); }
-    100% { transform: scale(1) rotate(0deg); }
+    0% { transform: scale(0.96); }
+    100% { transform: scale(1); }
 }
 
 .wow-card-tilt-inner {
@@ -265,13 +262,12 @@
 }
 
 .wow-gallery-name.is-pop {
-    animation: wcs-name-pop 0.48s var(--wcs-ease-out);
+    animation: wcs-name-pop 0.35s var(--wcs-ease-out);
 }
 
 @keyframes wcs-name-pop {
-    0% { transform: scale(1); }
-    35% { transform: scale(1.08); }
-    100% { transform: scale(1); }
+    0% { opacity: 0.55; transform: translateY(4px); }
+    100% { opacity: 1; transform: translateY(0); }
 }
 
 .wow-gallery-sub {
@@ -280,7 +276,7 @@
     color: rgba(220, 232, 225, 0.62);
 }
 
-.wow-gallery-sub.wow-stack-rarity--Rare { color: #93c5fd; }
+.wow-gallery-sub.wow-stack-rarity--Rare { color: #3d9b86; }
 .wow-gallery-sub.wow-stack-rarity--Epic { color: #c4b5fd; }
 .wow-gallery-sub.wow-stack-rarity--Legendary { color: #fbbf24; }
 .wow-gallery-sub.wow-stack-rarity--Mythic { color: #f87171; }
@@ -777,7 +773,7 @@
     padding: 6px 12px;
     border-radius: 8px;
     border: 1px solid rgba(148, 163, 184, 0.35);
-    background: rgba(15, 23, 42, 0.65);
+    background: rgba(8, 28, 26, 0.65);
     color: #cbd5e1;
     cursor: pointer;
 }
@@ -1005,7 +1001,7 @@
     display: block;
     height: 8px;
     border-radius: 999px;
-    background: rgba(15, 23, 42, 0.65);
+    background: rgba(8, 28, 26, 0.65);
     overflow: hidden;
 }
 

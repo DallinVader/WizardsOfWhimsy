@@ -175,17 +175,6 @@ a:hover {
         linear-gradient(118deg, #080612 0%, #12102a 28%, #0a2f2a 52%, #071e1b 100%);
 }
 
-.wow-hero-bg::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background:
-        url('assets/cards/Card Back.png') right -5% center / min(72vw, 780px) auto no-repeat;
-    opacity: 0.55;
-    filter: saturate(1.05) contrast(1.05);
-    animation: wow-hero-breathe 14s ease-in-out infinite;
-}
-
 .wow-hero-bg::after {
     content: '';
     position: absolute;
@@ -194,6 +183,83 @@ a:hover {
         linear-gradient(90deg, rgba(4, 20, 17, 0.94) 0%, rgba(4, 20, 17, 0.78) 38%, rgba(4, 20, 17, 0.25) 62%, rgba(4, 20, 17, 0.45) 100%),
         linear-gradient(to top, rgba(4, 16, 14, 0.9) 0%, transparent 42%);
     pointer-events: none;
+}
+
+/* Hero flip card — back by default; hover reveals a random face */
+.wow-hero-card {
+    position: absolute;
+    right: clamp(-2%, 2vw, 4%);
+    top: 50%;
+    z-index: 2;
+    width: min(42vw, 420px);
+    aspect-ratio: 5 / 7;
+    transform: translateY(-46%);
+    perspective: 1400px;
+    cursor: pointer;
+    filter: saturate(1.05) contrast(1.05);
+    opacity: 0.78;
+    animation: wow-hero-breathe 14s ease-in-out infinite;
+}
+
+.wow-hero-card.is-ready {
+    pointer-events: auto;
+}
+
+.wow-hero-card:not(.is-ready) {
+    pointer-events: none;
+}
+
+.wow-hero-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    border-radius: 3.5% / 2.5%;
+}
+
+.wow-hero-card.is-flipped .wow-hero-card-inner {
+    transform: rotateY(180deg);
+    animation: none;
+}
+
+.wow-hero-card.is-flipped {
+    opacity: 0.95;
+    animation: none;
+    filter: saturate(1.08) contrast(1.06) drop-shadow(0 18px 42px rgba(0, 0, 0, 0.45));
+}
+
+.wow-hero-card-face {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    overflow: hidden;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+
+.wow-hero-card-face img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    pointer-events: none;
+    user-select: none;
+}
+
+.wow-hero-card-face--back {
+    background: rgba(4, 16, 14, 0.35);
+}
+
+.wow-hero-card-face--front {
+    transform: rotateY(180deg);
+    background: rgba(4, 16, 14, 0.45);
+}
+
+@keyframes wow-hero-breathe {
+    0%, 100% { transform: translateY(-46%) scale(1); opacity: 0.72; }
+    50% { transform: translateY(-46%) scale(1.035) translateX(-1.2%); opacity: 0.86; }
 }
 
 .wow-hero-stars {
@@ -230,10 +296,6 @@ a:hover {
     pointer-events: none;
 }
 
-@keyframes wow-hero-breathe {
-    0%, 100% { transform: scale(1) translate3d(0, 0, 0); opacity: 0.52; }
-    50% { transform: scale(1.04) translate3d(-1.5%, 1%, 0); opacity: 0.62; }
-}
 
 .wow-hero-copy {
     position: relative;
@@ -684,13 +746,12 @@ a:hover {
 }
 
 .wow-stack-card.is-arriving .wow-card-tilt-inner {
-    animation: wow-card-arrive 0.58s var(--ease-out);
+    animation: wow-card-arrive 0.42s var(--ease-out);
 }
 
 @keyframes wow-card-arrive {
-    0% { transform: scale(0.9) rotate(-2.5deg); }
-    55% { transform: scale(1.05) rotate(1.2deg); }
-    100% { transform: scale(1) rotate(0deg); }
+    0% { transform: scale(0.96); }
+    100% { transform: scale(1); }
 }
 
 .wow-card-stack.is-dragging .wow-stack-card.is-active .wow-card-tilt-inner {
@@ -804,28 +865,24 @@ a:hover {
 }
 
 .wow-gallery-name.is-pop {
-    animation: wow-name-pop 0.48s var(--ease-out);
+    animation: wow-name-pop 0.35s var(--ease-out);
 }
 
 @keyframes wow-name-pop {
-    0% { transform: scale(1) rotate(0deg); }
-    35% { transform: scale(1.08) rotate(-1.5deg); }
-    70% { transform: scale(0.98) rotate(0.6deg); }
-    100% { transform: scale(1) rotate(0deg); }
+    0% { opacity: 0.55; transform: translateY(4px); }
+    100% { opacity: 1; transform: translateY(0); }
 }
 
 .wow-gallery-nav.is-sparkle {
-    animation: wow-nav-wiggle 0.42s var(--ease-out);
-    border-color: rgba(196, 168, 255, 0.55);
-    box-shadow: 0 0 22px rgba(155, 122, 212, 0.25);
+    animation: wow-nav-pulse 0.28s var(--ease-out);
+    border-color: rgba(230, 162, 60, 0.5);
+    box-shadow: 0 0 14px rgba(230, 162, 60, 0.2);
 }
 
-@keyframes wow-nav-wiggle {
-    0% { transform: rotate(0deg) scale(1); }
-    25% { transform: rotate(-8deg) scale(1.06); }
-    50% { transform: rotate(7deg) scale(1.04); }
-    75% { transform: rotate(-3deg) scale(1.02); }
-    100% { transform: rotate(0deg) scale(1); }
+@keyframes wow-nav-pulse {
+    0% { transform: scale(1); }
+    45% { transform: scale(0.94); }
+    100% { transform: scale(1); }
 }
 
 .wow-gallery-sub {
@@ -1027,6 +1084,15 @@ a:hover {
         transform: none;
     }
 
+    .wow-hero-card {
+        animation: none !important;
+        opacity: 0.78;
+    }
+
+    .wow-hero-card-inner {
+        transition: none !important;
+    }
+
     .wow-dust.is-falling {
         animation: none;
     }
@@ -1058,10 +1124,24 @@ a:hover {
 }
 
 @media (max-width: 860px) {
-    .wow-hero-bg::before {
-        background-position: 70% center;
-        background-size: min(110vw, 560px) auto;
-        opacity: 0.4;
+    .wow-hero-card {
+        right: 50%;
+        top: auto;
+        bottom: 18%;
+        width: min(52vw, 240px);
+        transform: translate(42%, 0);
+        opacity: 0.55;
+        animation: wow-hero-breathe-mobile 14s ease-in-out infinite;
+    }
+
+    .wow-hero-card.is-flipped {
+        opacity: 0.85;
+        animation: none;
+    }
+
+    @keyframes wow-hero-breathe-mobile {
+        0%, 100% { transform: translate(42%, 0) scale(1); opacity: 0.5; }
+        50% { transform: translate(42%, 0) scale(1.03); opacity: 0.62; }
     }
 
     .wow-hero-bg::after {

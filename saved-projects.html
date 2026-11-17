@@ -13,7 +13,11 @@
     <script>WowAuth.gatePage();</script>
     <script src="js/cardmaker-nav.js" defer></script>
     <style>
-        body { background: #0b1220; color: #e2e8f0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; }
+        body {
+            margin: 0;
+            color: #dce8e1;
+            font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif;
+        }
         .spm-wrap { max-width: min(1960px, calc(100vw - 24px)); margin: 0 auto; padding: 22px max(18px, env(safe-area-inset-right)) 40px max(18px, env(safe-area-inset-left)); }
         .spm-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 16px; margin-bottom: 22px; }
 
@@ -32,12 +36,19 @@
             box-shadow: 0 12px 40px rgba(0,0,0,0.25);
             color: #e2e8f0;
         }
-        .spm-panel h3 { margin: 0 0 12px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: #93c5fd; }
+        .spm-panel h3 {
+            margin: 0 0 12px;
+            font-family: 'Cinzel', Georgia, serif;
+            font-size: 0.78rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #9b7ad4;
+        }
         .spm-panel .spm-list-heading { margin: 28px 0 12px; }
 
         .spm-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 8px; }
         .spm-stat {
-            background: rgba(15,23,42,0.45);
+            background: rgba(8,28,26,0.45);
             border: 1px solid rgba(148,163,184,0.18);
             border-radius: 14px;
             padding: 14px 16px;
@@ -49,13 +60,13 @@
         .spm-status-card {
             margin-top: 4px;
             margin-bottom: 4px;
-            background: rgba(15,23,42,0.45);
+            background: rgba(8,28,26,0.45);
             border: 1px solid rgba(148,163,184,0.18);
             border-radius: 14px;
             padding: 14px 16px;
         }
         .spm-status-card .k { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
-        .spm-status-card .v { font-size: 15px; font-weight: 800; color: #93c5fd; line-height: 1.35; }
+        .spm-status-card .v { font-size: 15px; font-weight: 800; color: #3d9b86; line-height: 1.35; }
 
         .spm-summary-fold > summary {
             list-style: none;
@@ -64,7 +75,7 @@
             font-size: 12px;
             letter-spacing: .08em;
             text-transform: uppercase;
-            color: #93c5fd;
+            color: #3d9b86;
             padding: 4px 0 12px;
             user-select: none;
         }
@@ -80,7 +91,7 @@
             display: flex; align-items: center; gap: 8px;
             font-size: 12px; color: #cbd5e1; cursor: pointer; user-select: none;
         }
-        .spm-catalog-opt input { accent-color: #6366f1; }
+        .spm-catalog-opt input { accent-color: #3d9b86; }
         .spm-catalog-btn { width: 100%; margin-bottom: 8px; }
         @media (min-width: 981px) {
             .spm-summary-fold > summary { display: none; }
@@ -93,7 +104,7 @@
         .spm-list-box {
             max-height: 260px; overflow: auto; border-radius: 12px;
             border: 1px solid rgba(148,163,184,0.16);
-            background: rgba(15,23,42,0.35);
+            background: rgba(8,28,26,0.35);
             padding: 12px 14px;
             color:#e2e8f0;
         }
@@ -104,7 +115,7 @@
         }
         .spm-list-item:last-child { border-bottom: none; }
         .spm-list-item .name { color: #e2e8f0; font-weight: 700; font-size: 13px; line-height: 1.35; }
-        .spm-list-item .count { color: #93c5fd; font-weight: 900; font-variant-numeric: tabular-nums; min-width: 2ch; text-align: right; }
+        .spm-list-item .count { color: #3d9b86; font-weight: 900; font-variant-numeric: tabular-nums; min-width: 2ch; text-align: right; }
 
         .spm-table-tools { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; justify-content: space-between; margin-bottom: 16px; }
         .spm-select { padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.06); color: #e2e8f0; font-weight: 800; }
@@ -138,7 +149,7 @@
             .spm-card-grid { grid-template-columns: 1fr; max-width: 340px; margin-inline: auto; }
         }
         .spm-card {
-            background: rgba(15, 23, 42, 0.8);
+            background: rgba(8, 28, 26, 0.8);
             border: 1px solid rgba(148, 163, 184, 0.2);
             border-radius: 12px;
             overflow: hidden;
@@ -146,17 +157,17 @@
             flex-direction: column;
         }
         .spm-card.is-selected {
-            border-color: rgba(129, 140, 248, 0.65);
-            box-shadow: 0 0 0 1px rgba(129,140,248,0.25);
+            border-color: rgba(155, 122, 212, 0.65);
+            box-shadow: 0 0 0 1px rgba(155,122,212,0.25);
         }
         .spm-card.is-dup { box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.55); }
         .spm-card.is-selected.is-dup {
-            box-shadow: 0 0 0 1px rgba(129,140,248,0.25), 0 0 0 3px rgba(248, 113, 113, 0.45);
+            box-shadow: 0 0 0 1px rgba(155,122,212,0.25), 0 0 0 3px rgba(248, 113, 113, 0.45);
         }
         .spm-card-art {
             position: relative;
             aspect-ratio: 2.5 / 3.5;
-            background: #1e293b;
+            background: #0a2422;
             cursor: zoom-in;
         }
         .spm-card-art img {
@@ -233,7 +244,7 @@
             object-fit: contain;
             border-radius: 12px;
             box-shadow: 0 18px 50px rgba(0,0,0,0.55);
-            background: #0f172a;
+            background: #081c1a;
             pointer-events: none;
             user-select: none;
             -webkit-user-drag: none;
@@ -283,7 +294,7 @@
             height: 36px;
             border-radius: 50%;
             border: 3px solid rgba(148, 163, 184, 0.28);
-            border-top-color: #93c5fd;
+            border-top-color: #3d9b86;
             animation: spm-zoom-spin 0.7s linear infinite;
             pointer-events: none;
         }
@@ -295,7 +306,7 @@
             .spm-zoom-layer {
                 transition: opacity 0.15s ease;
             }
-            .spm-zoom-spinner { animation: none; border-top-color: #93c5fd; opacity: 0.85; }
+            .spm-zoom-spinner { animation: none; border-top-color: #3d9b86; opacity: 0.85; }
         }
         .spm-zoom-nav {
             position: absolute;
@@ -306,7 +317,7 @@
             height: 48px;
             border: none;
             border-radius: 50%;
-            background: rgba(15, 23, 42, 0.78);
+            background: rgba(8, 28, 26, 0.78);
             color: #f8fafc;
             font-size: 28px;
             line-height: 1;
@@ -320,7 +331,7 @@
         .spm-zoom-nav:hover { background: rgba(51, 65, 85, 0.95); }
         .spm-zoom-nav:focus-visible,
         .spm-zoom-close:focus-visible {
-            outline: 2px solid #a5b4fc;
+            outline: 2px solid #9b7ad4;
             outline-offset: 2px;
         }
         .spm-zoom-nav[hidden] { display: none !important; }
@@ -335,7 +346,7 @@
             height: 44px;
             border: none;
             border-radius: 12px;
-            background: rgba(15, 23, 42, 0.78);
+            background: rgba(8, 28, 26, 0.78);
             color: #e2e8f0;
             font-size: 26px;
             line-height: 1;
@@ -366,7 +377,7 @@
             font-size: 12px;
             font-weight: 700;
             letter-spacing: 0.04em;
-            color: #93c5fd;
+            color: #3d9b86;
             font-variant-numeric: tabular-nums;
         }
         .spm-zoom-hint {
@@ -409,7 +420,7 @@
         .spm-edit-card-nav-count {
             font-size: 12px;
             font-weight: 800;
-            color: #93c5fd;
+            color: #3d9b86;
             font-variant-numeric: tabular-nums;
             text-align: center;
             flex: 1 1 auto;
@@ -473,7 +484,7 @@
 
         .spm-message { margin-top: 18px; font-size: 13px; color: #94a3b8; line-height: 1.5; }
         .spm-message.is-error { color: #fca5a5; font-weight: 800; }
-        .spm-progress { color: #93c5fd; font-weight: 900; }
+        .spm-progress { color: #3d9b86; font-weight: 900; }
 
         /* spm-small-btn, spm-link-btn, variants → cardmaker-buttons.css */
 
@@ -534,8 +545,8 @@
             margin-bottom: 16px;
             padding: 16px 18px 18px;
             border-radius: 16px;
-            border: 1px solid rgba(129,140,248,0.28);
-            background: linear-gradient(145deg, rgba(30,27,75,0.55) 0%, rgba(15,23,42,0.72) 100%);
+            border: 1px solid rgba(155,122,212,0.28);
+            background: linear-gradient(145deg, rgba(30,27,75,0.55) 0%, rgba(8,28,26,0.72) 100%);
             box-shadow: 0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.06);
         }
         @media (max-width: 720px) {
@@ -546,13 +557,13 @@
         }
         .spm-bulk-title {
             font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
-            color: #a5b4fc;
+            color: #9b7ad4;
         }
         .spm-bulk-badge {
             display: inline-flex; align-items: baseline; gap: 8px;
             padding: 8px 14px;
             border-radius: 999px;
-            background: rgba(15,23,42,0.65);
+            background: rgba(8,28,26,0.65);
             border: 1px solid rgba(165,180,252,0.35);
             font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums;
             color: #e0e7ff;
@@ -586,7 +597,7 @@
             margin-bottom: 14px;
             border-radius: 14px;
             border: 1px solid rgba(148,163,184,0.2);
-            background: rgba(15,23,42,0.35);
+            background: rgba(8,28,26,0.35);
             overflow: hidden;
         }
         .spm-multi-panel > summary {
@@ -608,14 +619,14 @@
         .spm-multi-panel > summary::after {
             content: '▶';
             font-size: 10px;
-            color: #93c5fd;
+            color: #3d9b86;
             transition: transform 0.15s ease;
         }
         .spm-multi-panel[open] > summary::after {
             transform: rotate(90deg);
         }
         .spm-multi-panel > summary:hover {
-            background: rgba(99,102,241,0.08);
+            background: rgba(61,155,134,0.08);
             color: #e2e8f0;
         }
         .spm-multi-panel-body {
@@ -663,7 +674,7 @@
             margin: 0;
             border-radius: 7px;
             border: 2px solid rgba(148,163,184,0.45);
-            background: rgba(15,23,42,0.85);
+            background: rgba(8,28,26,0.85);
             cursor: pointer;
             flex-shrink: 0;
             position: relative;
@@ -671,15 +682,15 @@
         }
         .spm-row-check:hover {
             border-color: rgba(165,180,252,0.75);
-            box-shadow: 0 0 0 3px rgba(129,140,248,0.2);
+            box-shadow: 0 0 0 3px rgba(155,122,212,0.2);
         }
         .spm-row-check:focus-visible {
             outline: none;
-            border-color: #a5b4fc;
-            box-shadow: 0 0 0 3px rgba(129,140,248,0.35);
+            border-color: #9b7ad4;
+            box-shadow: 0 0 0 3px rgba(155,122,212,0.35);
         }
         .spm-row-check:checked {
-            background: linear-gradient(155deg, #818cf8 0%, #6366f1 100%);
+            background: linear-gradient(155deg, #5eb89f 0%, #3d9b86 100%);
             border-color: #c7d2fe;
         }
         .spm-row-check:checked::after {
@@ -694,8 +705,8 @@
             transform: rotate(45deg);
         }
         .spm-row-check:indeterminate {
-            background: rgba(99,102,241,0.35);
-            border-color: #a5b4fc;
+            background: rgba(61,155,134,0.35);
+            border-color: #9b7ad4;
         }
         .spm-row-check:indeterminate::after {
             content: '';
@@ -768,7 +779,7 @@
             font-weight: 800;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            color: #93c5fd;
+            color: #3d9b86;
             flex-shrink: 0;
         }
         .spm-edit-preview-frame {
@@ -777,7 +788,7 @@
             min-height: 180px;
             border-radius: 16px;
             border: 1px solid rgba(148,163,184,0.22);
-            background: rgba(15,23,42,0.75);
+            background: rgba(8,28,26,0.75);
             overflow: auto;
             display: flex;
             align-items: flex-start;
@@ -1059,7 +1070,7 @@
                 </div>
 
                 <h3 class="spm-list-heading">Site catalog</h3>
-                <p class="spm-muted" style="font-size:12px; line-height:1.45; margin:0 0 10px;">Export your Drive library to <code style="color:#93c5fd">catalog/wow-card-catalog.json</code> plus <code style="color:#93c5fd">catalog/thumbs/</code> images. Publish downloads a zip — extract it to the repo root.</p>
+                <p class="spm-muted" style="font-size:12px; line-height:1.45; margin:0 0 10px;">Export your Drive library to <code style="color:#3d9b86">catalog/wow-card-catalog.json</code> plus <code style="color:#3d9b86">catalog/thumbs/</code> images. Publish downloads a zip — extract it to the repo root.</p>
                 <div class="spm-catalog-options">
                     <label class="spm-catalog-opt"><input type="checkbox" id="spmPublishSyncQuestline" checked> Sync Questline items</label>
                     <label class="spm-catalog-opt"><input type="checkbox" id="spmPublishFirestore"> Push to Firestore</label>
@@ -1218,7 +1229,7 @@
             <div class="spm-modal-field">
                 <label for="spmEditName">Save name</label>
                 <input type="text" id="spmEditName" class="spm-input" maxlength="100" autocomplete="off" />
-                <span class="spm-modal-suffix">Stored as <code style="color:#93c5fd">name<span class="spm-edit-ext">.cardmaker.json</span></code> in hidden app data.</span>
+                <span class="spm-modal-suffix">Stored as <code style="color:#3d9b86">name<span class="spm-edit-ext">.cardmaker.json</span></code> in hidden app data.</span>
             </div>
             <div class="spm-modal-field">
                 <label for="spmEditType">Type</label>
@@ -1244,7 +1255,7 @@
                     <span class="spm-muted" aria-hidden="true">/</span>
                     <input type="number" id="spmEditCardSetTotal" class="spm-input" min="1" step="1" placeholder="120" aria-label="Set size (total cards)" />
                 </div>
-                <span class="spm-modal-suffix">Shown on the card as <code style="color:#93c5fd">n / total</code>. Leave both empty to hide. Use two integers ≥ 1.</span>
+                <span class="spm-modal-suffix">Shown on the card as <code style="color:#3d9b86">n / total</code>. Leave both empty to hide. Use two integers ≥ 1.</span>
             </div>
             <div class="spm-modal-field">
                 <label for="spmEditRarity">Rarity</label>
@@ -1328,7 +1339,7 @@
             <div class="spm-modal-panel">
                 <button type="button" class="spm-modal-close" data-spm-edit-set-close aria-label="Close">&times;</button>
                 <h2 id="spmEditSetTitle">Edit named set</h2>
-                <p class="spm-modal-hint">Renaming or changing the card count only updates this browser’s set list. Cloud saves keep their own <code style="color:#93c5fd">n / total</code> until you edit or reassign them.</p>
+                <p class="spm-modal-hint">Renaming or changing the card count only updates this browser’s set list. Cloud saves keep their own <code style="color:#3d9b86">n / total</code> until you edit or reassign them.</p>
                 <div class="spm-modal-field">
                     <label for="spmEditSetPick">Set</label>
                     <select id="spmEditSetPick" class="spm-select"></select>
@@ -1358,7 +1369,7 @@
             <div class="spm-modal-panel" style="max-width:720px;">
                 <button type="button" class="spm-modal-close" data-spm-field-options-close aria-label="Close">&times;</button>
                 <h2 id="spmFieldOptionsTitle">Manage types &amp; subtypes</h2>
-                <p class="spm-modal-hint">Built-in options start here; add, rename, or remove any entry. Syncs to Drive app data when signed in (<code style="color:#93c5fd">CardMaker.FieldOptions.v1.json</code>).</p>
+                <p class="spm-modal-hint">Built-in options start here; add, rename, or remove any entry. Syncs to Drive app data when signed in (<code style="color:#3d9b86">CardMaker.FieldOptions.v1.json</code>).</p>
                 <div class="spm-field-options-grid">
                     <div>
                         <label for="spmFieldOptionsTypeList">Types</label>

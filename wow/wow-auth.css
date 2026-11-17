@@ -13,7 +13,7 @@ html.wow-auth-pending body {
 .cm-app-nav-user {
     font-size: 12px;
     font-weight: 600;
-    color: #cbd5e1;
+    color: #dce8e1;
     max-width: 140px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -28,47 +28,51 @@ html.wow-auth-pending body {
 }
 
 .cm-app-nav-user-link:hover {
-    color: #e0e7ff;
-    background: rgba(255, 255, 255, 0.06);
+    color: #f0c06a;
+    background: rgba(230, 162, 60, 0.08);
 }
 
 .cm-app-nav-auth-btn {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif;
     font-size: 12px;
-    font-weight: 700;
-    padding: 7px 12px;
-    border-radius: 10px;
-    border: 1px solid rgba(148, 163, 184, 0.28);
-    background: rgba(30, 41, 59, 0.88);
-    color: #e2e8f0;
+    font-weight: 650;
+    padding: 7px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(155, 122, 212, 0.28);
+    background: rgba(8, 28, 26, 0.78);
+    color: #e8f0eb;
     text-decoration: none;
     cursor: pointer;
     white-space: nowrap;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .cm-app-nav-auth-btn:hover {
-    background: rgba(51, 65, 85, 0.95);
-    border-color: rgba(165, 180, 252, 0.4);
+    background: rgba(11, 61, 56, 0.9);
+    border-color: rgba(230, 162, 60, 0.4);
+    color: #fff;
 }
 
 .cm-app-nav-auth-btn--primary {
-    border-color: rgba(129, 140, 248, 0.45);
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.85) 0%, rgba(79, 70, 229, 0.9) 100%);
-    color: #fff;
+    border-color: rgba(240, 192, 106, 0.5);
+    background: linear-gradient(135deg, #e6a23c 0%, #d48a2a 100%);
+    color: #14221c;
 }
 
 .cm-app-nav-auth-btn--ghost {
     background: transparent;
-    border-color: rgba(148, 163, 184, 0.22);
-    color: #94a3b8;
+    border-color: rgba(220, 232, 225, 0.22);
+    color: rgba(220, 232, 225, 0.7);
 }
 
 .wow-signin-page {
     min-height: 100dvh;
-    background: linear-gradient(155deg, #0f172a 0%, #1e293b 50%, #0f3460 100%);
-    color: #e2e8f0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(155, 122, 212, 0.14), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 85% 30%, rgba(61, 155, 134, 0.12), transparent 50%),
+        #050f14;
+    color: #dce8e1;
+    font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif;
 }
 
 .wow-signin-wrap {
@@ -81,16 +85,18 @@ html.wow-auth-pending body {
     margin-top: 24px;
     padding: 28px 24px;
     border-radius: 16px;
-    border: 1px solid rgba(148, 163, 184, 0.22);
-    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid rgba(155, 122, 212, 0.22);
+    background: rgba(8, 28, 26, 0.88);
     box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
 }
 
 .wow-signin-card h1 {
     margin: 0 0 6px;
+    font-family: 'Cinzel', Georgia, serif;
     font-size: 1.35rem;
-    font-weight: 700;
-    color: #f8fafc;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #e8f0eb;
 }
 
 .wow-signin-lead {
@@ -109,19 +115,19 @@ html.wow-auth-pending body {
 .wow-signin-tab {
     flex: 1;
     padding: 10px;
-    border-radius: 10px;
-    border: 1px solid rgba(148, 163, 184, 0.25);
-    background: rgba(30, 41, 59, 0.6);
-    color: #94a3b8;
+    border-radius: 999px;
+    border: 1px solid rgba(155, 122, 212, 0.25);
+    background: rgba(8, 28, 26, 0.6);
+    color: rgba(220, 232, 225, 0.65);
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
 }
 
 .wow-signin-tab.is-active {
-    border-color: rgba(129, 140, 248, 0.5);
-    background: rgba(49, 46, 129, 0.45);
-    color: #e0e7ff;
+    border-color: rgba(230, 162, 60, 0.55);
+    background: rgba(230, 162, 60, 0.18);
+    color: #f0c06a;
 }
 
 .wow-signin-panel[hidden] {
@@ -145,14 +151,14 @@ html.wow-auth-pending body {
     box-sizing: border-box;
     padding: 10px 12px;
     border-radius: 10px;
-    border: 1px solid rgba(148, 163, 184, 0.28);
-    background: rgba(15, 23, 42, 0.85);
-    color: #f1f5f9;
+    border: 1px solid rgba(155, 122, 212, 0.28);
+    background: rgba(5, 15, 20, 0.85);
+    color: #e8f0eb;
     font-size: 16px;
 }
 
 .wow-signin-field input:focus {
-    outline: 2px solid rgba(129, 140, 248, 0.45);
+    outline: 2px solid rgba(155, 122, 212, 0.45);
     outline-offset: 1px;
 }
 
@@ -162,18 +168,26 @@ html.wow-auth-pending body {
     gap: 10px;
 }
 
+@media (max-width: 480px) {
+    .wow-signin-row {
+        grid-template-columns: 1fr;
+    }
+}
+
 .wow-signin-submit {
     width: 100%;
     margin-top: 8px;
-    padding: 12px;
+    padding: 12px 16px;
     border: none;
-    border-radius: 10px;
+    border-radius: 999px;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 650;
     cursor: pointer;
-    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-    color: #fff;
-    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+    background: linear-gradient(135deg, #e6a23c 0%, #d48a2a 100%);
+    color: #14221c;
+    box-shadow:
+        0 8px 24px rgba(230, 162, 60, 0.22),
+        0 0 20px rgba(155, 122, 212, 0.12);
 }
 
 .wow-signin-submit:disabled {
@@ -185,7 +199,7 @@ html.wow-auth-pending body {
     margin: 12px 0 0;
     font-size: 13px;
     min-height: 1.25em;
-    color: #93c5fd;
+    color: #3d9b86;
 }
 
 .wow-signin-msg.is-error {
@@ -202,9 +216,12 @@ html.wow-auth-pending body {
 
 .wow-account-page {
     min-height: 100dvh;
-    background: linear-gradient(155deg, #0f172a 0%, #1e293b 50%, #0f3460 100%);
-    color: #e2e8f0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(155, 122, 212, 0.12), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 90% 20%, rgba(61, 155, 134, 0.1), transparent 50%),
+        #050f14;
+    color: #dce8e1;
+    font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif;
 }
 
 .wow-account-wrap {
@@ -224,8 +241,11 @@ html.wow-auth-pending body {
 
 .wow-account-header h1 {
     margin: 0 0 4px;
+    font-family: 'Cinzel', Georgia, serif;
     font-size: 1.5rem;
-    color: #f8fafc;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #e8f0eb;
 }
 
 .wow-account-email {
@@ -241,18 +261,20 @@ html.wow-auth-pending body {
 }
 
 .wow-account-btn {
+    font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif;
     font-size: 13px;
-    font-weight: 700;
-    padding: 9px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(148, 163, 184, 0.28);
-    background: rgba(30, 41, 59, 0.88);
-    color: #e2e8f0;
+    font-weight: 650;
+    padding: 9px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(155, 122, 212, 0.28);
+    background: rgba(8, 28, 26, 0.78);
+    color: #e8f0eb;
     cursor: pointer;
 }
 
 .wow-account-btn:hover {
-    background: rgba(51, 65, 85, 0.95);
+    background: rgba(11, 61, 56, 0.9);
+    border-color: rgba(230, 162, 60, 0.4);
 }
 
 .wow-account-stats {
@@ -265,8 +287,8 @@ html.wow-auth-pending body {
 .wow-account-stat {
     padding: 18px 16px;
     border-radius: 14px;
-    border: 1px solid rgba(148, 163, 184, 0.22);
-    background: rgba(15, 23, 42, 0.88);
+    border: 1px solid rgba(155, 122, 212, 0.22);
+    background: rgba(8, 28, 26, 0.72);
 }
 
 .wow-account-stat-label {
@@ -285,11 +307,11 @@ html.wow-auth-pending body {
 }
 
 .wow-account-stat-value--count {
-    color: #a5b4fc;
+    color: #3d9b86;
 }
 
 .wow-account-stat-value--items {
-    color: #7dd3fc;
+    color: #9b7ad4;
 }
 
 .wow-account-tabs {
@@ -302,19 +324,20 @@ html.wow-auth-pending body {
     flex: 1;
     max-width: 220px;
     padding: 10px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(148, 163, 184, 0.25);
-    background: rgba(30, 41, 59, 0.6);
-    color: #94a3b8;
+    border-radius: 999px;
+    border: 1px solid rgba(155, 122, 212, 0.25);
+    background: rgba(8, 28, 26, 0.6);
+    color: rgba(220, 232, 225, 0.65);
+    font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif;
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 650;
     cursor: pointer;
 }
 
 .wow-account-tab.is-active {
-    border-color: rgba(129, 140, 248, 0.5);
-    background: rgba(49, 46, 129, 0.45);
-    color: #e0e7ff;
+    border-color: rgba(230, 162, 60, 0.55);
+    background: rgba(230, 162, 60, 0.18);
+    color: #f0c06a;
 }
 
 .wow-account-panel[hidden] {
@@ -323,8 +346,11 @@ html.wow-auth-pending body {
 
 .wow-account-section h2 {
     margin: 0 0 14px;
-    font-size: 1.1rem;
-    color: #f1f5f9;
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: #e8f0eb;
 }
 
 .wow-account-status {
@@ -354,7 +380,7 @@ html.wow-auth-pending body {
 .wow-account-card {
     border-radius: 12px;
     border: 1px solid rgba(148, 163, 184, 0.22);
-    background: rgba(15, 23, 42, 0.92);
+    background: rgba(8, 28, 26, 0.92);
     overflow: hidden;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
 }
@@ -443,6 +469,25 @@ html.wow-auth-pending body {
     color: #94a3b8;
 }
 
+.wow-account-btn--ghost {
+    background: transparent;
+    border-color: rgba(148, 163, 184, 0.35);
+    color: #cbd5e1;
+    text-decoration: none;
+}
+
+a.wow-account-btn--ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wow-account-btn--ghost:hover {
+    background: rgba(51, 65, 85, 0.55);
+    border-color: rgba(165, 180, 252, 0.4);
+    color: #f1f5f9;
+}
+
 .wow-account-btn--danger {
     border-color: rgba(248, 113, 113, 0.5);
     background: rgba(127, 29, 29, 0.45);
@@ -510,7 +555,7 @@ html.wow-auth-pending body {
     padding: 28px 20px;
     border-radius: 14px;
     border: 1px dashed rgba(148, 163, 184, 0.35);
-    background: rgba(15, 23, 42, 0.5);
+    background: rgba(8, 28, 26, 0.5);
     text-align: center;
     color: #94a3b8;
     font-size: 14px;
@@ -546,7 +591,7 @@ html.wow-auth-pending body {
 .wow-account-pack {
     border-radius: 14px;
     border: 1px solid rgba(148, 163, 184, 0.22);
-    background: rgba(15, 23, 42, 0.92);
+    background: rgba(8, 28, 26, 0.92);
     overflow: hidden;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
 }
@@ -561,11 +606,11 @@ html.wow-auth-pending body {
     align-items: center;
     justify-content: center;
     font-size: 2.4rem;
-    background: linear-gradient(145deg, rgba(30, 41, 59, 0.95) 0%, rgba(51, 65, 85, 0.85) 100%);
+    background: linear-gradient(145deg, rgba(8, 28, 26, 0.95) 0%, rgba(11, 61, 56, 0.85) 100%);
 }
 
 .wow-account-pack-art--premium {
-    background: linear-gradient(145deg, rgba(79, 70, 229, 0.35) 0%, rgba(30, 41, 59, 0.95) 100%);
+    background: linear-gradient(145deg, rgba(61, 155, 134, 0.35) 0%, rgba(8, 28, 26, 0.95) 100%);
 }
 
 .wow-account-pack-body {
@@ -643,7 +688,7 @@ html.wow-auth-pending body {
 
 .wow-account-pack-skip-label input {
     margin-top: 1px;
-    accent-color: #a78bfa;
+    accent-color: #9b7ad4;
 }
 
 .wow-account-pack-btn {
@@ -653,8 +698,8 @@ html.wow-auth-pending body {
     font-weight: 700;
     padding: 9px 12px;
     border-radius: 10px;
-    border: 1px solid rgba(129, 140, 248, 0.45);
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.85) 0%, rgba(79, 70, 229, 0.9) 100%);
+    border: 1px solid rgba(155, 122, 212, 0.45);
+    background: linear-gradient(135deg, rgba(61, 155, 134, 0.85) 0%, rgba(79, 70, 229, 0.9) 100%);
     color: #fff;
     cursor: not-allowed;
     opacity: 0.55;
@@ -735,7 +780,7 @@ html.wow-pack-modal-open body {
     position: relative;
     display: flex;
     flex-direction: column;
-    background: #0f172a;
+    background: #081c1a;
     border: 1px solid rgba(148, 163, 184, 0.28);
     border-radius: 16px;
     padding: 22px 22px 28px;

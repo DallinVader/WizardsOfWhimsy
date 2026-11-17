@@ -62,20 +62,90 @@
         });
     }
 
-    function cardGallery() {
-        var gallery = document.getElementById('wowGallery');
-        var empty = document.getElementById('wowGalleryEmpty');
-        if (!gallery) return;
+    function encodeSrc(path) {
+        if (!path) return '';
+        if (/^data:|^https?:|^blob:/i.test(String(path))) return String(path);
+        return String(path).split('/').map(function (part) {
+            return encodeURIComponent(part);
+        }).join('/');
+    }
 
-        fetch('assets/landing/landing-cards.json', { cache: 'no-cache' })
+    function loadLandingCards() {
+        return fetch('assets/landing/landing-cards.json', { cache: 'no-cache' })
             .then(function (res) {
                 if (!res.ok) throw new Error('missing');
                 return res.json();
             })
             .then(function (data) {
-                var cards = Array.isArray(data) ? data.filter(function (c) {
+                return Array.isArray(data) ? data.filter(function (c) {
                     return c && c.image && c.name;
                 }) : [];
+            });
+    }
+
+    function initHeroFlip(cards) {
+        var cardEl = document.getElementById('wowHeroCard');
+        var frontImg = document.getElementById('wowHeroCardFront');
+        if (!cardEl || !frontImg || !cards.length) return;
+
+        var lastIndex = -1;
+        var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        function pickRandomIndex() {
+            if (cards.length === 1) return 0;
+            var idx = Math.floor(Math.random() * cards.length);
+            if (idx === lastIndex) {
+                idx = (idx + 1 + Math.floor(Math.random() * (cards.length - 1))) % cards.length;
+            }
+            return idx;
+        }
+
+        function preload(src) {
+            if (!src) return;
+            var img = new Image();
+            img.decoding = 'async';
+            img.src = encodeSrc(src);
+        }
+
+        cards.forEach(function (c) { preload(c.image); });
+
+        function showRandomFace() {
+            var idx = pickRandomIndex();
+            lastIndex = idx;
+            var card = cards[idx];
+            frontImg.src = encodeSrc(card.image);
+            frontImg.alt = card.name || 'Card';
+            cardEl.classList.add('is-flipped');
+            if (reduced) {
+                cardEl.classList.add('is-instant');
+            }
+        }
+
+        function showBack() {
+            cardEl.classList.remove('is-flipped');
+            cardEl.classList.remove('is-instant');
+        }
+
+        cardEl.addEventListener('pointerenter', showRandomFace);
+        cardEl.addEventListener('pointerleave', showBack);
+        cardEl.addEventListener('focus', showRandomFace);
+        cardEl.addEventListener('blur', showBack);
+
+        cardEl.setAttribute('tabindex', '0');
+        cardEl.setAttribute('role', 'img');
+        cardEl.setAttribute('aria-label', 'Hover to flip a random card');
+        cardEl.removeAttribute('aria-hidden');
+        cardEl.classList.add('is-ready');
+    }
+
+    function cardGallery() {
+        var gallery = document.getElementById('wowGallery');
+        var empty = document.getElementById('wowGalleryEmpty');
+
+        loadLandingCards()
+            .then(function (cards) {
+                initHeroFlip(cards);
+                if (!gallery) return;
                 if (!cards.length) {
                     if (empty) empty.hidden = false;
                     return;

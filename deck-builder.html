@@ -16,9 +16,8 @@
     <style>
         html, body { margin: 0; min-height: 100%; }
         body.db-page {
-            background: linear-gradient(155deg, #0f172a 0%, #1e293b 50%, #0f3460 100%);
-            color: #e2e8f0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #dce8e1;
+            font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif;
         }
         .db-wrap { max-width: 1280px; margin: 0 auto; padding: 16px max(16px, env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
         /* db-btn variants → cardmaker-buttons.css */
@@ -44,8 +43,8 @@
             .db-layout .db-side { order: 2; }
         }
         .db-side {
-            position: sticky; top: 12px;
-            background: rgba(15, 23, 42, 0.72);
+            position: sticky; top: calc(var(--cm-app-nav-offset, 64px) + 12px);
+            background: rgba(8, 28, 26, 0.72);
             border: 1px solid rgba(148, 163, 184, 0.2);
             border-radius: 14px; padding: 14px;
         }
@@ -54,19 +53,26 @@
             .db-input, .db-select { font-size: 16px; min-height: 44px; box-sizing: border-box; }
             .db-qty input { font-size: 16px; min-height: 44px; width: 56px; }
         }
-        .db-side h2 { margin: 0 0 10px; font-size: 0.95rem; }
+        .db-side h2 {
+            margin: 0 0 10px;
+            font-family: 'Cinzel', Georgia, serif;
+            font-size: 0.95rem;
+            letter-spacing: 0.04em;
+            color: #e8f0eb;
+        }
         .db-summary {
             font-variant-numeric: tabular-nums; font-weight: 800; color: #f8fafc;
             margin-bottom: 12px; font-size: 15px;
         }
         .db-field { margin-bottom: 10px; }
         .db-field label {
-            display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.05em;
-            text-transform: uppercase; color: #93c5fd; margin-bottom: 6px;
+            display: block; font-family: 'Cinzel', Georgia, serif;
+            font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+            text-transform: uppercase; color: #9b7ad4; margin-bottom: 6px;
         }
         .db-input, .db-select {
             width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px;
-            border: 2px solid rgba(102, 126, 234, 0.28); background: #0f172a; color: #f1f5f9;
+            border: 2px solid rgba(61, 155, 134, 0.28); background: #081c1a; color: #f1f5f9;
             font: inherit;
         }
         .db-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #cbd5e1; margin: 8px 0 12px; }
@@ -100,11 +106,11 @@
             .db-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: none; margin-inline: 0; }
         }
         .db-card {
-            background: rgba(15, 23, 42, 0.8);
+            background: rgba(8, 28, 26, 0.8);
             border: 1px solid rgba(148, 163, 184, 0.2);
             border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;
         }
-        .db-card[data-in-deck="1"] { border-color: rgba(129, 140, 248, 0.65); box-shadow: 0 0 0 1px rgba(129,140,248,0.25); }
+        .db-card[data-in-deck="1"] { border-color: rgba(155, 122, 212, 0.65); box-shadow: 0 0 0 1px rgba(155,122,212,0.25); }
         .db-card--unowned {
             opacity: 0.58;
             filter: grayscale(0.82);
@@ -126,7 +132,7 @@
         }
         .db-card-own.is-unowned { color: #94a3b8; }
         .db-card-art {
-            position: relative; aspect-ratio: 2.5 / 3.5; background: #1e293b;
+            position: relative; aspect-ratio: 2.5 / 3.5; background: #0a2422;
             cursor: zoom-in;
         }
         .db-card-art img {
@@ -149,7 +155,7 @@
         /* db-qty-btn → cardmaker-buttons.css */
         .db-qty input {
             width: 48px; text-align: center; padding: 7px 4px; border-radius: 8px;
-            border: 2px solid rgba(102,126,234,0.3); background: #0f172a; color: #f8fafc; font: inherit; font-weight: 800;
+            border: 2px solid rgba(61,155,134,0.3); background: #081c1a; color: #f8fafc; font: inherit; font-weight: 800;
         }
         .db-empty { padding: 28px 16px; text-align: center; color: #94a3b8; }
         .db-zoom {
@@ -166,7 +172,7 @@
             object-fit: contain;
             border-radius: 12px;
             box-shadow: 0 18px 50px rgba(0,0,0,0.55);
-            background: #0f172a;
+            background: #081c1a;
         }
         .db-zoom-hint {
             position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
@@ -189,7 +195,7 @@
                 <div class="db-side-actions">
                     <button type="button" class="db-btn db-btn-primary" id="dbSaveBtn">Save to Drive</button>
                     <button type="button" class="db-btn db-btn-primary" id="dbPlayBtn" title="Open Card Player with this deck">Play this deck</button>
-                    <button type="button" class="db-btn db-btn-print" id="dbPrintBtn">Print deck…</button>
+                    <button type="button" class="db-btn db-btn-print" id="dbPrintBtn" hidden>Print deck…</button>
                 </div>
                 <div class="db-side-actions">
                     <button type="button" class="db-btn" id="dbSignInBtn">Connect Google</button>
@@ -697,6 +703,8 @@
             var catalog = parts[0];
             var session = parts[1];
             isAdmin = !!(session && session.user && window.WowAuth.isAdmin(session.user));
+            var printBtn = document.getElementById('dbPrintBtn');
+            if (printBtn) printBtn.hidden = !isAdmin;
             var ownedItems = session && session.user && Array.isArray(session.user.ownedItems)
                 ? session.user.ownedItems
                 : [];
@@ -876,6 +884,10 @@
     }
 
     function printDeck() {
+        if (!isAdmin) {
+            setStatus('Print sheet is available for admins. Use Account or ask an admin to print.', true);
+            return;
+        }
         var ids = [];
         var skipped = 0;
         collectEntries().forEach(function (ent) {
@@ -898,7 +910,7 @@
                 fileIds: ids
             }));
         } catch (e) {
-            setStatus('Could not queue print (storage blocked?).', true);
+            setStatus('Could not prepare print (storage blocked?).', true);
             return;
         }
         window.open('card-grid.html', '_blank', 'noopener,noreferrer');

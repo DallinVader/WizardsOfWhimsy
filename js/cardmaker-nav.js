@@ -17,11 +17,12 @@
     function pageIdFromLocation() {
         var path = (window.location.pathname || '').split('/').pop() || 'editor.html';
         if (!path || path === '/') return 'editor';
+        if (path === 'sign-in.html' || path === 'index.html') return '';
         var i;
         for (i = 0; i < PAGES.length; i++) {
             if (PAGES[i].href === path) return PAGES[i].id;
         }
-        return 'editor';
+        return '';
     }
 
     function escapeAttr(s) {
@@ -72,7 +73,27 @@
         );
     }
 
+    function ensureWhimsyFonts() {
+        if (document.getElementById('cmWowFonts')) return;
+        var pre1 = document.createElement('link');
+        pre1.rel = 'preconnect';
+        pre1.href = 'https://fonts.googleapis.com';
+        var pre2 = document.createElement('link');
+        pre2.rel = 'preconnect';
+        pre2.href = 'https://fonts.gstatic.com';
+        pre2.crossOrigin = 'anonymous';
+        var link = document.createElement('link');
+        link.id = 'cmWowFonts';
+        link.rel = 'stylesheet';
+        link.href = 'https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Outfit:wght@400;500;650;700&display=swap';
+        document.head.appendChild(pre1);
+        document.head.appendChild(pre2);
+        document.head.appendChild(link);
+    }
+
     function mountNav() {
+        ensureWhimsyFonts();
+        document.body.classList.add('cm-wow-app');
         if (document.getElementById('cmAppNav')) return;
         var activeId = pageIdFromLocation();
         var pages = getVisiblePages();
@@ -124,15 +145,31 @@
         if (window.WowAuth && typeof window.WowAuth.updateNavAuth === 'function') {
             window.WowAuth.updateNavAuth();
         }
+        syncNavOffset();
+    }
+
+    function syncNavOffset() {
+        var nav = document.getElementById('cmAppNav');
+        if (!nav) return;
+        var h = Math.ceil(nav.getBoundingClientRect().height);
+        if (h > 0) {
+            document.documentElement.style.setProperty('--cm-app-nav-offset', h + 'px');
+        }
     }
 
     window.CardMakerNav = {
-        refresh: refreshNav
+        refresh: refreshNav,
+        syncNavOffset: syncNavOffset
     };
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', mountNav);
+        document.addEventListener('DOMContentLoaded', function () {
+            mountNav();
+            syncNavOffset();
+        });
     } else {
         mountNav();
+        syncNavOffset();
     }
+    window.addEventListener('resize', syncNavOffset);
 })();
