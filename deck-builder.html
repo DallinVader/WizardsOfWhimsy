@@ -41,6 +41,15 @@
             }
             .db-layout main { order: 1; }
             .db-layout .db-side { order: 2; }
+            .db-side { position: static; }
+            .db-side-actions .db-btn {
+                flex: 1 1 calc(50% - 6px);
+                justify-content: center;
+                min-height: 44px;
+            }
+            .db-wrap {
+                padding: 12px max(12px, env(safe-area-inset-right)) max(36px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+            }
         }
         .db-side {
             position: sticky; top: calc(var(--cm-app-nav-offset, 64px) + 12px);
@@ -48,7 +57,6 @@
             border: 1px solid rgba(148, 163, 184, 0.2);
             border-radius: 14px; padding: 14px;
         }
-        @media (max-width: 860px) { .db-side { position: static; } }
         @media (max-width: 900px) {
             .db-input, .db-select { font-size: 16px; min-height: 44px; box-sizing: border-box; }
             .db-qty input { font-size: 16px; min-height: 44px; width: 56px; }
@@ -97,10 +105,14 @@
         }
         @media (max-width: 1100px) { .db-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
         @media (max-width: 720px) {
-            .db-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .db-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
             .db-input, .db-select { font-size: 16px; min-height: 44px; }
             .db-main-toolbar { flex-direction: column; align-items: stretch; }
             .db-main-toolbar .db-field { flex: 1 1 auto; min-width: 0; }
+            .db-side-actions { gap: 8px; }
+            .db-side-actions .db-btn { flex: 1 1 100%; }
+            .db-card-meta { padding: 8px 8px 4px; }
+            .db-card-title { font-size: 12px; }
         }
         @media (max-width: 420px) {
             .db-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: none; margin-inline: 0; }

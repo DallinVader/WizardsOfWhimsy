@@ -965,7 +965,7 @@ body.cm-page .top-drive-status-wrap {
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-@media (max-width: 520px) {
+@media (max-width: 900px) {
     .cm-field-grid-2,
     .cm-field-grid-3 {
         grid-template-columns: 1fr;
@@ -1995,23 +1995,33 @@ kbd {
 }
 
 @media (max-width: 900px) {
+    .cm-wrap {
+        max-width: 100%;
+        padding: 0 max(12px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    }
+
     .top-bar {
         margin: 12px max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
+        max-width: 100%;
     }
 
     .top-bar-under {
         margin: 8px max(12px, env(safe-area-inset-right)) 12px max(12px, env(safe-area-inset-left));
         flex-direction: column;
+        max-width: 100%;
     }
 
     .top-bar-nav-links,
     .top-drive-controls {
-        justify-content: center;
+        justify-content: stretch;
         width: 100%;
+        flex-wrap: wrap;
+        gap: 8px;
     }
 
     .top-drive-status-wrap {
         margin: -4px max(12px, env(safe-area-inset-right)) 10px max(12px, env(safe-area-inset-left));
+        max-width: 100%;
     }
 
     h1 {
@@ -2021,14 +2031,14 @@ kbd {
     }
 
     .main-container {
-        padding: max(12px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-right))
-            max(20px, env(safe-area-inset-bottom));
-        gap: 16px;
+        padding: 8px 0 0;
+        gap: 14px;
+        width: 100%;
     }
 
     .controls-panel {
         max-height: none;
-        padding: 16px;
+        padding: 14px;
         padding-bottom: max(20px, env(safe-area-inset-bottom));
         -webkit-overflow-scrolling: touch;
     }
@@ -2051,6 +2061,32 @@ kbd {
         box-sizing: border-box;
     }
 
+    .cm-name-type-row,
+    .cm-page .cm-editor-panel .cm-name-type-row,
+    .cm-images-file-row,
+    .cm-page .cm-editor-panel .cm-images-file-row,
+    .cm-type-sub-col,
+    .cm-page .cm-editor-panel .cm-type-sub-col {
+        grid-template-columns: 1fr;
+    }
+
+    .cm-page .cm-editor-panel .cm-stat-strip,
+    .cm-stat-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .cm-page .cm-editor-panel .cm-export-actions,
+    .cm-export-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .cm-page .cm-editor-panel .cm-export-actions button,
+    .cm-export-actions button {
+        width: 100%;
+        justify-content: center;
+    }
+
     .drive-modal-input,
     .drive-modal-search-input {
         font-size: 16px;
@@ -2066,11 +2102,17 @@ kbd {
     }
 
     .card-preview {
-        max-height: min(44dvh, 360px);
+        position: relative;
+        top: auto;
+        max-height: none;
+        justify-content: center;
+        width: 100%;
     }
 
     #cardCanvas {
-        max-height: min(40dvh, 340px);
+        max-width: min(100%, 420px);
+        max-height: min(48dvh, 380px);
+        margin-inline: auto;
     }
 
     .top-bar-btn,
@@ -2078,6 +2120,8 @@ kbd {
         min-height: 44px;
         padding: 12px 16px;
         font-size: 0.9rem;
+        flex: 1 1 calc(50% - 6px);
+        justify-content: center;
     }
 
     .controls-panel button,
@@ -2091,6 +2135,8 @@ kbd {
     .controls-panel select,
     .controls-panel textarea {
         max-width: 100%;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .controls-panel input[type="file"] {
@@ -2107,9 +2153,18 @@ kbd {
 @media (max-width: 520px) {
     .top-bar-btn,
     .top-drive-btn {
-        flex: 1 1 auto;
+        flex: 1 1 100%;
         justify-content: center;
         text-align: center;
+    }
+
+    .cm-page .cm-editor-panel .cm-stat-strip,
+    .cm-stat-strip {
+        grid-template-columns: 1fr;
+    }
+
+    #cardCanvas {
+        max-height: min(42dvh, 320px);
     }
 }
 

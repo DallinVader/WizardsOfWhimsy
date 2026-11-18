@@ -60,6 +60,12 @@
             </div>
 
             <p class="wow-signin-msg" id="wowSignInMsg" aria-live="polite"></p>
+
+            <div class="wow-signin-guest" id="wowGuestContinue" hidden>
+                <button type="button" class="wow-signin-guest-btn" id="wowGuestContinueBtn">Continue as guest</button>
+                <p class="wow-signin-guest-note">Play without an account. Decks and progress stay on this device only.</p>
+            </div>
+
             <p class="wow-signin-note">Players can use the deck builder and play cards. Card Maker, saved cards, and print are admin only.</p>
         </div>
     </div>
@@ -76,9 +82,27 @@
         return redir;
     }
 
+    function isCardPlayerRedirect(redir) {
+        var path = String(redir || '').split('?')[0].split('#')[0];
+        return path === 'card-player.html';
+    }
+
     if (WowAuth.isSignedIn()) {
         window.location.replace(redirectTarget());
         return;
+    }
+
+    var guestWrap = document.getElementById('wowGuestContinue');
+    var guestBtn = document.getElementById('wowGuestContinueBtn');
+    if (guestWrap && isCardPlayerRedirect(redirectTarget())) {
+        guestWrap.hidden = false;
+    }
+    if (guestBtn) {
+        guestBtn.addEventListener('click', function () {
+            var href = WowAuth.continueAsCardPlayerGuest();
+            var target = redirectTarget();
+            window.location.replace(isCardPlayerRedirect(target) ? target : href);
+        });
     }
 
     var tabSignIn = document.getElementById('wowTabSignIn');

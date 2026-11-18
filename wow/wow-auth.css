@@ -1,6 +1,8 @@
 /* Questline sign-in + nav auth (Wizards of Whimsy) */
 html.wow-auth-pending body {
     visibility: hidden;
+    opacity: 0;
+    animation: none !important;
 }
 
 .cm-app-nav-auth {
@@ -174,6 +176,119 @@ html.wow-auth-pending body {
     }
 }
 
+@media (max-width: 900px) {
+    .wow-signin-wrap,
+    .wow-account-wrap {
+        padding: 16px max(14px, env(safe-area-inset-right)) max(36px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+    }
+
+    .wow-signin-card {
+        margin-top: 16px;
+        padding: 22px 18px;
+    }
+
+    .wow-account-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .wow-account-actions {
+        width: 100%;
+    }
+
+    .wow-account-actions .wow-account-btn {
+        flex: 1 1 calc(50% - 6px);
+        justify-content: center;
+        min-height: 44px;
+        text-align: center;
+    }
+
+    .wow-account-tabs {
+        flex-wrap: wrap;
+    }
+
+    .wow-account-tab {
+        max-width: none;
+        flex: 1 1 calc(50% - 6px);
+        min-height: 44px;
+    }
+
+    .wow-account-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .wow-account-grid,
+    .wow-account-grid--items,
+    .wow-account-shop-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .wow-account-pack-btn,
+    .wow-account-pack-btn--test,
+    .wow-account-pack-btn--preview {
+        width: 100%;
+        min-height: 44px;
+    }
+
+    .wow-pack-modal {
+        padding:
+            max(8px, env(safe-area-inset-top, 0px))
+            max(8px, env(safe-area-inset-right, 0px))
+            max(12px, env(safe-area-inset-bottom, 0px))
+            max(8px, env(safe-area-inset-left, 0px));
+        align-items: stretch;
+    }
+
+    .wow-pack-modal-dialog,
+    .wow-pack-modal-dialog.wow-pack-modal-dialog--summary {
+        width: 100%;
+    }
+
+    .wow-pack-modal-panel {
+        padding: 18px 14px 22px;
+        border-radius: 14px;
+    }
+
+    .wow-pack-modal-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .wow-pack-modal-actions .wow-account-btn,
+    .wow-pack-modal-actions button {
+        width: 100%;
+        min-height: 44px;
+        justify-content: center;
+    }
+
+    .cm-app-nav-auth-btn {
+        min-height: 40px;
+    }
+}
+
+@media (max-width: 520px) {
+    .wow-account-grid,
+    .wow-account-grid--items,
+    .wow-account-shop-grid {
+        grid-template-columns: 1fr;
+        max-width: 360px;
+        margin-inline: auto;
+        width: 100%;
+    }
+
+    .wow-account-actions .wow-account-btn,
+    .wow-account-tab {
+        flex: 1 1 100%;
+    }
+
+    .wow-signin-field input,
+    .wow-signin-submit {
+        font-size: 16px;
+        min-height: 48px;
+    }
+}
+
 .wow-signin-submit {
     width: 100%;
     margin-top: 8px;
@@ -212,6 +327,44 @@ html.wow-auth-pending body {
     line-height: 1.45;
     color: #64748b;
     text-align: center;
+}
+
+.wow-signin-guest {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(155, 122, 212, 0.22);
+    text-align: center;
+}
+
+.wow-signin-guest[hidden] {
+    display: none !important;
+}
+
+.wow-signin-guest-btn {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(61, 155, 134, 0.45);
+    background: rgba(8, 28, 26, 0.72);
+    color: #e8f0eb;
+    font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 650;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.wow-signin-guest-btn:hover {
+    background: rgba(61, 155, 134, 0.22);
+    border-color: rgba(230, 162, 60, 0.45);
+    color: #fff;
+}
+
+.wow-signin-guest-note {
+    margin: 10px 0 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #94a3b8;
 }
 
 .wow-account-page {

@@ -912,6 +912,11 @@
         }
 
         @media (max-width: 900px) {
+            body { overflow-x: hidden; }
+            .spm-wrap {
+                max-width: 100%;
+                padding: 14px max(12px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+            }
             .spm-top {
                 flex-direction: column;
                 align-items: stretch;
@@ -933,6 +938,10 @@
             .spm-table-tools > div {
                 width: 100%;
                 justify-content: stretch !important;
+            }
+            .spm-grid-toolbar {
+                flex-direction: column;
+                align-items: stretch;
             }
             .spm-multi-panel-body { padding: 0 10px 12px; }
             .spm-input, select.spm-select, textarea {

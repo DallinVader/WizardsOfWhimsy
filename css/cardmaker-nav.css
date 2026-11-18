@@ -21,6 +21,46 @@ html {
     scroll-padding-top: calc(var(--cm-app-nav-offset) + 8px);
 }
 
+html,
+body.cm-wow-app,
+body.cm-page,
+body.db-page,
+body.cp-player-body,
+body.wow-account-page,
+body.wow-signin-page {
+    overflow-x: hidden;
+}
+
+@keyframes cm-page-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Quick page enter — delayed until auth gate clears on protected pages */
+html:not(.wow-auth-pending) body.cm-wow-app,
+html:not(.wow-auth-pending) body.cm-page,
+html:not(.wow-auth-pending) body.db-page,
+html:not(.wow-auth-pending) body.cp-player-body,
+html:not(.wow-auth-pending) body.wow-account-page,
+html:not(.wow-auth-pending) body.wow-signin-page {
+    animation: cm-page-fade-in 0.28s var(--wow-ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html:not(.wow-auth-pending) body.cm-wow-app,
+    html:not(.wow-auth-pending) body.cm-page,
+    html:not(.wow-auth-pending) body.db-page,
+    html:not(.wow-auth-pending) body.cp-player-body,
+    html:not(.wow-auth-pending) body.wow-account-page,
+    html:not(.wow-auth-pending) body.wow-signin-page {
+        animation: none;
+    }
+}
+
 body.cm-wow-app,
 body.cm-page,
 body.db-page,
@@ -190,35 +230,77 @@ body.wow-signin-page {
 }
 
 @media (max-width: 859px) {
+    :root {
+        --cm-app-nav-offset: 112px;
+    }
+
     .cm-app-nav-links {
         display: none;
     }
 
     .cm-app-nav-inner {
         justify-content: space-between;
-        gap: 8px;
+        align-items: center;
+        gap: 8px 10px;
+        flex-wrap: wrap;
+        padding-bottom: 10px;
     }
 
     .cm-app-nav-spacer {
         display: none;
     }
 
+    .cm-app-nav-brand {
+        font-size: 0.92rem;
+        padding: 8px 6px;
+        max-width: min(52vw, 220px);
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .cm-app-nav-auth {
+        order: 2;
+        margin-left: auto;
+        gap: 6px;
+    }
+
     .cm-app-nav-jump {
+        order: 3;
+        flex: 1 1 100%;
         min-width: 0;
-        flex: 1 1 auto;
-        justify-content: flex-end;
+        justify-content: stretch;
+        gap: 0;
+    }
+
+    .cm-app-nav-jump-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
     }
 
     .cm-app-nav-select {
         min-height: 44px;
-        min-width: 0;
+        width: 100%;
+        max-width: none;
         flex: 1 1 auto;
-        max-width: min(240px, calc(100vw - 132px));
         font-size: 16px;
     }
+}
 
-    .cm-app-nav-brand {
-        font-size: 0.95rem;
-        padding: 8px 8px;
+@media (max-width: 520px) {
+    .cm-app-nav-user {
+        display: none;
+    }
+
+    .cm-app-nav-auth-btn {
+        min-height: 40px;
+        padding: 8px 12px;
+        font-size: 12px;
     }
 }

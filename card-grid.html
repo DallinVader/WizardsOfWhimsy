@@ -114,13 +114,29 @@
         }
 
         @media (max-width: 900px) {
-            .cg-wrap { padding-top: 14px; }
+            .cg-page { overflow-x: hidden; }
+            .cg-wrap {
+                padding-top: 14px;
+                padding-left: max(12px, env(safe-area-inset-left));
+                padding-right: max(12px, env(safe-area-inset-right));
+                max-width: 100%;
+            }
+            .cg-toolbar {
+                gap: 8px;
+            }
+            .cg-size-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
             .cg-size-row select,
             .cg-size-row input[type="number"],
             #printSetupModal .drive-modal-input,
             #cgChooseCardModal .drive-modal-input {
                 font-size: 16px;
                 min-height: 44px;
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
             }
         }
 

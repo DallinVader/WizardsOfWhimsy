@@ -1056,15 +1056,33 @@
     color: #64748b;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
     .wow-pack-multi-rate-row {
-        grid-template-columns: 78px 1fr 36px minmax(120px, auto);
-        gap: 8px;
+        grid-template-columns: 72px 1fr auto;
+        grid-template-areas:
+            'label bar count'
+            'pct pct pct';
+        gap: 6px 8px;
         font-size: 12px;
+    }
+
+    .wow-pack-multi-rate-label { grid-area: label; }
+    .wow-pack-multi-rate-bar { grid-area: bar; }
+    .wow-pack-multi-rate-count { grid-area: count; }
+    .wow-pack-multi-rate-pct {
+        grid-area: pct;
+        text-align: left;
     }
 
     .wow-pack-multi-rate-avg {
         font-size: 10px;
+        display: inline;
+        margin-left: 0.35em;
+    }
+
+    .wow-peel-stack,
+    .wow-card-stack {
+        max-width: min(86vw, 320px);
     }
 }
 

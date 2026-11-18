@@ -5,6 +5,7 @@
     'use strict';
 
     var STORAGE_KEY = 'wow_questline_auth_v1';
+    var GUEST_PLAY_KEY = 'wow_card_player_guest_v1';
     var PLAYER_PAGES = {
         'deck-builder.html': true,
         'card-player.html': true,
@@ -306,6 +307,27 @@
         });
     }
 
+    function clearCardPlayerGuest() {
+        try {
+            sessionStorage.removeItem(GUEST_PLAY_KEY);
+        } catch (e) { /* ignore */ }
+    }
+
+    function isCardPlayerGuest() {
+        try {
+            return sessionStorage.getItem(GUEST_PLAY_KEY) === '1';
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function continueAsCardPlayerGuest() {
+        try {
+            sessionStorage.setItem(GUEST_PLAY_KEY, '1');
+        } catch (e) { /* ignore */ }
+        return 'card-player.html';
+    }
+
     function login(email, password) {
         return apiFetch('/auth/login', {
             method: 'POST',
@@ -317,6 +339,7 @@
                     refresh: tokens.refresh,
                     user: user
                 };
+                clearCardPlayerGuest();
                 writeSession(session);
                 syncNav();
                 return session;
@@ -340,6 +363,7 @@
                     refresh: tokens.refresh,
                     user: user
                 };
+                clearCardPlayerGuest();
                 writeSession(session);
                 syncNav();
                 return session;
@@ -349,6 +373,7 @@
 
     function logout() {
         clearSession();
+        clearCardPlayerGuest();
         syncNav();
     }
 
@@ -396,6 +421,10 @@
     function gatePage() {
         var page = currentPageName();
         if (!isProtectedPage(page)) return Promise.resolve(getSession());
+        /* Guest play is allowed only on the card player. */
+        if (page === 'card-player.html' && !isSignedIn() && isCardPlayerGuest()) {
+            return Promise.resolve(null);
+        }
         if (!isSignedIn()) {
             redirectToSignIn();
             return Promise.reject(new Error('auth_required'));
@@ -451,7 +480,11 @@
             }
         } else {
             var redir = encodeURIComponent(currentPageName() || 'deck-builder.html');
+            var guestNote = isCardPlayerGuest() && currentPageName() === 'card-player.html'
+                ? '<span class="cm-app-nav-user" title="Playing as guest">Guest</span>'
+                : '';
             slot.innerHTML =
+                guestNote +
                 '<a class="cm-app-nav-auth-btn" href="sign-in.html?redirect=' + redir + '">Sign in</a>';
         }
     }
@@ -717,6 +750,9 @@
         isPlayerPage: isPlayerPage,
         updateNavAuth: updateNavAuth,
         signInUrl: signInUrl,
+        isCardPlayerGuest: isCardPlayerGuest,
+        continueAsCardPlayerGuest: continueAsCardPlayerGuest,
+        clearCardPlayerGuest: clearCardPlayerGuest,
         userDisplayName: userDisplayName,
         apiFetch: apiFetch,
         authedFetch: authedFetch,
