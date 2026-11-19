@@ -204,8 +204,9 @@
             var card = addCard(boardId, {
                 libId: libId,
                 zone: ZONES.FIELD,
-                x: x || 40,
-                y: y || 40,
+                /* Normalized 0–1 play-mat coords (cross-device). */
+                x: x != null ? x : 0.18,
+                y: y != null ? y : 0.2,
                 fromDeck: true
             });
             bump(boardId);
@@ -370,6 +371,7 @@
 
         function beginAnnounce() {
             if (!state.turn || !state.turn.activeSeat) return;
+            if (state.turn.phase !== 'coin') return;
             state.turn = Object.assign({}, state.turn, {
                 phase: 'announce',
                 announceNonce: (state.turn.announceNonce || 0) + 1
@@ -380,6 +382,8 @@
 
         function beginPlayPhase() {
             if (!state.turn || !state.turn.activeSeat) return;
+            if (state.turn.phase !== 'announce' && state.turn.phase !== 'play') return;
+            if (state.turn.phase === 'play') return state.turn;
             state.turn = Object.assign({}, state.turn, { phase: 'play' });
             emit({ type: 'turn', turn: state.turn });
             return state.turn;
@@ -387,6 +391,7 @@
 
         function endTurn() {
             if (!state.localSeat || !isMyTurn()) return null;
+            if (!state.roomBothSeated) return null;
             if (!state.turn || state.turn.phase !== 'play') return null;
             var nextSeat = state.turn.activeSeat === 1 ? 2 : 1;
             state.turn = {
@@ -416,12 +421,25 @@
         function serializeSeat(boardId) {
             var seat = getSeat(boardId);
             var cards = cardList(boardId).map(function (c) {
+                /* Field l/t are 0–1 fractions of the playable mat (cross-device). */
+                var lx = c.x;
+                var ty = c.y;
+                if (c.zone === ZONES.FIELD) {
+                    if (lx > 1.05 || ty > 1.05) {
+                        /* Legacy absolute px — keep sending; receivers map via playRect. */
+                        lx = c.x;
+                        ty = c.y;
+                    } else {
+                        lx = Math.max(0, Math.min(1, Number(c.x) || 0));
+                        ty = Math.max(0, Math.min(1, Number(c.y) || 0));
+                    }
+                }
                 var row = {
                     i: c.id,
                     lib: c.libId,
                     b: boardId,
-                    l: c.x,
-                    t: c.y,
+                    l: lx,
+                    t: ty,
                     h: c.zone === ZONES.HAND ? 1 : 0,
                     d: c.zone === ZONES.DISCARD ? 1 : 0,
                     tr: c.zone === ZONES.TREASURE ? 1 : 0,

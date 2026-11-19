@@ -95,9 +95,10 @@
             }
         }
 
-        function showOverlay(show) {
+        function showOverlay(show, passThrough) {
             ensureDom();
             overlay.hidden = !show;
+            overlay.classList.toggle('cp-turn-overlay--pass-through', !!passThrough);
         }
 
         function runCoinFlip(turn) {
@@ -106,7 +107,7 @@
             var stage = document.getElementById('cpCoinStage');
             if (stage) stage.hidden = false;
             if (banner) banner.hidden = true;
-            showOverlay(true);
+            showOverlay(true, false);
             if (coinResult) coinResult.textContent = 'Flipping…';
             if (coinCard) {
                 coinCard.classList.remove('cp-coin-land-heads', 'cp-coin-land-tails', 'cp-coin-spinning');
@@ -125,7 +126,10 @@
                 var stageEl = document.getElementById('cpCoinStage');
                 if (stageEl) stageEl.hidden = true;
                 /* Player 1 advances match phases so both clients stay in sync. */
-                if (store.getState().localSeat === 1) store.beginAnnounce();
+                var st = store.getState();
+                if (st.localSeat === 1 && st.turn && st.turn.phase === 'coin') {
+                    store.beginAnnounce();
+                }
             }, 2800);
         }
 
@@ -134,7 +138,8 @@
             clearTimers();
             var stage = document.getElementById('cpCoinStage');
             if (stage) stage.hidden = true;
-            showOverlay(true);
+            /* Banner is visual-only so it never blocks the board on mobile. */
+            showOverlay(true, true);
             if (banner) banner.hidden = false;
             var local = store.getState().localSeat;
             var mine = local && turn.activeSeat === local;
@@ -150,9 +155,12 @@
             }
             later(function () {
                 if (banner) banner.hidden = true;
-                showOverlay(false);
-                if (store.getState().localSeat === 1) store.beginPlayPhase();
-            }, 1600);
+                showOverlay(false, false);
+                var st = store.getState();
+                if (st.localSeat === 1 && st.turn && st.turn.phase === 'announce') {
+                    store.beginPlayPhase();
+                }
+            }, 1200);
         }
 
         function syncHud() {
@@ -164,7 +172,9 @@
             hud.hidden = !inMatch;
             var label = document.getElementById('cpTurnHudLabel');
             if (label) {
-                if (turn.phase === 'play') {
+                if (!st.roomBothSeated && inMatch) {
+                    label.textContent = 'Opponent away · board saved';
+                } else if (turn.phase === 'play') {
                     label.textContent = store.isMyTurn()
                         ? ('Your turn · #' + (turn.turnNumber || 1))
                         : ('Player ' + turn.activeSeat + '\'s turn · #' + (turn.turnNumber || 1));
@@ -177,7 +187,7 @@
                 }
             }
             if (endBtn) {
-                endBtn.disabled = !(turn.phase === 'play' && store.isMyTurn());
+                endBtn.disabled = !(turn.phase === 'play' && store.isMyTurn() && st.roomBothSeated);
                 endBtn.hidden = turn.phase !== 'play';
             }
             document.body.classList.toggle('cp-not-my-turn', online && turn.phase === 'play' && !store.isMyTurn());
@@ -185,6 +195,16 @@
 
         function onStore(_state, change) {
             var turn = store.getState().turn || {};
+            if (turn.phase === 'waiting' || turn.phase === 'idle') {
+                lastCoinNonce = -1;
+                lastAnnounceNonce = -1;
+                clearTimers();
+                ensureDom();
+                showOverlay(false);
+                if (banner) banner.hidden = true;
+                var stageIdle = document.getElementById('cpCoinStage');
+                if (stageIdle) stageIdle.hidden = true;
+            }
             if (change && change.type === 'turn') {
                 if (turn.phase === 'coin' && turn.coinNonce !== lastCoinNonce) {
                     lastCoinNonce = turn.coinNonce;

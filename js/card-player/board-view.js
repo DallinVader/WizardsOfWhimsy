@@ -114,14 +114,108 @@
             };
         }
 
+        /**
+         * Playable battlefield rectangle (above hand / bottom rails).
+         * Field card x/y are stored as 0–1 fractions of this rect so mobile and
+         * desktop see the same relative placement.
+         */
+        function playRect(boardId) {
+            var b = boardEls(boardId);
+            if (!b.field) return { left: 0, top: 0, width: 1, height: 1 };
+            var w = b.field.clientWidth || 1;
+            var h = b.field.clientHeight || 1;
+            var hand = zoneRect(boardId, Z.HAND);
+            var treasure = zoneRect(boardId, Z.TREASURE);
+            var bottom = h;
+            if (hand && hand.top > 8) bottom = Math.min(bottom, hand.top);
+            if (treasure && treasure.top > 8) bottom = Math.min(bottom, treasure.top);
+            if (!(b.field.classList && b.field.classList.contains('cp-board-readonly'))) {
+                /* Local seat: keep a small gap above the hand shelf. */
+                bottom = Math.max(48, bottom - 6);
+            } else {
+                bottom = Math.max(40, bottom - 4);
+            }
+            return {
+                left: 0,
+                top: 0,
+                width: Math.max(1, w),
+                height: Math.max(1, bottom)
+            };
+        }
+
+        function isNormalizedCoord(x, y) {
+            return x <= 1.05 && y <= 1.05 && x >= -0.05 && y >= -0.05;
+        }
+
+        function toNorm(boardId, px, py) {
+            var r = playRect(boardId);
+            var nx = r.width ? px / r.width : 0;
+            var ny = r.height ? py / r.height : 0;
+            return {
+                x: Math.max(0, Math.min(1, nx)),
+                y: Math.max(0, Math.min(1, ny))
+            };
+        }
+
+        function fromNorm(boardId, nx, ny) {
+            var r = playRect(boardId);
+            var x = nx;
+            var y = ny;
+            /* Legacy absolute pixels from older sessions / other device sizes. */
+            if (!isNormalizedCoord(nx, ny)) {
+                x = r.width ? Math.max(0, Math.min(1, nx / r.width)) : 0;
+                y = r.height ? Math.max(0, Math.min(1, ny / r.height)) : 0;
+            }
+            return {
+                x: x * r.width,
+                y: y * r.height,
+                nx: x,
+                ny: y,
+                play: r
+            };
+        }
+
         var draggingId = null;
 
         function setDraggingId(id) {
             draggingId = id || null;
         }
 
+        /**
+         * Opponent boards hide/collapse the treasure rail for space. When the
+         * real zone has no box, invent one above the hand/deck rail so treasures
+         * never keep stale field coordinates (looks scattered on mobile).
+         */
+        function treasureLayoutRect(boardId) {
+            var rect = zoneRect(boardId, Z.TREASURE);
+            if (rect && rect.width >= 8 && rect.height >= 8) return rect;
+            var hand = zoneRect(boardId, Z.HAND);
+            var b = boardEls(boardId);
+            var fieldW = (b.field && b.field.clientWidth) || 0;
+            var fieldH = (b.field && b.field.clientHeight) || 0;
+            if (hand && hand.width >= 8 && hand.height >= 8) {
+                var h = Math.max(22, Math.min(hand.height, 40));
+                return {
+                    left: hand.left,
+                    top: Math.max(2, hand.top - h - 2),
+                    width: hand.width,
+                    height: h,
+                    host: null
+                };
+            }
+            var rail = Math.max(26, Math.min(44, fieldH * 0.14));
+            var deckCol = 72;
+            return {
+                left: 4,
+                top: Math.max(2, fieldH - rail * 2 - 6),
+                width: Math.max(40, fieldW - deckCol - 8),
+                height: rail,
+                host: null
+            };
+        }
+
         function layoutZoneCards(boardId, zone, cards) {
-            var rect = zoneRect(boardId, zone);
+            var rect = zone === Z.TREASURE ? treasureLayoutRect(boardId) : zoneRect(boardId, zone);
             if (!rect || rect.width < 8 || rect.height < 8) return;
             var n = cards.length;
             var aspect = 1.4;
@@ -213,8 +307,9 @@
 
             if (draggingId && card.id === draggingId) return;
             if (card.zone === Z.FIELD) {
-                el.style.left = (card.x || 0) + 'px';
-                el.style.top = (card.y || 0) + 'px';
+                var pos = fromNorm(boardId, card.x || 0, card.y || 0);
+                el.style.left = pos.x + 'px';
+                el.style.top = pos.y + 'px';
                 el.style.width = '';
                 el.style.zIndex = '40';
                 var rot = el.querySelector('.cp-card-rot');
@@ -225,6 +320,12 @@
         function renderBoard(boardId) {
             var b = boardEls(boardId);
             if (!b.field) return;
+            /*
+             * Readonly CSS moves opponent hand/treasure rails. Apply it before
+             * measuring zones or treasures land in the wrong (desktop) box.
+             */
+            b.field.classList.toggle('cp-board-readonly', !store.canEdit(boardId));
+
             var cards = store.cardList(boardId);
             var seen = Object.create(null);
             var byZone = { field: [], hand: [], discard: [], treasure: [], commander: [] };
@@ -261,8 +362,6 @@
             var ready = byZone.treasure.filter(function (c) { return (c.rot || 0) % 180 !== 90; }).length;
             if (b.treasureCount) b.treasureCount.textContent = String(ready);
             if (b.drawZone) b.drawZone.classList.toggle('is-empty', deckN === 0);
-
-            b.field.classList.toggle('cp-board-readonly', !store.canEdit(boardId));
         }
 
         function renderShell() {
@@ -334,6 +433,9 @@
             fieldPointFromClient: fieldPointFromClient,
             hitZone: hitZone,
             zoneRect: zoneRect,
+            playRect: playRect,
+            toNorm: toNorm,
+            fromNorm: fromNorm,
             setDraggingId: setDraggingId
         };
     }

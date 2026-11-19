@@ -67,6 +67,8 @@
         if (drawBtn) drawBtn.disabled = deckN === 0;
         var draw7 = $('cpDrawHand');
         if (draw7) draw7.disabled = deckN === 0;
+        var onboardDraw7 = $('cpOnboardDraw7');
+        if (onboardDraw7) onboardDraw7.disabled = deckN === 0;
         var nameEl = $('cpCommanderName');
         if (nameEl) {
             var cid = store.getState().commanderId;
@@ -475,7 +477,11 @@
             setStatus('Shuffled');
         });
         on('cpDraw', 'click', function () {
-            var card = store.drawToField(activeBoard(), 48 + Math.random() * 80, 48 + Math.random() * 60);
+            var card = store.drawToField(
+                activeBoard(),
+                0.12 + Math.random() * 0.55,
+                0.1 + Math.random() * 0.45
+            );
             if (card) sfx.place();
             else setStatus('Deck empty');
             refreshStats();
@@ -551,12 +557,17 @@
             });
         });
         on('cpFirebaseDisconnect', 'click', function () {
-            sync.disconnect();
             var disc = $('cpFirebaseDisconnect');
             var copy = $('cpCopyRoomLink');
             if (disc) disc.disabled = true;
-            if (copy) copy.disabled = true;
-            setFirebaseStatus('Disconnected');
+            setFirebaseStatus('Leaving room…');
+            Promise.resolve(sync.disconnect()).then(function () {
+                if (copy) copy.disabled = true;
+                setFirebaseStatus('Disconnected');
+            }).catch(function () {
+                if (copy) copy.disabled = true;
+                setFirebaseStatus('Disconnected');
+            });
         });
         on('cpCopyRoomLink', 'click', function () {
             var rid = sync.getRoomId() || (($('cpRoomId') && $('cpRoomId').value) || '');

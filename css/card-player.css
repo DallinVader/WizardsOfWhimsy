@@ -156,16 +156,19 @@ body.cp-player-body {
     min-height: 1.25em;
 }
 
+.cp-panel.cp-panel-play,
 .cp-panel-play {
     position: relative;
     min-height: 0;
     height: 100%;
+    width: 100%;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     background: #060a12;
-    padding: 0;
+    padding: 0 !important;
     border: none;
+    box-sizing: border-box;
     --cp-card-field-w: min(72px, 8.5vh);
     --cp-card-hand-w: min(128px, 18vh, 22vw);
     --cp-deck-w: min(70px, 9vh);
@@ -301,8 +304,10 @@ body.cp-player-body {
     --cp-deck-h: min(48px, 5.6vh);
     --cp-deck-col-w: calc(var(--cp-deck-w) * 2 + 8px);
     --cp-hand-rail-h: 0px;
+    --cp-opp-treasure-h: max(28px, calc(var(--cp-deck-h) * 0.72));
     --cp-bottom-inset: 3px;
-    padding-bottom: calc(var(--cp-deck-h) + var(--cp-bottom-inset));
+    /* Hand/deck rail + compact treasure strip above it. */
+    padding-bottom: calc(var(--cp-deck-h) + var(--cp-opp-treasure-h) + var(--cp-bottom-inset) + 4px);
 }
 
 .cp-field.cp-board-readonly .cp-hand-zone {
@@ -315,8 +320,17 @@ body.cp-player-body {
     background: rgba(11, 61, 56, 0.4);
 }
 
+/* Keep opponent treasures in a real rail — never leave them at field coords. */
 .cp-field.cp-board-readonly .cp-treasure-zone {
-    display: none;
+    display: block;
+    left: var(--cp-bottom-inset);
+    right: calc(var(--cp-bottom-inset) + var(--cp-deck-col-w));
+    bottom: calc(var(--cp-bottom-inset) + var(--cp-deck-h) + 2px);
+    height: var(--cp-opp-treasure-h);
+    border: 1px solid rgba(250, 204, 21, 0.32);
+    border-radius: 6px;
+    background: rgba(22, 20, 12, 0.75);
+    pointer-events: none;
 }
 
 .cp-field.cp-board-readonly .cp-zone-label {
@@ -604,6 +618,19 @@ body.cp-player-body {
     filter: drop-shadow(0 18px 40px rgba(0, 0, 0, 0.55));
 }
 
+.cp-preview-pop .cp-preview-nav {
+    display: none;
+}
+
+.cp-preview-pop .cp-preview-meta {
+    display: none;
+    margin: 8px 0 0;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 650;
+    color: #dce8e1;
+}
+
 .cp-preview-pop.cp-preview-pop--sheet .cp-preview-actions {
     display: flex;
     gap: 8px;
@@ -614,6 +641,38 @@ body.cp-player-body {
     flex: 1 1 0;
     justify-content: center;
     min-height: 44px;
+}
+
+/* MTG-style inspect: large card, dim board, browse hand with arrows / swipe. */
+.cp-preview-pop.cp-preview-pop--sheet .cp-preview-nav {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.cp-preview-pop.cp-preview-pop--sheet .cp-preview-nav[hidden] {
+    display: none !important;
+}
+
+.cp-preview-nav-btn {
+    flex: 0 0 48px;
+    height: 48px;
+    border-radius: 999px;
+    border: 1px solid rgba(155, 122, 212, 0.35);
+    background: rgba(8, 28, 26, 0.92);
+    color: #f0c06a;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.cp-preview-pop.cp-preview-pop--sheet .cp-preview-meta {
+    display: block;
+}
+
+.cp-preview-pop.cp-preview-pop--sheet .cp-preview-meta[hidden] {
+    display: none !important;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -776,11 +835,37 @@ body.cp-player-body {
 }
 
 @media (max-width: 900px) {
+    /* Reclaim vertical space: single-row nav on the play page. */
+    body.cp-player-body {
+        --cm-app-nav-offset: 56px;
+    }
+
+    body.cp-player-body .cm-app-nav-jump {
+        display: none !important;
+    }
+
+    body.cp-player-body .cm-app-nav-inner {
+        flex-wrap: nowrap;
+        padding-bottom: 8px;
+    }
+
     html,
     body.cp-player-body {
         height: 100dvh;
         max-height: 100dvh;
+        width: 100%;
         overflow: hidden;
+    }
+
+    .cp-wrap,
+    .cp-main,
+    .cp-panel-play,
+    .cp-play-stacks,
+    .cp-field-wrap,
+    .cp-field {
+        width: 100% !important;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 
     .cp-main {
@@ -789,48 +874,67 @@ body.cp-player-body {
         flex-direction: column;
         height: 100%;
         min-height: 0;
+        flex: 1 1 auto;
     }
 
+    /* Full-bleed board — never inherit sidebar .cp-panel padding. */
+    .cp-panel.cp-panel-play,
     .cp-panel-play {
         order: 1;
         flex: 1 1 auto;
         height: auto;
         min-height: 0;
-        --cp-card-field-w: min(62px, 14vw, 8vh);
-        --cp-card-hand-w: min(92px, 21vw, 12vh);
-        --cp-deck-w: min(50px, 12vw);
-        --cp-deck-h: min(68px, 16vw, 9vh);
-        --cp-hand-rail-h: calc(var(--cp-card-hand-w) * 1.42 + 10px);
+        padding: 0 !important;
+        --cp-card-field-w: min(72px, 18vw, 9vh);
+        --cp-card-hand-w: min(100px, 24vw, 13vh);
+        --cp-deck-w: min(48px, 12vw);
+        --cp-deck-h: min(64px, 15vw, 8.5vh);
+        --cp-hand-rail-h: calc(var(--cp-card-hand-w) * 1.4 + 8px);
         --cp-bottom-inset: 4px;
+        --cp-deck-col-w: calc(var(--cp-deck-w) * 2 + 10px);
     }
 
     .cp-panel-play:not(.cp-solo-mode) {
-        --cp-card-field-w: min(56px, 13vw, 7vh);
-        --cp-card-hand-w: min(78px, 18vw, 10vh);
-        --cp-deck-w: min(42px, 10vw);
-        --cp-deck-h: min(56px, 13vw, 7.5vh);
-        --cp-hand-rail-h: calc(var(--cp-card-hand-w) * 1.42 + 8px);
+        --cp-card-field-w: min(64px, 16vw, 8vh);
+        --cp-card-hand-w: min(88px, 22vw, 11vh);
+        --cp-deck-w: min(40px, 10vw);
+        --cp-deck-h: min(54px, 13vw, 7vh);
+        --cp-hand-rail-h: calc(var(--cp-card-hand-w) * 1.4 + 6px);
     }
 
     .cp-hand-zone {
-        /* Keep a closed rail so cards read as inside Hand, not over Treasure. */
         border-bottom: 1px solid rgba(155, 122, 212, 0.22);
-        border-radius: 6px;
+        border-radius: 8px 8px 0 0;
+        /* MTG-style: hand is a shelf, not a tall wall. */
+        z-index: 10;
     }
 
+    /* Opponent strip big enough to read battlefield cards vs desktop. */
     .cp-panel-play:not(.cp-solo-mode) .cp-play-stacks {
-        grid-template-rows: minmax(96px, 22%) minmax(0, 1fr);
+        grid-template-rows: minmax(120px, 32%) minmax(0, 1fr);
     }
 
     .cp-field.cp-board-readonly {
-        --cp-card-field-w: min(44px, 10vw);
+        --cp-card-field-w: min(56px, 14vw, 7vh);
         --cp-card-hand-w: min(28px, 7vw);
-        --cp-deck-w: min(28px, 7vw);
-        --cp-deck-h: min(36px, 9vw);
+        --cp-deck-w: min(30px, 8vw);
+        --cp-deck-h: min(42px, 10vw);
         --cp-deck-col-w: calc(var(--cp-deck-w) * 2 + 6px);
+        --cp-hand-rail-h: 0px;
+        --cp-opp-treasure-h: max(26px, calc(var(--cp-deck-h) * 0.7));
+        padding-bottom: calc(var(--cp-deck-h) + var(--cp-opp-treasure-h) + var(--cp-bottom-inset) + 4px);
     }
 
-    /* Controls as a bottom drawer — board keeps the full remaining height. */
+    .cp-field.cp-board-readonly .cp-hand-zone {
+        height: var(--cp-deck-h);
+    }
+
+    .cp-field.cp-board-readonly .cp-treasure-zone {
+        height: var(--cp-opp-treasure-h);
+        bottom: calc(var(--cp-bottom-inset) + var(--cp-deck-h) + 2px);
+    }
+
+    /* Thin controls strip — drawer overlays board when open. */
     .cp-sidebar-shell {
         order: 2;
         flex: 0 0 auto;
@@ -840,15 +944,15 @@ body.cp-player-body {
         border-top: 1px solid rgba(155, 122, 212, 0.28);
         margin: 0;
         background: rgba(8, 28, 26, 0.94);
-        z-index: 50;
+        z-index: 40;
     }
 
     .cp-sidebar-toggle {
         width: 100%;
-        min-height: 46px;
+        min-height: 40px;
         border-right: none;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 700;
         letter-spacing: 0.04em;
         gap: 8px;
@@ -861,20 +965,21 @@ body.cp-player-body {
         left: 0;
         right: 0;
         bottom: 0;
-        max-height: min(72dvh, 560px);
+        max-height: min(58dvh, 480px);
         border-radius: 16px 16px 0 0;
         box-shadow: 0 -16px 40px rgba(0, 0, 0, 0.5);
         padding-bottom: env(safe-area-inset-bottom, 0px);
+        z-index: 60;
     }
 
     .cp-main:not(.cp-sidebar-collapsed) .cp-sidebar-inner {
         display: block;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
-        max-height: calc(min(72dvh, 560px) - 46px);
+        max-height: calc(min(58dvh, 480px) - 40px);
     }
 
-    .cp-panel { padding: 14px 14px 20px; }
+    .cp-sidebar-inner .cp-panel { padding: 14px 14px 20px; }
 
     .cp-actions .cp-btn {
         flex: 1 1 calc(50% - 6px);
@@ -882,17 +987,70 @@ body.cp-player-body {
         min-height: 44px;
     }
 
-    .cp-preview-pop:not(.cp-preview-pop--sheet) {
-        width: min(280px, 78vw, 58vh * 5 / 7);
+    /* End turn: right-edge chip — never covers the hand shelf. */
+    .cp-turn-hud {
+        top: 42%;
+        right: 8px;
+        left: auto;
+        bottom: auto;
+        transform: translateY(-50%);
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        padding: 8px;
+        border-radius: 14px;
+        max-width: 112px;
+        z-index: 28;
+    }
+
+    .cp-turn-hud span {
+        white-space: normal;
+        text-align: center;
+        font-size: 11px;
+        line-height: 1.25;
+    }
+
+    .cp-turn-hud .cp-btn {
+        width: 100%;
+        min-height: 40px;
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+
+    /* Turn / coin overlays: dim but don't trap the board after banners. */
+    .cp-turn-overlay {
+        padding: 12px;
+        background: rgba(5, 15, 20, 0.55);
+    }
+
+    .cp-turn-overlay.cp-turn-overlay--pass-through {
+        pointer-events: none;
+        background: transparent;
+    }
+
+    .cp-coin-scene {
+        width: min(150px, 38vw);
+        height: min(210px, 52vw);
+    }
+
+    .cp-turn-banner {
+        padding: 14px 18px;
+        pointer-events: none;
+    }
+
+    .cp-turn-banner p {
+        font-size: clamp(18px, 5.5vw, 26px);
     }
 
     .cp-preview-pop.cp-preview-pop--sheet .cp-preview-sheet {
-        width: min(360px, 90vw);
+        width: min(320px, 84vw);
     }
 
     .cp-action-menu {
         min-width: min(200px, 84vw);
         padding: 10px;
+        max-height: min(70dvh, 520px);
+        overflow: auto;
     }
 
     .cp-action-menu button {
@@ -901,40 +1059,46 @@ body.cp-player-body {
         padding: 12px 14px;
     }
 
-    .cp-turn-hud {
-        top: auto;
-        bottom: calc(52px + env(safe-area-inset-bottom, 0px));
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
     .cp-solo-banner {
-        padding: 6px 10px;
+        padding: 4px 10px;
         font-size: 11px;
     }
 
     .cp-modal-list {
-        max-height: min(42vh, 360px);
+        max-height: min(38vh, 320px);
+    }
+
+    .drive-modal-panel {
+        max-height: min(78dvh, 640px);
+        overflow: auto;
     }
 }
 
 @media (max-width: 520px) {
     .cp-actions .cp-btn { flex: 1 1 100%; }
 
+    .cp-panel.cp-panel-play,
     .cp-panel-play {
-        --cp-card-hand-w: min(88px, 24vw, 12vh);
-        --cp-deck-w: min(48px, 14vw);
-        --cp-deck-h: min(68px, 18vw);
+        --cp-card-field-w: min(70px, 19vw, 9vh);
+        --cp-card-hand-w: min(96px, 26vw, 12vh);
+        --cp-deck-w: min(44px, 12vw);
+        --cp-deck-h: min(60px, 15vw);
+        --cp-hand-rail-h: calc(var(--cp-card-hand-w) * 1.4 + 6px);
     }
 
     .cp-panel-play:not(.cp-solo-mode) {
-        --cp-card-hand-w: min(76px, 22vw, 10vh);
-        --cp-deck-h: min(58px, 15vw);
+        --cp-card-hand-w: min(84px, 23vw, 10.5vh);
+        --cp-deck-h: min(52px, 13vw);
     }
 
     .cp-firebase-room {
         flex: 1 1 100%;
         border-radius: 12px;
+    }
+
+    .cp-turn-hud {
+        max-width: 100px;
+        right: 6px;
     }
 }
 
@@ -1115,9 +1279,10 @@ body.cp-player-body {
 
 .cp-turn-hud {
     position: absolute;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
+    top: 12px;
+    right: 12px;
+    left: auto;
+    transform: none;
     z-index: 25;
     display: flex;
     align-items: center;
@@ -1127,7 +1292,7 @@ body.cp-player-body {
     background: rgba(8, 28, 26, 0.92);
     border: 1px solid rgba(155, 122, 212, 0.35);
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
-    max-width: calc(100% - 24px);
+    max-width: min(280px, calc(100% - 24px));
 }
 
 .cp-turn-hud[hidden] { display: none !important; }
@@ -1143,6 +1308,41 @@ body.cp-player-body {
     flex-shrink: 0;
     min-height: 36px;
     padding: 8px 14px;
+}
+
+/*
+ * Mobile HUD must follow the base .cp-turn-hud block so it wins the cascade.
+ * Sit on the local seat's right edge — never cover the opponent strip or hand.
+ */
+@media (max-width: 900px) {
+    .cp-turn-hud {
+        top: auto;
+        bottom: calc(var(--cp-hand-rail-h, 120px) + var(--cp-deck-h, 54px) + 52px);
+        right: 6px;
+        left: auto;
+        transform: none;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        padding: 6px;
+        border-radius: 12px;
+        max-width: 104px;
+        z-index: 28;
+    }
+
+    .cp-turn-hud span {
+        white-space: normal;
+        text-align: center;
+        font-size: 10px;
+        line-height: 1.2;
+    }
+
+    .cp-turn-hud .cp-btn {
+        width: 100%;
+        min-height: 38px;
+        padding: 6px 8px;
+        font-size: 12px;
+    }
 }
 
 body.cp-not-my-turn .cp-panel-play {

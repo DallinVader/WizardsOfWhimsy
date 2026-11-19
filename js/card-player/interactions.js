@@ -25,10 +25,40 @@
         var hoverLeaveTimer = null;
         var previewReq = 0;
         var previewCardId = null;
+        /* Mobile: single tap → inspect, double tap → action menu. */
+        var lastTapCardId = null;
+        var lastTapAt = 0;
+        var lastTapX = 0;
+        var lastTapY = 0;
+        var pendingTapTimer = null;
+        /* Generous window — phones often space double-taps ~300–450ms apart. */
+        var DOUBLE_TAP_MS = 450;
 
-        try {
-            finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-        } catch (e) { /* ignore */ }
+        function refreshPointerMode(ev) {
+            try {
+                finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+            } catch (e1) {
+                finePointer = true;
+            }
+            /* Real phones / first touch: always use tap + double-tap UX. */
+            if (ev && (ev.pointerType === 'touch' || ev.pointerType === 'pen')) {
+                finePointer = false;
+            } else {
+                try {
+                    if (window.matchMedia('(hover: none), (pointer: coarse)').matches) {
+                        finePointer = false;
+                    }
+                } catch (e2) { /* ignore */ }
+            }
+        }
+        refreshPointerMode(null);
+
+        function clearPendingTap() {
+            if (pendingTapTimer) {
+                clearTimeout(pendingTapTimer);
+                pendingTapTimer = null;
+            }
+        }
 
         function ensurePreview() {
             if (previewEl) return previewEl;
@@ -38,7 +68,12 @@
             previewEl.innerHTML =
                 '<button type="button" class="cp-preview-backdrop" aria-label="Close preview"></button>' +
                 '<div class="cp-preview-sheet" role="dialog" aria-label="Card preview">' +
+                    '<div class="cp-preview-nav">' +
+                        '<button type="button" class="cp-preview-nav-btn" data-preview-act="prev" aria-label="Previous card">‹</button>' +
+                        '<button type="button" class="cp-preview-nav-btn" data-preview-act="next" aria-label="Next card">›</button>' +
+                    '</div>' +
                     '<img alt="" />' +
+                    '<p class="cp-preview-meta" id="cpPreviewMeta"></p>' +
                     '<div class="cp-preview-actions">' +
                         '<button type="button" class="cp-btn cp-btn-primary" data-preview-act="play" hidden>Play</button>' +
                         '<button type="button" class="cp-btn" data-preview-act="actions">Actions</button>' +
@@ -53,26 +88,72 @@
                     var id = previewCardId;
                     var found = id ? store.findCard(id) : null;
                     if (act === 'close') {
+                        clearTapMemory();
                         hidePreview();
                         return;
                     }
+                    if (act === 'prev' || act === 'next') {
+                        stepHandPreview(act === 'next' ? 1 : -1);
+                        return;
+                    }
                     if (act === 'play' && found && store.canEdit(found.boardId) && found.card.zone === Z.HAND) {
+                        clearTapMemory();
                         hidePreview();
                         runAction(found.card.id, 'field');
                         return;
                     }
                     if (act === 'actions') {
+                        clearTapMemory();
                         hidePreview();
                         if (found && store.canEdit(found.boardId)) {
-                            store.select(found.card.id, found.boardId);
-                            showActionMenu(window.innerWidth / 2, window.innerHeight * 0.42);
+                            openCardActions(found, window.innerWidth / 2, window.innerHeight * 0.42);
                         }
                         return;
                     }
                 }
-                if (ev.target.classList.contains('cp-preview-backdrop')) hidePreview();
+                /*
+                 * Double-tap's second hit often lands on the dimmer or big card
+                 * (preview already covered the table card). Prefer actions over dismiss.
+                 */
+                if (tryConsumeDoubleTapFromPreview(ev.clientX, ev.clientY)) return;
+                if (ev.target.classList.contains('cp-preview-backdrop')) {
+                    clearTapMemory();
+                    hidePreview();
+                }
             });
+            var touchX = null;
+            previewEl.addEventListener('touchstart', function (ev) {
+                if (!ev.touches || !ev.touches[0]) return;
+                touchX = ev.touches[0].clientX;
+            }, { passive: true });
+            previewEl.addEventListener('touchend', function (ev) {
+                if (touchX == null || !ev.changedTouches || !ev.changedTouches[0]) return;
+                var dx = ev.changedTouches[0].clientX - touchX;
+                touchX = null;
+                if (Math.abs(dx) < 48) return;
+                stepHandPreview(dx < 0 ? 1 : -1);
+            }, { passive: true });
             return previewEl;
+        }
+
+        function handBrowseList(boardId) {
+            return store.cardsInZone(boardId || store.activeBoardId(), Z.HAND);
+        }
+
+        function stepHandPreview(dir) {
+            if (!previewCardId) return;
+            var found = store.findCard(previewCardId);
+            if (!found || found.card.zone !== Z.HAND) return;
+            var list = handBrowseList(found.boardId);
+            if (!list.length) return;
+            var idx = -1;
+            var i;
+            for (i = 0; i < list.length; i++) {
+                if (list[i].id === previewCardId) { idx = i; break; }
+            }
+            if (idx < 0) return;
+            var next = list[(idx + dir + list.length) % list.length];
+            if (next) showPreview(next, opts.library, null, null, true);
         }
 
         function positionPreview(clientX, clientY) {
@@ -111,6 +192,7 @@
             hoverLeaveTimer = null;
             hoverCardId = null;
             previewCardId = null;
+            clearPendingTap();
             var el = ensurePreview();
             el.hidden = true;
             el.classList.remove('is-visible', 'cp-preview-pop--sheet');
@@ -137,6 +219,27 @@
                 var playBtn = actions.querySelector('[data-preview-act="play"]');
                 if (actBtn) actBtn.hidden = !canAct;
                 if (playBtn) playBtn.hidden = !(canAct && card.zone === Z.HAND);
+            }
+            var nav = el.querySelector('.cp-preview-nav');
+            var meta = el.querySelector('#cpPreviewMeta');
+            var inHand = !!(found && found.card.zone === Z.HAND);
+            if (nav) nav.hidden = !(useSheet && inHand && handBrowseList(found.boardId).length > 1);
+            if (meta) {
+                if (useSheet && inHand) {
+                    var list = handBrowseList(found.boardId);
+                    var n = 0;
+                    var j;
+                    for (j = 0; j < list.length; j++) {
+                        if (list[j].id === card.id) { n = j + 1; break; }
+                    }
+                    meta.textContent = 'Hand · ' + n + ' / ' + list.length;
+                    meta.hidden = false;
+                } else if (useSheet) {
+                    meta.textContent = (card.zone || 'card').replace(/^./, function (c) { return c.toUpperCase(); });
+                    meta.hidden = false;
+                } else {
+                    meta.hidden = true;
+                }
             }
             hideActionMenu();
             positionPreview(useSheet ? null : clientX, useSheet ? null : clientY);
@@ -298,6 +401,7 @@
         }
 
         function onPointerDown(ev) {
+            refreshPointerMode(ev);
             var boardId = boardFromEventTarget(ev.target);
             if (!store.canEdit(boardId) && !ev.target.closest('.cp-card-on-field')) return;
 
@@ -331,14 +435,27 @@
 
             var found = cardFromTarget(ev.target);
             if (!found) {
+                clearPendingTap();
+                lastTapCardId = null;
                 store.select(null, null);
                 hideActionMenu();
                 hidePreview();
                 return;
             }
             if (!store.canEdit(found.boardId)) {
-                /* Still allow inspecting cards (own board off-turn, or opponent). */
-                showPreview(found.card, opts.library, ev.clientX, ev.clientY, !finePointer);
+                /* Opponent / off-turn: tap handled on pointerup (inspect only). */
+                drag = {
+                    kind: 'inspect',
+                    boardId: found.boardId,
+                    cardId: found.card.id,
+                    startX: ev.clientX,
+                    startY: ev.clientY,
+                    moved: false,
+                    pointerId: ev.pointerId
+                };
+                if (ev.pointerType === 'touch') {
+                    try { ev.preventDefault(); } catch (eInspect) { /* ignore */ }
+                }
                 return;
             }
 
@@ -371,21 +488,76 @@
 
             clearLongPress();
             longPressFired = false;
-            longPressTimer = setTimeout(function () {
-                longPressTimer = null;
-                if (!drag || drag.moved) return;
-                longPressFired = true;
-                hidePreview();
-                if (found.card.zone === Z.TREASURE) {
-                    store.moveCard(found.card.id, { rot: ((found.card.rot || 0) + 90) % 360 });
-                    sfx.place();
-                    return;
-                }
-                showActionMenu(ev.clientX, ev.clientY);
-            }, finePointer ? 480 : 320);
+            /* Desktop: long-press opens actions. Mobile uses double-tap instead. */
+            if (finePointer) {
+                longPressTimer = setTimeout(function () {
+                    longPressTimer = null;
+                    if (!drag || drag.moved) return;
+                    longPressFired = true;
+                    hidePreview();
+                    if (found.card.zone === Z.TREASURE) {
+                        store.moveCard(found.card.id, { rot: ((found.card.rot || 0) + 90) % 360 });
+                        sfx.place();
+                        return;
+                    }
+                    showActionMenu(ev.clientX, ev.clientY);
+                }, 480);
+            }
             if (ev.pointerType === 'touch') {
                 try { ev.preventDefault(); } catch (e3) { /* ignore */ }
             }
+        }
+
+        function clearTapMemory() {
+            clearPendingTap();
+            lastTapCardId = null;
+            lastTapAt = 0;
+        }
+
+        function openCardActions(found, clientX, clientY) {
+            if (!found || !store.canEdit(found.boardId)) return;
+            store.select(found.card.id, found.boardId);
+            if (found.card.zone === Z.TREASURE) {
+                store.moveCard(found.card.id, { rot: ((found.card.rot || 0) + 90) % 360 });
+                sfx.place();
+                return;
+            }
+            showActionMenu(clientX, clientY);
+        }
+
+        function isDoubleTapFor(cardId) {
+            return !!cardId && lastTapCardId === cardId && (Date.now() - lastTapAt) <= DOUBLE_TAP_MS;
+        }
+
+        function tryConsumeDoubleTapFromPreview(clientX, clientY) {
+            if (finePointer || !previewCardId || !isDoubleTapFor(previewCardId)) return false;
+            var found = store.findCard(previewCardId);
+            clearTapMemory();
+            hidePreview();
+            if (!found || !store.canEdit(found.boardId)) return true;
+            openCardActions(
+                found,
+                clientX != null ? clientX : lastTapX,
+                clientY != null ? clientY : lastTapY
+            );
+            return true;
+        }
+
+        function handleMobileCardTap(found, clientX, clientY) {
+            if (!found) return;
+            clearPendingTap();
+            if (isDoubleTapFor(found.card.id)) {
+                clearTapMemory();
+                hidePreview();
+                openCardActions(found, clientX, clientY);
+                return;
+            }
+            lastTapCardId = found.card.id;
+            lastTapAt = Date.now();
+            lastTapX = clientX;
+            lastTapY = clientY;
+            /* Show inspect right away; a quick second tap (often on the dimmer) opens actions. */
+            showPreview(found.card, opts.library, clientX, clientY, true);
         }
 
         function onPointerMove(ev) {
@@ -396,6 +568,8 @@
             if (!drag.moved && (dx * dx + dy * dy) > moveThresh) {
                 drag.moved = true;
                 clearLongPress();
+                clearPendingTap();
+                lastTapCardId = null;
                 hideActionMenu();
                 hidePreview();
                 hoverCardId = null;
@@ -443,15 +617,11 @@
             return zone;
         }
 
-        function clampFieldPoint(boardId, x, y) {
-            var hand = view.zoneRect(boardId, Z.HAND);
-            var maxY = hand ? Math.max(8, hand.top - 8) : y;
-            var b = view.boardEls(boardId);
-            var w = (b.field && b.field.clientWidth) || 0;
-            var h = (b.field && b.field.clientHeight) || 0;
+        function fieldCardSize(boardId) {
             var cardW = 64;
             var cardH = 90;
             try {
+                var b = view.boardEls(boardId);
                 var cs = b.field && window.getComputedStyle(b.field);
                 if (cs) {
                     var cw = parseFloat(cs.getPropertyValue('--cp-card-field-w'));
@@ -461,10 +631,22 @@
                     }
                 }
             } catch (e) { /* ignore */ }
-            return {
-                x: Math.max(0, Math.min(x, Math.max(0, w - cardW))),
-                y: Math.max(0, Math.min(y, Math.max(0, Math.min(maxY, h - cardH))))
-            };
+            return { w: cardW, h: cardH };
+        }
+
+        /**
+         * Clamp a pixel drop into the playable area, then return 0–1 norms
+         * so the same relative spot appears on every device size.
+         */
+        function clampFieldPoint(boardId, x, y) {
+            var play = view.playRect ? view.playRect(boardId) : null;
+            var size = fieldCardSize(boardId);
+            var maxX = play ? Math.max(0, play.width - size.w) : x;
+            var maxY = play ? Math.max(0, play.height - size.h) : y;
+            var px = Math.max(0, Math.min(x, maxX));
+            var py = Math.max(0, Math.min(y, maxY));
+            if (view.toNorm) return view.toNorm(boardId, px, py);
+            return { x: px, y: py };
         }
 
         function highlightDrop(boardId, zone) {
@@ -501,6 +683,15 @@
             if (d.el) d.el.classList.remove('cp-card-dragging');
             if (d.wrap) d.wrap.classList.remove('cp-wrap-dragging');
 
+            if (d.kind === 'inspect') {
+                if (!d.moved) {
+                    var inspectCard = store.findCard(d.cardId);
+                    if (!finePointer) handleMobileCardTap(inspectCard, ev.clientX, ev.clientY);
+                    else if (inspectCard) showPreview(inspectCard.card, opts.library, ev.clientX, ev.clientY, false);
+                }
+                return;
+            }
+
             if (d.kind === 'deck') {
                 if (!d.moved) {
                     var drawn = store.drawToHand(d.boardId, 1);
@@ -533,8 +724,12 @@
                         longPressFired = false;
                         return;
                     }
-                    /* Tap = inspect (sheet on mobile). Long-press = actions. */
-                    showPreview(found.card, opts.library, ev.clientX, ev.clientY, !finePointer);
+                    if (!finePointer) {
+                        /* Mobile: tap = large card, double-tap = actions. */
+                        handleMobileCardTap(found, ev.clientX, ev.clientY);
+                    } else {
+                        showPreview(found.card, opts.library, ev.clientX, ev.clientY, false);
+                    }
                     return;
                 }
                 var dropZone = resolveDropZone(d.boardId, ev.clientX, ev.clientY, d);
@@ -567,6 +762,11 @@
         }
 
         function onDblClick(ev) {
+            /* Mobile double-tap is handled in pointerup → action menu. */
+            if (!finePointer) {
+                ev.preventDefault();
+                return;
+            }
             var found = cardFromTarget(ev.target);
             if (!found || !store.canEdit(found.boardId)) return;
             if (found.card.zone === Z.HAND) {
@@ -630,12 +830,20 @@
                 root.addEventListener('pointerout', onCardPointerLeave);
                 root.addEventListener('pointermove', onCardPointerMoveHover);
             }
-            document.addEventListener('click', function (ev) {
+            document.addEventListener('pointerdown', function (ev) {
                 if (actionEl && !actionEl.hidden && !actionEl.contains(ev.target) && !ev.target.closest('.cp-card-on-field')) {
                     hideActionMenu();
                 }
+            }, true);
+            document.addEventListener('click', function (ev) {
                 if (previewEl && !previewEl.hidden && previewEl.classList.contains('cp-preview-pop--sheet')) {
+                    if (ev.target.classList.contains('cp-preview-backdrop')) {
+                        /* Handled in previewEl click (double-tap vs dismiss). */
+                        return;
+                    }
                     if (!previewEl.contains(ev.target) && !ev.target.closest('.cp-card-on-field')) {
+                        if (tryConsumeDoubleTapFromPreview(ev.clientX, ev.clientY)) return;
+                        clearTapMemory();
                         hidePreview();
                     }
                 }
